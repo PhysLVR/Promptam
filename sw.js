@@ -1,9 +1,11 @@
-const CACHE = "pm-v5";
-const APP_VERSION = "1.2";
+const CACHE = "pm-v6";
+const APP_VERSION = "1.3";
 
 const ASSETS = [
   "./",
   "./index.html",
+  "./style.css",
+  "./app.js",
   "./manifest.json",
   "./icons/icon-192.png",
   "./icons/icon-512.png",
