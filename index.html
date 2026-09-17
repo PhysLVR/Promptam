@@ -4788,6 +4788,7 @@ function updateVarPreview() {
     scrollLogicalStart(varPreviewEl);
   }
 
+  const filled = fillVars(varState.prompt.content, varState.values);
   varPreviewEl.textContent = filled;
   applyTextDir(varPreviewEl, filled);
 }
