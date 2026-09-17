@@ -93,12 +93,90 @@
 #iosHint b {
   color: var(--vio);
 }
-#iosHint .close-x {
-  display: block;
-  margin-top: 6px;
+/* ═══ چنج‌لاگ ═══ */
+.chlog-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  max-height: 60vh;
+  overflow-y: auto;
+  padding-inline-end: 4px;
+}
+.chlog-item {
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 0.85rem 1rem;
+  background: var(--deep);
+}
+.chlog-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  margin-bottom: 0.55rem;
+}
+.chlog-ver {
+  font-family: var(--mono);
+  font-weight: 800;
+  font-size: var(--f-md);
+  color: var(--acc);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.chlog-date {
   font-size: var(--f-2xs);
   color: var(--dim);
-  cursor: pointer;
+  font-family: var(--mono);
+}
+.chlog-item ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+.chlog-item li {
+  font-size: var(--f-xs);
+  color: var(--mut);
+  line-height: 1.7;
+  padding-inline-start: 1.1rem;
+  position: relative;
+}
+.chlog-item li::before {
+  content: "▸";
+  position: absolute;
+  inset-inline-start: 0;
+  color: var(--vio);
+  opacity: 0.7;
+}
+.chlog-current {
+  display: inline-block;
+  font-size: var(--f-2xs);
+  font-weight: 800;
+  color: var(--acc);
+  background: color-mix(in srgb, var(--acc) 15%, transparent);
+  border: 1px solid color-mix(in srgb, var(--acc) 40%, transparent);
+  padding: 1px 8px;
+  border-radius: 999px;
+}
+/* ═══ نشان آپدیت روی دکمهٔ تنظیمات ═══ */
+#settingsBtn.has-update::before {
+  content: "";
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: var(--ros);
+  box-shadow: 0 0 0 2px var(--card);
+  animation: updPulse 1.8s ease-in-out infinite;
+}
+@keyframes updPulse {
+  0%, 100% { transform: scale(1); opacity: 1; }
+  50% { transform: scale(1.25); opacity: 0.7; }
 }
 </style>
 <link
@@ -112,6 +190,12 @@ href="https://cdn.jsdelivr.net/npm/@fontsource/vazirmatn@5.0.16/arabic-700.css"
 <link
 rel="stylesheet"
 href="https://cdn.jsdelivr.net/npm/@fontsource/vazirmatn@5.0.16/arabic-800.css"
+/>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link
+  href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@500;700&display=swap"
+  rel="stylesheet"
 />
 <style>
 /* ══════════════ توکن‌ها ══════════════ */
@@ -1856,10 +1940,8 @@ main {
 
   .editor-modal {
     max-width: none;
-    max-height: 100vh;
-    max-height: 100dvh;
-    height: 100vh;
-    height: 100dvh;
+    max-height: var(--vvh, 100dvh);
+    height: var(--vvh, 100dvh);
     border-radius: 0;
     border: none;
   }
@@ -2921,6 +3003,18 @@ footer.app-footer .ft-author {
   font-weight: 700;
   text-decoration: none;
   transition: color 0.2s var(--ease);
+  direction: ltr;
+  unicode-bidi: isolate;
+  display: inline-block;
+  font-family: "Chakra Petch", var(--mono);
+  letter-spacing: 0.3px;
+  font-size: 0.95em;
+}
+footer.app-footer .ft-author:hover {
+  color: var(--cyn);
+  text-shadow:
+    0 0 4px color-mix(in srgb, var(--cyn) 60%, transparent),
+    0 0 12px color-mix(in srgb, var(--cyn) 30%, transparent);
 }
 footer.app-footer .ft-author:hover {
   color: var(--vio);
@@ -3303,7 +3397,7 @@ line-height: 1.4rem !important;
 <div class="ft-inner">
   <span class="ft-brand">Prompt Manager</span>
   <span class="ft-sep">·</span>
-  <span>نسخه <span class="ft-ver">1.0</span></span>
+  <span>نسخه <span class="ft-ver" id="ftVer">۱.۲</span></span>
   <span class="ft-sep">·</span>
   <span
     >ساخته‌شده توسط
@@ -3586,6 +3680,17 @@ aria-label="تنظیمات"
     </button>
   </div>
 
+  <div class="group" id="updateGroup" style="display: none">
+    <h4>به‌روزرسانی</h4>
+    <div class="row-pref">
+      <div class="label">
+        <b style="color: var(--ros)">نسخهٔ جدید موجود است</b>
+        <span id="updateVerLabel">پس از آپدیت، تغییرات اعمال می‌شود.</span>
+      </div>
+      <button class="btn sm g" id="updateBtn">به‌روزرسانی</button>
+    </div>
+  </div>
+
   <div class="group">
     <h4>داده‌ها</h4>
     <div class="row-pref">
@@ -3600,6 +3705,12 @@ aria-label="تنظیمات"
       </div>
       <button class="btn sm" id="importBtn">انتخاب فایل</button>
       <input type="file" id="importFile" accept=".json" hidden />
+    </div>
+    <div class="row-pref">
+      <div class="label">
+        <b>تغییرات نسخه</b><span>تاریخچهٔ به‌روزرسانی‌ها</span>
+      </div>
+      <button class="btn sm" id="chlogBtn">نمایش</button>
     </div>
     <div class="row-pref">
       <div class="label">
@@ -3863,10 +3974,25 @@ aria-labelledby="dialogTitle"
 </div>
 </div>
 
-<div id="swUpdate" role="status">
-  <span>نسخهٔ جدید موجود است</span>
-  <button id="swUpdateBtn">به‌روزرسانی</button>
+<div
+  class="modal-back"
+  id="chlogBack"
+  role="dialog"
+  aria-modal="true"
+  aria-labelledby="chlogTitle"
+>
+  <div class="modal" style="max-width: 560px">
+    <h2>
+      <span aria-hidden="true">📋</span>
+      <span id="chlogTitle">تغییرات نسخه</span>
+    </h2>
+    <div class="chlog-list" id="chlogList"></div>
+    <div class="foot">
+      <button class="btn g" id="chlogCloseBtn">بستن</button>
+    </div>
+  </div>
 </div>
+
 <div id="iosHint" role="status">
   برای نصب: <b>Share</b> → <b>Add to Home Screen</b>
   <span class="close-x" id="iosHintClose">بستن</span>
@@ -6637,44 +6763,130 @@ renderGrid();
 updateHeaderHeight();
 setTimeout(updateHeaderHeight, 200);
 
+/* ═══ چنج‌لاگ ═══ */
+const CHANGELOG = [
+  {
+    version: "1.2",
+    date: "۱۴۰۴/۰۶/۲۶",
+    items: [
+      "پشتیبانی از نصب به‌عنوان PWA",
+      "بنر آپدیت خودکار",
+      "صفحهٔ تغییرات نسخه",
+      "بهبود تراز عنوان و سنجاق",
+      "شبکهٔ لوزی پس‌زمینه",
+      "تنظیم ارتفاع ادیتور با کیبورد",
+    ],
+  },
+  {
+    version: "1.1",
+    date: "۱۴۰۴/۰۶/۲۵",
+    items: [
+      "پشتیبانی از متغیرها {{var}}",
+      "باز کردن مستقیم در AI",
+      "خروجی/ورودی JSON",
+    ],
+  },
+  {
+    version: "1.0",
+    date: "۱۴۰۴/۰۶/۲۴",
+    items: ["انتشار اولیه", "جست‌وجو، دسته‌بندی، سنجاق"],
+  },
+];
+
+let currentAppVer = null;
+
+function renderChangelog() {
+  const el = $("#chlogList");
+  if (!el) return;
+  el.innerHTML = CHANGELOG.map((c, i) => {
+    const isCurrent = currentAppVer && c.version === currentAppVer;
+    return `
+<div class="chlog-item">
+  <div class="chlog-head">
+    <span class="chlog-ver">
+      نسخه ${esc(c.version)}
+      ${
+        isCurrent || (!currentAppVer && i === 0)
+          ? '<span class="chlog-current">فعلی</span>'
+          : ""
+      }
+    </span>
+    <span class="chlog-date">${esc(c.date || "")}</span>
+  </div>
+  <ul>${c.items.map((it) => `<li>${esc(it)}</li>`).join("")}</ul>
+</div>`;
+  }).join("");
+}
+function openChangelog() {
+  renderChangelog();
+  $("#chlogBack").classList.add("open");
+  refreshFocusTrap();
+}
+function closeChangelog() {
+  $("#chlogBack").classList.remove("open");
+  refreshFocusTrap();
+}
+$("#chlogBtn")?.addEventListener("click", openChangelog);
+$("#chlogCloseBtn")?.addEventListener("click", closeChangelog);
+$("#chlogBack")?.addEventListener("click", (e) => {
+  if (e.target.id === "chlogBack") closeChangelog();
+});
+document.addEventListener("keydown", (e) => {
+  if (
+    e.key === "Escape" &&
+    $("#chlogBack")?.classList.contains("open")
+  ) {
+    closeChangelog();
+    e.stopPropagation();
+  }
+});
+
+/* ═══ خواندن نسخهٔ اپ از sw.js ═══ */
+(async function showVersion() {
+  try {
+    const res = await fetch("./sw.js", { cache: "no-store" });
+    const txt = await res.text();
+    const m = txt.match(/APP_VERSION\s*=\s*["']([^"']+)["']/);
+    if (m && m[1]) {
+      currentAppVer = m[1];
+      const ftVer = $("#ftVer");
+      if (ftVer) ftVer.textContent = m[1];
+      if ($("#chlogBack")?.classList.contains("open")) renderChangelog();
+    }
+  } catch (_) {}
+})();
+
 /* ═══ PWA: نصب ═══ */
 let deferredInstall = null;
 const installBtn = $("#installBtn");
 const iosHint = $("#iosHint");
 
-// قبل از نصب
 window.addEventListener("beforeinstallprompt", (e) => {
   e.preventDefault();
   deferredInstall = e;
   installBtn.classList.add("show");
 });
 
-// نصب انجام شد
 window.addEventListener("appinstalled", () => {
   deferredInstall = null;
   installBtn.classList.remove("show");
   toast("اپ نصب شد ✓");
 });
 
-// کلیک روی دکمهٔ نصب
 installBtn.addEventListener("click", async () => {
   if (!deferredInstall) return;
   deferredInstall.prompt();
   const { outcome } = await deferredInstall.userChoice;
-  if (outcome === "accepted") {
-    installBtn.classList.remove("show");
-  }
+  if (outcome === "accepted") installBtn.classList.remove("show");
   deferredInstall = null;
 });
 
-// iOS: راهنما (چون iOS beforeinstallprompt نداره)
 (function iosInstallHint() {
   const isIos = /iphone|ipad|ipod/i.test(navigator.userAgent);
   const isStandalone =
     window.navigator.standalone === true ||
     matchMedia("(display-mode: standalone)").matches;
   const dismissed = localStorage.getItem("iosHintDismissed") === "1";
-
   if (isIos && !isStandalone && !dismissed) {
     setTimeout(() => iosHint.classList.add("show"), 3000);
   }
@@ -6684,13 +6896,33 @@ installBtn.addEventListener("click", async () => {
   });
 })();
 
-/* ═══ Service Worker + آپدیت ═══ */
+/* ═══ Service Worker + آپدیت دستی ═══ */
+let swWaitingWorker = null;
+
+function showUpdateIndicator(ver) {
+  $("#settingsBtn")?.classList.add("has-update");
+  const grp = $("#updateGroup");
+  if (grp) grp.style.display = "";
+  const lbl = $("#updateVerLabel");
+  if (lbl && ver) {
+    lbl.textContent = `نسخهٔ ${ver} آماده است. برای اعمال، دکمه را بزن.`;
+  } else if (lbl) {
+    lbl.textContent = "برای اعمال تغییرات، دکمه را بزن.";
+  }
+}
+
 if ("serviceWorker" in navigator) {
   window.addEventListener("load", () => {
     navigator.serviceWorker
       .register("./sw.js")
       .then((reg) => {
-        // اگر نسخهٔ جدید پیدا شد
+        /* اگه از قبل waiting داره (مثلاً reload کرده) */
+        if (reg.waiting && navigator.serviceWorker.controller) {
+          swWaitingWorker = reg.waiting;
+          showUpdateIndicator();
+        }
+
+        /* آپدیت جدید پیدا شد */
         reg.addEventListener("updatefound", () => {
           const newWorker = reg.installing;
           if (!newWorker) return;
@@ -6699,32 +6931,59 @@ if ("serviceWorker" in navigator) {
               newWorker.state === "installed" &&
               navigator.serviceWorker.controller
             ) {
-              // نسخهٔ جدید آماده‌ست
-              $("#swUpdate").classList.add("show");
+              swWaitingWorker = newWorker;
+              showUpdateIndicator();
             }
           });
         });
+
+        /* هر بار اپ باز می‌شه، چک کن نسخهٔ جدید هست */
+        reg.update();
       })
       .catch((err) => console.warn("SW register failed:", err));
 
-    // وقتی کاربر «به‌روزرسانی» رو زد
+    /* بعد از آپدیت، صفحه reload می‌شه */
     let refreshing = false;
     navigator.serviceWorker.addEventListener("controllerchange", () => {
       if (refreshing) return;
       refreshing = true;
       window.location.reload();
     });
-
-    $("#swUpdateBtn")?.addEventListener("click", () => {
-      navigator.serviceWorker.getRegistration().then((reg) => {
-        if (reg && reg.waiting) {
-          reg.waiting.postMessage("SKIP_WAITING");
-        }
-      });
-      $("#swUpdate").classList.remove("show");
-    });
   });
 }
+
+/* دکمهٔ آپدیت تو تنظیمات */
+$("#updateBtn")?.addEventListener("click", () => {
+  if (!swWaitingWorker) {
+    /* اگه waiting نیست، شاید بعد از reload تموم شده */
+    closeDrawer();
+    window.location.reload();
+    return;
+  }
+  swWaitingWorker.postMessage("SKIP_WAITING");
+  $("#settingsBtn")?.classList.remove("has-update");
+  const grp = $("#updateGroup");
+  if (grp) grp.style.display = "none";
+  toast("به‌روزرسانی در حال اعمال…");
+});
+
+/* ═══ تنظیم ارتفاع ادیتور با کیبورد موبایل ═══ */
+(function keyboardResize() {
+  if (!window.visualViewport) return;
+  const vv = window.visualViewport;
+  const editorBack = document.getElementById("modalBack");
+  if (!editorBack) return;
+
+  function update() {
+    if (!editorBack.classList.contains("open")) return;
+    document.documentElement.style.setProperty("--vvh", vv.height + "px");
+    setTimeout(() => {
+      document.documentElement.style.setProperty("--vvh", vv.height + "px");
+    }, 100);
+  }
+  vv.addEventListener("resize", update);
+  vv.addEventListener("scroll", update);
+})();
 </script>
 </body>
 </html>

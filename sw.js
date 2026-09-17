@@ -1,4 +1,5 @@
-const CACHE = "pm-v4";
+const CACHE = "pm-v5";
+const APP_VERSION = "1.2";
 
 const ASSETS = [
   "./",
@@ -21,7 +22,7 @@ self.addEventListener("install", (e) => {
       Promise.all(ASSETS.map((u) => c.add(u).catch(() => {})))
     )
   );
-  self.skipWaiting();
+  /* بدون skipWaiting — منتظر می‌مونه تا کاربر تأیید کنه */
 });
 
 self.addEventListener("activate", (e) => {
