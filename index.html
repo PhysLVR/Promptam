@@ -4675,19 +4675,56 @@ function toggleAiMenu() {
   else openAiMenu();
 }
 
+function copyTextAsync(txt) {
+  return new Promise((resolve) => {
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(txt).then(
+        () => resolve(true),
+        () => resolve(legacyCopySilent(txt)),
+      );
+    } else {
+      resolve(legacyCopySilent(txt));
+    }
+  });
+}
+function legacyCopySilent(txt) {
+  const ta = document.createElement("textarea");
+  ta.value = txt;
+  ta.style.cssText = "position:fixed;opacity:0;top:0;left:0";
+  document.body.appendChild(ta);
+  ta.select();
+  let ok = false;
+  try {
+    ok = document.execCommand("copy");
+  } catch (e) {}
+  ta.remove();
+  return ok;
+}
 function openInAI(p, target) {
   const vars = extractVars(p.content);
   if (vars.length) {
     openVarModal(p, vars, { aiTarget: target });
     return;
   }
-  const url = target.url(p.content);
-  const win = window.open(url, "_blank", "noopener,noreferrer");
-  if (!win) {
-    toast("مرورگر اجازهٔ باز کردن تب جدید نداد", "err");
-    return;
-  }
-  copyText(p.content, `کپی شد — باز شد در ${target.name}`);
+  copyTextAsync(p.content).then((ok) => {
+    const url = target.url(p.content);
+    const win = window.open(url, "_blank", "noopener,noreferrer");
+    if (!win) {
+      toast(
+        ok
+          ? "کپی شد؛ مرورگر اجازهٔ باز کردن تب جدید نداد"
+          : "کپی و باز کردن هر دو ناموفق بود",
+        "err",
+      );
+      return;
+    }
+    toast(
+      ok
+        ? `کپی شد — باز شد در ${target.name}`
+        : `باز شد در ${target.name} (کپی ناموفق)`,
+      ok ? undefined : "err",
+    );
+  });
 }
 
 let varState = null;
@@ -4761,14 +4798,25 @@ function copyVarFinal() {
   const target = varState.pendingAI;
 
   if (target) {
-    const url = target.url(txt);
-    const win = window.open(url, "_blank", "noopener,noreferrer");
-    if (!win) {
-      toast("مرورگر اجازهٔ باز کردن تب جدید نداد", "err");
-      closeVarModal();
-      return;
-    }
-    copyText(txt, `کپی شد — باز شد در ${target.name}`);
+    copyTextAsync(txt).then((ok) => {
+      const url = target.url(txt);
+      const win = window.open(url, "_blank", "noopener,noreferrer");
+      if (!win) {
+        toast(
+          ok
+            ? "کپی شد؛ مرورگر اجازهٔ باز کردن تب جدید نداد"
+            : "کپی و باز کردن هر دو ناموفق بود",
+          "err",
+        );
+        return;
+      }
+      toast(
+        ok
+          ? `کپی شد — باز شد در ${target.name}`
+          : `باز شد در ${target.name} (کپی ناموفق)`,
+        ok ? undefined : "err",
+      );
+    });
   } else {
     copyText(txt, "متن نهایی کپی شد");
   }
