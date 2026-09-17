@@ -1028,6 +1028,7 @@ function requestCopy(p) {
   }
   openVarModal(p, vars);
 }
+
 function openVarModal(p, vars, opts) {
   varState = {
     prompt: p,
@@ -1039,34 +1040,42 @@ function openVarModal(p, vars, opts) {
     .map(
       (v) => `
 <div class="var-row">
-<label>
-<code>{{${esc(v)}}}</code>
-<small>خالی = بدون جای‌گذاری</small>
-</label>
+<label><code>{{${esc(v)}}}</code></label>
 <input type="text" data-var="${esc(v)}" placeholder="مقدار…" autocomplete="off">
 </div>
 `,
     )
     .join("");
-  form.querySelectorAll("input[data-var]").forEach((inp) => {
+
+  /* پیش‌نمایش رو ببند هر بار باز کردن */
+  const pvBox = $("#varPreviewBox");
+  if (pvBox) pvBox.open = false;
+
+  const inputs = Array.from(form.querySelectorAll("input[data-var]"));
+  inputs.forEach((inp, i) => {
     inp.addEventListener("input", () => {
       varState.values[inp.dataset.var] = inp.value;
       updateVarPreview();
     });
+    /* Enter = برو فیلد بعدی؛ تو فیلد آخر = کپی */
+    inp.addEventListener("keydown", (e) => {
+      if (e.key === "Enter") {
+        e.preventDefault();
+        const next = inputs[i + 1];
+        if (next) next.focus();
+        else $("#varCopyBtn").click();
+      }
+    });
   });
+
   updateVarPreview();
-  const varPreviewEl = $("#varPreview");
-  if (varPreviewEl) {
-    varPreviewEl.scrollTop = 0;
-    scrollLogicalStart(varPreviewEl);
-  }
   $("#varModalBack").classList.add("open");
   refreshFocusTrap();
   setTimeout(() => {
-    const f = form.querySelector("input");
-    if (f) f.focus();
+    if (inputs[0]) inputs[0].focus();
   }, 100);
 }
+  
 function updateVarPreview() {
   if (!varState) return;
 
@@ -1115,6 +1124,7 @@ function copyVarFinal() {
   }
   closeVarModal();
 }
+
 function copyVarRaw() {
   if (!varState) return;
   copyText(varState.prompt.content, "متن خام کپی شد");
