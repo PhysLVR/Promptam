@@ -1,0 +1,6455 @@
+<!doctype html>
+<html lang="fa" dir="rtl">
+<head>
+<meta charset="UTF-8" />
+<meta
+name="viewport"
+content="width=device-width, initial-scale=1.0, viewport-fit=cover"
+/>
+<title>پرامپتام | مدیریت پرامپت</title>
+<link
+rel="stylesheet"
+href="https://cdn.jsdelivr.net/npm/@fontsource/vazirmatn@5.0.16/arabic-400.css"
+/>
+<link
+rel="stylesheet"
+href="https://cdn.jsdelivr.net/npm/@fontsource/vazirmatn@5.0.16/arabic-700.css"
+/>
+<link
+rel="stylesheet"
+href="https://cdn.jsdelivr.net/npm/@fontsource/vazirmatn@5.0.16/arabic-800.css"
+/>
+<style>
+/* ══════════════ توکن‌ها ══════════════ */
+:root {
+  --bg: #070b16;
+  --bg2: #0a1122;
+  --card: #101a33;
+  --card2: #152142;
+  --deep: #0b1226;
+  --line: rgba(140, 160, 255, 0.14);
+  --line2: rgba(140, 160, 255, 0.28);
+  --txt: #eaeefb;
+  --mut: #a5b0d2;
+  --dim: #67739b;
+  --vio: #a78bfa;
+  --blu: #60a5fa;
+  --cyn: #22d3ee;
+  --grn: #34d399;
+  --amb: #fbbf24;
+  --ros: #fb7185;
+  --focus: #7c8adb;
+  --ink: #0b0f1e;
+  --acc: #a78bfa;
+  --acc-ink: #0b0f1e;
+  --header-bg: rgba(8, 12, 24, 0.68);
+  --shadow: 0 14px 40px rgba(2, 5, 18, 0.55);
+  --ease: cubic-bezier(0.22, 0.75, 0.3, 1);
+  --ease-ios: cubic-bezier(0.32, 0.72, 0, 1);
+  --ease-spring: cubic-bezier(0.34, 1.4, 0.5, 1);
+  --gap: 16px;
+  --header-h: 64px;
+
+  /* ═══ سیستم اندازه ═══
+--fs-base مرجع rem است (html{font-size:var(--fs-base)})
+پس هر 1rem معادل اندازهٔ پایهٔ انتخاب‌شده کاربر می‌شود */
+  --fs-base: 16px;
+  --f-2xs: 0.75rem; /* ~12px  — کوچک‌ترین متن مجاز */
+  --f-xs: 0.82rem; /* ~13px  — متن ثانویه */
+  --f-sm: 0.88rem; /* ~14px  — متن پیش‌فرض بدنهٔ ریز */
+  --f-md: 0.94rem; /* ~15px  — متن عادی */
+  --f-lg: 1rem; /*  16px  — عنوان کوچک */
+  --f-xl: 1.06rem; /* ~17px  — عنوان مودال */
+  --f-2xl: 1.25rem; /* ~20px  — عنوان بزرگ */
+
+  --mono:
+    ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas,
+    "Liberation Mono", "Courier New", monospace, "Vazirmatn", system-ui,
+    sans-serif;
+}
+:root[data-theme="light"] {
+  --bg: #f3f5fb;
+  --bg2: #eaeef8;
+  --card: #fff;
+  --card2: #eef2fb;
+  --deep: #e8edf8;
+  --line: rgba(23, 44, 110, 0.13);
+  --line2: rgba(23, 44, 110, 0.26);
+  --txt: #18203a;
+  --mut: #49557c;
+  --dim: #7d87ab;
+  --vio: #6d28d9;
+  --blu: #1d4ed8;
+  --cyn: #0e7490;
+  --grn: #047857;
+  --amb: #b45309;
+  --ros: #be123c;
+  --acc: #7c3aed;
+  --acc-ink: #ffffff;
+  --header-bg: rgba(255, 255, 255, 0.74);
+  --shadow: 0 12px 32px rgba(90, 110, 170, 0.18);
+  --focus: #4f6bd8;
+}
+
+/* ═══ پالت‌های رنگ تأکیدی ═══ */
+:root[data-accent="ocean"] {
+  --acc: #60a5fa;
+  --acc-ink: #0b0f1e;
+}
+:root[data-accent="forest"] {
+  --acc: #34d399;
+  --acc-ink: #0b0f1e;
+}
+:root[data-accent="sunset"] {
+  --acc: #fb923c;
+  --acc-ink: #0b0f1e;
+}
+:root[data-accent="galaxy"] {
+  --acc: #f472b6;
+  --acc-ink: #0b0f1e;
+}
+:root[data-accent="mono"] {
+  --acc: #94a3b8;
+  --acc-ink: #0b0f1e;
+}
+
+:root[data-accent="mono"] .brand .logo {
+  background: var(--acc-ink);
+}
+:root[data-accent="mono"] .brand .logo svg {
+  fill: var(--acc);
+}
+
+:root[data-theme="light"][data-accent="ocean"] {
+  --acc: #2563eb;
+  --acc-ink: #ffffff;
+}
+:root[data-theme="light"][data-accent="forest"] {
+  --acc: #059669;
+  --acc-ink: #ffffff;
+}
+:root[data-theme="light"][data-accent="sunset"] {
+  --acc: #ea580c;
+  --acc-ink: #ffffff;
+}
+:root[data-theme="light"][data-accent="galaxy"] {
+  --acc: #db2777;
+  --acc-ink: #ffffff;
+}
+:root[data-theme="light"][data-accent="mono"] {
+  --acc: #475569;
+  --acc-ink: #ffffff;
+}
+
+:root[data-fs="small"] {
+  --fs-base: 14px;
+}
+:root[data-fs="large"] {
+  --fs-base: 18px;
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+html {
+  scroll-behavior: smooth;
+  font-size: var(--fs-base);
+  /* همیشه جای اسکرول‌بار رزرو می‌شود → باز/بسته شدن پنل‌ها هیچ جابه‌جایی‌ای ایجاد نمی‌کند */
+  scrollbar-gutter: stable;
+  overflow-y: scroll;
+}
+body {
+  font-family: "Vazirmatn", system-ui, sans-serif;
+  background-color: var(--bg);
+  color: var(--txt);
+  font-size: 1rem;
+  line-height: 1.8;
+  overflow-x: clip;
+  min-height: 100vh;
+}
+html.no-scroll {
+  overflow: hidden;
+}
+body.no-scroll {
+  overflow: hidden;
+  padding-inline-end: var(--sbw, 0px);
+}
+body.no-scroll footer.app-footer {
+  left: var(--sbw, 0px);
+}
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: -2;
+  background:
+    radial-gradient(
+      900px 500px at 88% -8%,
+      rgba(124, 58, 237, 0.15),
+      transparent 60%
+    ),
+    radial-gradient(
+      700px 600px at 50% 112%,
+      rgba(59, 130, 246, 0.12),
+      transparent 60%
+    );
+}
+/* body::after (grid overlay) حذف شد برای عملکرد WebView */
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+::-webkit-scrollbar-track {
+  background: var(--bg);
+}
+::-webkit-scrollbar-thumb {
+  background: #26335c;
+  border-radius: 8px;
+  border: 2px solid var(--bg);
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #374a82;
+}
+:root[data-theme="light"] ::-webkit-scrollbar-thumb {
+  background: #c2cbe3;
+}
+::selection {
+  background: rgba(139, 92, 246, 0.45);
+}
+button,
+input,
+select,
+textarea {
+  font-family: inherit;
+  color: inherit;
+}
+code {
+  font-family: var(--mono);
+  direction: ltr;
+  display: inline-block;
+  color: var(--cyn);
+  font-size: var(--f-xs);
+}
+
+/* ══════════════ هدر ══════════════ */
+header.top {
+  position: sticky;
+  top: 0;
+  z-index: 60;
+  display: grid;
+  grid-template-columns:
+    minmax(0, 1fr) minmax(0, clamp(340px, 44vw, 620px))
+    minmax(0, 1fr);
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.65rem 0.9rem;
+  background: var(--header-bg);
+  backdrop-filter: blur(5px) saturate(1.5);
+  -webkit-backdrop-filter: blur(5px) saturate(1.5);
+  border-bottom: 1px solid var(--line);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.06);
+  min-height: var(--header-h);
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  min-width: 0;
+  justify-self: start;
+}
+.brand .logo {
+  width: 2.35rem;
+  height: 2.35rem;
+  border-radius: 12px;
+  background: var(--acc);
+  display: grid;
+  place-items: center;
+  box-shadow: 0 6px 20px color-mix(in srgb, var(--acc) 40%, transparent);
+  flex-shrink: 0;
+}
+.brand .logo svg {
+  width: 1.55rem;
+  height: 1.55rem;
+  fill: var(--acc-ink);
+}
+.brand h1 {
+  font-size: var(--f-md);
+  font-weight: 800;
+  line-height: 1.25;
+  white-space: nowrap;
+}
+.brand small {
+  display: block;
+  font-size: var(--f-2xs);
+  font-weight: 400;
+  color: var(--mut);
+}
+
+.hend {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  justify-self: end;
+}
+.icon-btn {
+  width: 2.5rem;
+  height: 2.5rem;
+  border-radius: 12px;
+  border: 1px solid var(--line);
+  background: var(--card);
+  cursor: pointer;
+  display: grid;
+  place-items: center;
+  color: var(--mut);
+  transition:
+    transform 0.2s var(--ease),
+    border-color 0.2s,
+    color 0.2s,
+    background 0.2s;
+  position: relative;
+  flex-shrink: 0;
+}
+.icon-btn svg {
+  width: 1.1rem;
+  height: 1.1rem;
+  display: block;
+}
+.icon-btn:hover {
+  transform: translateY(-1px);
+  border-color: var(--focus);
+  color: var(--txt);
+}
+.icon-btn:active {
+  transform: scale(0.94);
+}
+
+/* ══════════════ سرچ دسکتاپ ══════════════ */
+.searchwrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+  min-width: 0;
+  width: 100%;
+  max-width: none;
+  justify-self: stretch;
+}
+.searchwrap input {
+  flex: 1;
+  min-width: 0;
+  width: 100%;
+  padding: 0.6rem 2.5rem 0.6rem 0.85rem;
+  border-radius: 12px;
+  border: 1px solid var(--line);
+  background: var(--deep);
+  font-size: var(--f-sm);
+  outline: none;
+  transition:
+    border-color 0.22s var(--ease),
+    box-shadow 0.22s var(--ease);
+}
+.searchwrap input:focus {
+  border-color: var(--focus);
+  box-shadow: 0 0 0 4px rgba(124, 92, 219, 0.14);
+}
+.searchwrap .sic {
+  position: absolute;
+  right: 0.8rem;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--dim);
+  pointer-events: none;
+  width: 1rem;
+  height: 1rem;
+  display: grid;
+  place-items: center;
+}
+.searchwrap .sic svg {
+  width: 1rem;
+  height: 1rem;
+  display: block;
+}
+
+#searchRes {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  left: 0;
+  background: var(--card);
+  border: 1px solid var(--line2);
+  border-radius: 14px;
+  box-shadow: var(--shadow);
+  max-height: min(460px, 72vh);
+  overflow-y: auto;
+  display: none;
+  z-index: 80;
+  padding: 6px;
+}
+#searchRes.show {
+  display: block;
+  animation: resIn 0.18s var(--ease);
+}
+@keyframes resIn {
+  from {
+    opacity: 0;
+    transform: translateY(-6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* ══════════════ موبایل: سرچ ══════════════ */
+#mSearchBtn {
+  display: none;
+}
+#mSearchBtn .mi {
+  display: none;
+}
+#mSearchBtn .mi svg {
+  width: 1.1rem;
+  height: 1.1rem;
+  display: block;
+}
+#mSearchBtn .mi-search {
+  display: block;
+}
+#mSearchBtn.on .mi-search {
+  display: none;
+}
+#mSearchBtn.on .mi-close {
+  display: block;
+}
+#mSearchBtn.on {
+  border-color: var(--vio);
+  color: var(--vio);
+}
+
+/* وقتی سرچ موبایل باز است، هدر/فوتر را مات کن
+   تا بک‌دراپ تیره از پشت شیشهٔ نیمه‌شفافشان دیده نشود */
+body.msearch-open header.top,
+body.msearch-open footer.app-footer {
+  background: var(--card);
+}
+
+.msearch-back {
+  position: fixed;
+  inset: 0;
+  z-index: 54;
+  background: rgba(3, 6, 16, 0.55);
+  backdrop-filter: blur(5px);
+  -webkit-backdrop-filter: blur(5px);
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  transition:
+    opacity 0.42s var(--ease-ios),
+    visibility 0s linear 0.42s;
+  display: none;
+}
+.msearch-back.open {
+  opacity: 1;
+  visibility: visible;
+  pointer-events: auto;
+  transition:
+    opacity 0.42s var(--ease-ios),
+    visibility 0s;
+  /* جایگزین قفل اسکرول: تاچ روی پس‌زمینه هیچ ژستی اجرا نمی‌کند */
+  touch-action: none;
+  overscroll-behavior: contain;
+}
+
+.msearch {
+  position: fixed;
+  left: 0;
+  right: 0;
+  z-index: 56;
+  top: var(--header-h);
+  max-height: calc(100vh - var(--header-h) - 16px);
+  max-height: calc(100dvh - var(--header-h) - 16px);
+  background: linear-gradient(180deg, var(--card), var(--deep));
+  border-bottom: 1px solid var(--line2);
+  border-radius: 0 0 20px 20px;
+  box-shadow: 0 20px 50px rgba(2, 5, 18, 0.6);
+  transform: translateY(-24px);
+  opacity: 0;
+  visibility: hidden;
+  transition:
+    transform 0.35s var(--ease-ios),
+    opacity 0.25s var(--ease-ios),
+    visibility 0s linear 0.35s;
+  flex-direction: column;
+  overflow: hidden;
+  display: none;
+}
+.msearch.open {
+  transform: none;
+  opacity: 1;
+  visibility: visible;
+  transition:
+    transform 0.4s var(--ease-ios),
+    opacity 0.25s var(--ease-ios),
+    visibility 0s;
+}
+.msearch-bar {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  padding: 0.85rem 1rem;
+  border-bottom: 1px solid var(--line);
+  flex-shrink: 0;
+}
+.msearch-bar .mb-ic {
+  color: var(--dim);
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+}
+.msearch-bar .mb-ic svg {
+  width: 1.1rem;
+  height: 1.1rem;
+  display: block;
+}
+.msearch-bar input {
+  flex: 1;
+  min-width: 0;
+  background: transparent;
+  border: none;
+  outline: none;
+  font-size: var(--f-lg);
+  font-weight: 600;
+  padding: 4px 0;
+  color: var(--txt);
+}
+.msearch-bar input::placeholder {
+  color: var(--dim);
+  font-weight: 500;
+}
+.msearch-body {
+  flex: 1;
+  overflow-y: auto;
+  padding: 6px 8px 12px;
+  min-height: 0;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior: contain;
+}
+
+/* ══════════════ آیتم‌های نتایج ══════════════ */
+.sp-group-label {
+  font-size: var(--f-2xs);
+  color: var(--dim);
+  font-weight: 800;
+  letter-spacing: 0.6px;
+  padding: 10px 11px 4px;
+  text-transform: uppercase;
+}
+.sp-item {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  width: 100%;
+  text-align: right;
+  padding: 0.6rem 0.7rem;
+  border-radius: 10px;
+  border: none;
+  background: transparent;
+  color: var(--txt);
+  cursor: pointer;
+  font-family: inherit;
+  transition: background 0.12s;
+}
+.sp-item:hover,
+.sp-item.active {
+  background: var(--card2);
+}
+.sp-item-ic {
+  width: 2.1rem;
+  height: 2.1rem;
+  border-radius: 9px;
+  flex-shrink: 0;
+  background: var(--deep);
+  border: 1px solid var(--line);
+  display: grid;
+  place-items: center;
+  color: var(--mut);
+}
+.sp-item-ic svg {
+  width: 0.9rem;
+  height: 0.9rem;
+  display: block;
+}
+.sp-item.active .sp-item-ic {
+  color: var(--vio);
+  border-color: rgba(139, 92, 246, 0.4);
+}
+.sp-item-body {
+  flex: 1;
+  min-width: 0;
+}
+.sp-item-title {
+  display: block;
+  font-size: var(--f-sm);
+  font-weight: 600;
+  line-height: 1.5;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.sp-item-title mark {
+  background: rgba(251, 191, 36, 0.22);
+  color: var(--amb);
+  border-radius: 4px;
+  padding: 0 2px;
+}
+.sp-item-sub {
+  display: block;
+  font-size: var(--f-2xs);
+  color: var(--dim);
+  line-height: 1.5;
+  margin-top: 1px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.sp-item-meta {
+  font-size: var(--f-2xs);
+  color: var(--dim);
+  padding: 2px 9px;
+  border-radius: 999px;
+  background: var(--deep);
+  border: 1px solid var(--line);
+  flex-shrink: 0;
+  font-family: var(--mono);
+  unicode-bidi: plaintext;
+}
+.sp-empty {
+  padding: 30px 14px;
+  text-align: center;
+  color: var(--dim);
+  font-size: var(--f-sm);
+}
+
+/* ══════════════ چیدمان ══════════════ */
+main {
+  max-width: 1180px;
+  margin: 0 auto;
+  padding: 1.15rem clamp(12px, 3vw, 32px) 4.5rem;
+}
+
+/* ══════════════ فیلتر ══════════════ */
+.filters {
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
+  margin-bottom: 1.25rem;
+}
+.chips {
+  display: flex;
+  gap: 0.4rem;
+  flex-wrap: wrap;
+  min-width: 0;
+}
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.42rem 0.9rem;
+  border-radius: 999px;
+  background: var(--card2);
+  border: 1px solid var(--line);
+  font-size: var(--f-xs);
+  color: var(--mut);
+  font-weight: 600;
+  cursor: pointer;
+  transition: 0.2s var(--ease);
+  font-family: inherit;
+  white-space: nowrap;
+}
+.chip:hover {
+  border-color: var(--line2);
+  color: var(--txt);
+}
+.chip:active {
+  transform: scale(0.95);
+}
+.chip.on {
+  background: color-mix(in srgb, var(--acc) 15%, transparent);
+  color: var(--txt);
+  border-color: color-mix(in srgb, var(--acc) 55%, transparent);
+}
+.chip .cnt {
+  font-size: var(--f-2xs);
+  padding: 1px 7px;
+  border-radius: 999px;
+  background: rgba(140, 160, 255, 0.1);
+  border: 1px solid var(--line);
+}
+.chip.on .cnt {
+  color: var(--acc);
+  border-color: color-mix(in srgb, var(--acc) 45%, transparent);
+}
+.chip .dot {
+  width: 0.5rem;
+  height: 0.5rem;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+.dot.b-vio {
+  background: var(--vio);
+}
+.dot.b-blu {
+  background: var(--blu);
+}
+.dot.b-cyn {
+  background: var(--cyn);
+}
+.dot.b-grn {
+  background: var(--grn);
+}
+.dot.b-amb {
+  background: var(--amb);
+}
+.dot.b-ros {
+  background: var(--ros);
+}
+
+.filter-actions {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+  flex-wrap: wrap;
+}
+.filter-actions .btn.g {
+  margin-inline-start: auto;
+}
+
+@media (min-width: 761px) {
+  .filters {
+    flex-direction: row;
+    align-items: center;
+    gap: 0.5rem;
+  }
+  .chips {
+    flex: 1;
+  }
+  .filter-actions {
+    flex-shrink: 0;
+  }
+  .filter-actions .btn.g {
+    margin-inline-start: 0;
+  }
+}
+
+/* ══════════════ دکمه‌ها ══════════════ */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.55rem 1.1rem;
+  border-radius: 11px;
+  border: 1px solid var(--line2);
+  background: var(--card2);
+  font-size: var(--f-sm);
+  font-weight: 700;
+  cursor: pointer;
+  transition: 0.22s var(--ease);
+  font-family: inherit;
+  white-space: nowrap;
+}
+.btn:hover {
+  transform: translateY(-1px);
+  border-color: var(--focus);
+  box-shadow: 0 8px 20px rgba(99, 102, 241, 0.22);
+}
+.btn:active {
+  transform: scale(0.97);
+}
+.btn.g {
+  background: var(--acc);
+  color: var(--acc-ink);
+  border: none;
+  font-weight: 800;
+}
+.btn.sm {
+  padding: 0.4rem 0.8rem;
+  font-size: var(--f-xs);
+  border-radius: 9px;
+}
+.btn.dgr {
+  border-color: rgba(251, 113, 133, 0.5);
+  color: var(--ros);
+}
+
+.btn.g.dgr {
+  background: #dc2626;
+  color: #fff;
+  border: none;
+}
+.btn.g.dgr:hover {
+  background: #ef4444;
+  box-shadow: 0 8px 20px rgba(220, 38, 38, 0.3);
+}
+
+/* ══════════════ Custom Select ══════════════ */
+.cselect {
+  position: relative;
+  display: inline-block;
+}
+.cselect.full {
+  display: block;
+  width: 100%;
+}
+.cselect-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.55rem;
+  padding: 0.5rem 0.8rem;
+  border-radius: 10px;
+  border: 1px solid var(--line);
+  background: var(--card2);
+  font-size: var(--f-xs);
+  font-weight: 600;
+  color: var(--mut);
+  cursor: pointer;
+  transition: 0.2s var(--ease);
+  font-family: inherit;
+}
+.cselect.full .cselect-btn {
+  width: 100%;
+  justify-content: space-between;
+  padding: 0.65rem 0.9rem;
+  font-size: var(--f-sm);
+}
+.cselect-btn:hover {
+  border-color: var(--line2);
+  color: var(--txt);
+}
+.cselect-btn .cs-ic {
+  display: grid;
+  place-items: center;
+  color: var(--dim);
+}
+.cselect-btn .cs-ic svg {
+  width: 0.85rem;
+  height: 0.85rem;
+  display: block;
+}
+.cselect-btn .cs-label {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  text-align: right;
+}
+.cselect-btn .cs-chev {
+  display: grid;
+  place-items: center;
+  color: var(--dim);
+  transition: transform 0.2s var(--ease);
+}
+.cselect-btn .cs-chev svg {
+  width: 0.7rem;
+  height: 0.7rem;
+  display: block;
+}
+.cselect.open .cselect-btn {
+  border-color: var(--focus);
+  color: var(--txt);
+  box-shadow: 0 0 0 3px rgba(124, 92, 219, 0.12);
+}
+.cselect.open .cs-chev {
+  transform: rotate(180deg);
+}
+.cselect-menu {
+  position: absolute;
+  top: calc(100% + 6px);
+  right: 0;
+  min-width: max(180px, 100%);
+  max-height: 260px;
+  overflow-y: auto;
+  background: var(--card);
+  border: 1px solid var(--line2);
+  border-radius: 12px;
+  box-shadow: var(--shadow);
+  padding: 5px;
+  opacity: 0;
+  visibility: hidden;
+  transform: translateY(-4px);
+  transition:
+    opacity 0.15s,
+    transform 0.15s,
+    visibility 0s linear 0.15s;
+  z-index: 70;
+}
+.cselect.open .cselect-menu {
+  opacity: 1;
+  visibility: visible;
+  transform: none;
+  transition:
+    opacity 0.15s,
+    transform 0.15s,
+    visibility 0s;
+}
+.cselect-item {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  width: 100%;
+  text-align: right;
+  padding: 0.55rem 0.7rem;
+  border-radius: 8px;
+  border: none;
+  background: transparent;
+  color: var(--txt);
+  font-size: var(--f-sm);
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.12s;
+  font-family: inherit;
+}
+.cselect-item:hover {
+  background: var(--card2);
+}
+.cselect-item .ci-check {
+  width: 0.9rem;
+  height: 0.9rem;
+  flex-shrink: 0;
+  color: var(--vio);
+  opacity: 0;
+  display: grid;
+  place-items: center;
+}
+.cselect-item .ci-check svg {
+  width: 0.9rem;
+  height: 0.9rem;
+  display: block;
+}
+.cselect-item.on .ci-check {
+  opacity: 1;
+}
+.cselect-item.on {
+  color: var(--vio);
+}
+
+/* ══════════════ گرید کارت‌ها ══════════════ */
+.grid {
+  display: grid;
+  grid-template-columns: repeat(var(--cols, 3), minmax(0, 1fr));
+  gap: var(--gap);
+}
+.grid.filtering {
+  animation: gridIn 0.32s var(--ease-ios);
+}
+@keyframes gridIn {
+  from {
+    opacity: 0.4;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+@media (max-width: 980px) {
+  .grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+@media (max-width: 620px) {
+  .grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.card {
+  background: linear-gradient(160deg, var(--card), var(--deep));
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  padding: 1.1rem 1.1rem 0.85rem;
+  box-shadow: var(--shadow);
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  min-height: 12rem;
+  transition:
+    transform 0.45s var(--ease-ios),
+    border-color 0.35s var(--ease-ios),
+    box-shadow 0.35s var(--ease-ios);
+  animation: rise 0.5s var(--ease-ios) both;
+}
+.card:hover {
+  transform: translateY(-3px);
+  border-color: var(--line2);
+}
+.grid.no-anim .card {
+  animation: none;
+}
+@keyframes rise {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+.card.flash {
+  animation: flash 1.6s ease;
+}
+@keyframes flash {
+  0% {
+    box-shadow:
+      0 0 0 3px rgba(251, 191, 36, 0.7),
+      var(--shadow);
+  }
+  100% {
+    box-shadow:
+      0 0 0 0 transparent,
+      var(--shadow);
+  }
+}
+
+.phead {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: flex-start;
+  gap: 0.5rem;
+  margin-bottom: 0.7rem;
+}
+.phead b {
+  grid-column: 2;
+}
+.phead .pcat {
+  grid-column: 3;
+  align-self: start;
+}
+
+.phead .pin {
+  width: 2rem;
+  height: 2rem;
+  border-radius: 9px;
+  border: 1px solid var(--line2);
+  background: var(--deep);
+  color: var(--mut);
+  cursor: pointer;
+  padding: 0;
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+  position: relative;
+  transition:
+    transform 0.2s var(--ease),
+    border-color 0.2s var(--ease),
+    background 0.2s var(--ease),
+    color 0.2s var(--ease),
+    box-shadow 0.22s var(--ease);
+}
+.phead .pin svg {
+  width: 1.05rem;
+  height: 1.05rem;
+  display: block;
+}
+.phead .pin:hover {
+  transform: translateY(-2px);
+  border-color: var(--focus);
+  color: var(--txt);
+  background: var(--card2);
+}
+.phead .pin:active {
+  transform: scale(0.94);
+}
+.phead .pin.on {
+  color: var(--amb);
+  border-color: rgba(251, 191, 36, 0.55);
+  background: rgba(251, 191, 36, 0.12);
+  box-shadow: 0 0 0 3px rgba(251, 191, 36, 0.1);
+}
+.phead .pin.on:hover {
+  transform: translateY(-2px);
+  border-color: rgba(251, 191, 36, 0.8);
+  background: rgba(251, 191, 36, 0.2);
+}
+
+.phead b {
+  font-size: var(--f-md);
+  font-weight: 800;
+  line-height: 1.5;
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+}
+.pcat {
+  font-size: var(--f-2xs);
+  padding: 3px 10px;
+  border-radius: 999px;
+  border: 1px solid;
+  font-weight: 800;
+  flex-shrink: 0;
+  align-self: flex-start;
+  white-space: nowrap;
+}
+.b-vio {
+  color: var(--vio);
+  border-color: rgba(167, 139, 250, 0.4);
+  background: rgba(167, 139, 250, 0.1);
+}
+.b-blu {
+  color: var(--blu);
+  border-color: rgba(96, 165, 250, 0.4);
+  background: rgba(96, 165, 250, 0.1);
+}
+.b-cyn {
+  color: var(--cyn);
+  border-color: rgba(34, 211, 238, 0.4);
+  background: rgba(34, 211, 238, 0.1);
+}
+.b-grn {
+  color: var(--grn);
+  border-color: rgba(52, 211, 153, 0.4);
+  background: rgba(52, 211, 153, 0.1);
+}
+.b-amb {
+  color: var(--amb);
+  border-color: rgba(251, 191, 36, 0.4);
+  background: rgba(251, 191, 36, 0.1);
+}
+.b-ros {
+  color: var(--ros);
+  border-color: rgba(251, 113, 133, 0.4);
+  background: rgba(251, 113, 133, 0.1);
+}
+
+.pdesc {
+  color: var(--mut);
+  font-size: var(--f-xs);
+  line-height: 1.75;
+  margin-bottom: 0.6rem;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.ptags {
+  display: flex;
+  gap: 5px;
+  flex-wrap: wrap;
+  margin-bottom: 0.7rem;
+}
+.tag {
+  font-size: var(--f-2xs);
+  padding: 3px 10px;
+  border-radius: 999px;
+  background: var(--card2);
+  border: 1px solid var(--line);
+  color: var(--dim);
+}
+.pfoot {
+  margin-top: auto;
+  display: flex;
+  gap: 0.4rem;
+  align-items: center;
+  border-top: 1px dashed var(--line);
+  padding-top: 0.75rem;
+  padding-bottom: 2px;
+}
+.pfoot .grow {
+  flex: 1;
+}
+
+.ibtn {
+  width: 2.5rem;
+  height: 2.5rem;
+  border-radius: 11px;
+  border: 1px solid var(--line);
+  background: var(--card2);
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+  color: var(--mut);
+  position: relative;
+  flex-shrink: 0;
+  transition:
+    transform 0.2s var(--ease),
+    border-color 0.2s,
+    background 0.2s,
+    color 0.2s;
+}
+.ibtn:hover {
+  transform: translateY(-2px);
+  border-color: var(--focus);
+  color: var(--txt);
+  background: var(--card);
+}
+.ibtn:active {
+  transform: scale(0.94);
+}
+.ibtn svg {
+  width: 1.2rem;
+  height: 1.2rem;
+  display: block;
+}
+.ibtn.dgr {
+  color: var(--ros);
+}
+.ibtn.dgr:hover {
+  border-color: var(--ros);
+  background: rgba(251, 113, 133, 0.08);
+}
+.ibtn[data-tip]::after,
+.pin[data-tip]::after,
+.etb-toggle[data-tip]::after,
+.etb-close[data-tip]::after,
+.seg.swatches button[data-tip]::after {
+  content: attr(data-tip);
+  position: absolute;
+  bottom: calc(100% + 8px);
+  left: 50%;
+  transform: translateX(-50%) translateY(4px);
+  background: var(--card2);
+  border: 1px solid var(--line2);
+  color: var(--txt);
+  font-size: var(--f-2xs);
+  font-weight: 600;
+  white-space: nowrap;
+  padding: 5px 9px;
+  border-radius: 8px;
+  box-shadow: var(--shadow);
+  opacity: 0;
+  pointer-events: none;
+  transition:
+    opacity 0.15s,
+    transform 0.15s;
+  z-index: 20;
+}
+.ibtn[data-tip]:hover::after,
+.ibtn[data-tip]:focus-visible::after,
+.pin[data-tip]:hover::after,
+.pin[data-tip]:focus-visible::after,
+.etb-toggle[data-tip]:hover::after,
+.etb-toggle[data-tip]:focus-visible::after,
+.etb-close[data-tip]:hover::after,
+.etb-close[data-tip]:focus-visible::after,
+.seg.swatches button[data-tip]:hover::after,
+.seg.swatches button[data-tip]:focus-visible::after {
+  opacity: 1;
+  transform: translateX(-50%) translateY(0);
+}
+
+/* ══════════════ جهت خودکار محتوا ══════════════ */
+.phead b,
+.pdesc,
+.pv-titles b,
+.pv-desc,
+.sp-item-title,
+.sp-item-sub,
+.dialog-msg {
+  unicode-bidi: plaintext;
+  text-align: start;
+}
+
+/* ══════════════ حالت خالی ══════════════ */
+.empty {
+  text-align: center;
+  color: var(--dim);
+  padding: 60px 20px;
+  font-size: var(--f-md);
+}
+.empty svg {
+  width: 4rem;
+  height: 4rem;
+  opacity: 0.4;
+  margin-bottom: 1rem;
+}
+.empty h3 {
+  font-size: var(--f-lg);
+  font-weight: 700;
+  color: var(--mut);
+  margin-bottom: 0.5rem;
+}
+.empty p {
+  line-height: 1.8;
+  margin-bottom: 1rem;
+}
+
+/* ══════════════ Modal ══════════════ */
+.modal-back {
+  position: fixed;
+  inset: 0;
+  z-index: 110;
+  background: rgba(3, 6, 16, 0.62);
+  backdrop-filter: blur(5px);
+  -webkit-backdrop-filter: blur(5px);
+  display: none;
+  place-items: safe center;
+  padding: 24px 16px;
+  overflow-y: auto;
+}
+.modal-back.open {
+  display: grid;
+}
+.modal {
+  background: linear-gradient(160deg, var(--card), var(--deep));
+  border: 1px solid var(--line2);
+  border-radius: 16px;
+  box-shadow: var(--shadow);
+  width: 100%;
+  max-width: 780px;
+  padding: 1.4rem;
+  animation: rise 0.28s var(--ease) both;
+}
+.modal h2 {
+  font-size: var(--f-xl);
+  font-weight: 800;
+  margin-bottom: 1rem;
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+}
+.modal label {
+  display: block;
+  font-size: var(--f-xs);
+  color: var(--mut);
+  margin-bottom: 5px;
+  font-weight: 600;
+}
+.modal .inp,
+.modal textarea {
+  width: 100%;
+  padding: 0.6rem 0.8rem;
+  border-radius: 10px;
+  border: 1px solid var(--line);
+  background: var(--deep);
+  font-size: var(--f-sm);
+  outline: none;
+  transition:
+    border-color 0.2s,
+    box-shadow 0.2s;
+}
+.modal .inp:focus,
+.modal textarea:focus {
+  border-color: var(--focus);
+  box-shadow: 0 0 0 4px rgba(124, 92, 219, 0.14);
+}
+.modal textarea {
+  resize: vertical;
+  line-height: 1.75;
+}
+.modal textarea.mono {
+  font-family: var(--mono);
+  direction: ltr;
+  text-align: left;
+  font-size: var(--f-xs);
+  line-height: 1.75;
+  unicode-bidi: plaintext;
+}
+.modal .row {
+  display: grid;
+  gap: 0.75rem;
+  grid-template-columns: repeat(auto-fit, minmax(min(220px, 100%), 1fr));
+  margin-bottom: 0.75rem;
+}
+.modal .row.full {
+  grid-template-columns: 1fr;
+}
+.modal .foot {
+  display: flex;
+  gap: 9px;
+  margin-top: 1rem;
+  flex-wrap: wrap;
+}
+
+/* ══════════════ Editor ══════════════ */
+.editor-back {
+  padding: 24px 16px;
+  align-items: center;
+}
+.editor-modal {
+  max-width: 960px;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  max-height: min(90vh, 900px);
+  height: min(90vh, 900px);
+  overflow: visible;
+  border-radius: 14px;
+}
+.editor-modal.meta-hidden .editor-meta {
+  display: none;
+}
+
+.field-error {
+  border-color: var(--ros) !important;
+  box-shadow: 0 0 0 4px rgba(251, 113, 133, 0.2) !important;
+}
+
+.editor-titlebar {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  padding: 0.6rem 0.8rem;
+  background: var(--deep);
+  border-bottom: 1px solid var(--line);
+  flex-shrink: 0;
+  border-radius: 14px 14px 0 0;
+}
+.editor-titlebar .etb-dots {
+  display: flex;
+  gap: 6px;
+  flex-shrink: 0;
+}
+.editor-titlebar .etb-dots span {
+  width: 11px;
+  height: 11px;
+  border-radius: 50%;
+  display: block;
+}
+.editor-titlebar .etb-dots span:nth-child(1) {
+  background: #ff5f57;
+}
+.editor-titlebar .etb-dots span:nth-child(2) {
+  background: #febc2e;
+}
+.editor-titlebar .etb-dots span:nth-child(3) {
+  background: #28c840;
+}
+.editor-titlebar .etb-title {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  font-size: var(--f-xs);
+  font-weight: 700;
+  color: var(--mut);
+  justify-content: center;
+}
+.editor-titlebar .etb-icon {
+  display: grid;
+  place-items: center;
+  color: var(--dim);
+}
+.editor-titlebar .etb-icon svg {
+  width: 0.85rem;
+  height: 0.85rem;
+  display: block;
+}
+.editor-titlebar .etb-close {
+  width: 2rem;
+  height: 2rem;
+  border-radius: 9px;
+  border: 1px solid var(--line);
+  background: var(--card2);
+  color: var(--mut);
+  cursor: pointer;
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+  position: relative;
+  transition:
+    transform 0.2s var(--ease),
+    border-color 0.2s var(--ease),
+    background 0.2s var(--ease),
+    color 0.2s var(--ease);
+}
+.editor-titlebar .etb-close:hover {
+  transform: translateY(-2px);
+  border-color: var(--ros);
+  color: var(--ros);
+  background: var(--card);
+}
+.editor-titlebar .etb-close:active {
+  transform: scale(0.94);
+}
+.editor-titlebar .etb-close svg {
+  width: 1rem;
+  height: 1rem;
+  display: block;
+}
+
+.editor-meta {
+  display: grid;
+  grid-template-columns: minmax(0, 190px) minmax(0, 1fr) minmax(0, 1.2fr);
+  gap: 0.65rem 0.75rem;
+  padding: 0.85rem 1rem;
+  background: var(--card);
+  border-bottom: 1px solid var(--line);
+  flex-shrink: 0;
+  overflow: visible;
+  animation: metaIn 0.22s var(--ease-ios);
+}
+@keyframes metaIn {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+.editor-meta .em-title {
+  grid-column: 1 / -1;
+  width: 100%;
+  padding: 0.7rem 0.85rem;
+  border-radius: 10px;
+  border: 1px solid var(--line);
+  background: var(--deep);
+  font-size: var(--f-md);
+  font-weight: 700;
+  outline: none;
+  transition:
+    border-color 0.2s,
+    box-shadow 0.2s;
+  unicode-bidi: plaintext;
+}
+.editor-meta .em-title:focus {
+  border-color: var(--focus);
+  box-shadow: 0 0 0 3px rgba(124, 92, 219, 0.14);
+}
+.editor-meta .em-row {
+  display: contents;
+}
+.editor-meta .em-tags,
+.editor-meta .em-desc {
+  width: 100%;
+  padding: 0.6rem 0.85rem;
+  border-radius: 10px;
+  border: 1px solid var(--line);
+  background: var(--deep);
+  font-size: var(--f-sm);
+  outline: none;
+  transition:
+    border-color 0.2s,
+    box-shadow 0.2s;
+}
+.editor-meta .em-tags:focus,
+.editor-meta .em-desc:focus {
+  border-color: var(--focus);
+  box-shadow: 0 0 0 3px rgba(124, 92, 219, 0.14);
+}
+
+.editor-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  padding: 0.45rem 0.8rem;
+  background: var(--deep);
+  border-bottom: 1px solid var(--line);
+  flex-shrink: 0;
+  font-size: var(--f-xs);
+  color: var(--dim);
+}
+.editor-toolbar .etb-toggle {
+  width: 2rem;
+  height: 2rem;
+  border-radius: 9px;
+  border: 1px solid var(--line);
+  background: var(--card2);
+  color: var(--mut);
+  cursor: pointer;
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+  position: relative;
+  transition:
+    transform 0.2s var(--ease),
+    border-color 0.2s var(--ease),
+    background 0.2s var(--ease),
+    color 0.2s var(--ease);
+}
+.editor-toolbar .etb-toggle:hover {
+  transform: translateY(-2px);
+  border-color: var(--focus);
+  color: var(--txt);
+  background: var(--card);
+}
+.editor-toolbar .etb-toggle:active {
+  transform: scale(0.94);
+}
+.editor-toolbar .etb-toggle svg {
+  width: 1rem;
+  height: 1rem;
+  display: block;
+}
+.editor-toolbar .etb-toggle.on {
+  color: var(--vio);
+  border-color: rgba(139, 92, 246, 0.45);
+  background: linear-gradient(
+    135deg,
+    rgba(139, 92, 246, 0.14),
+    rgba(34, 211, 238, 0.08)
+  );
+}
+.editor-toolbar .etb-toggle.on:hover {
+  border-color: rgba(139, 92, 246, 0.7);
+  background: linear-gradient(
+    135deg,
+    rgba(139, 92, 246, 0.22),
+    rgba(34, 211, 238, 0.12)
+  );
+}
+.editor-toolbar .etb-label {
+  font-weight: 700;
+  letter-spacing: 0.3px;
+  color: var(--dim);
+}
+.editor-toolbar .etb-spacer {
+  flex: 1;
+}
+.editor-toolbar .etb-info {
+  font-family: var(--mono);
+  direction: ltr;
+  unicode-bidi: embed;
+  font-size: var(--f-2xs);
+  color: var(--dim);
+}
+
+.editor-wrap {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  direction: ltr;
+  background: #080d1c;
+  overflow: hidden;
+}
+.editor-gutter {
+  flex-shrink: 0;
+  width: 3.5rem;
+  padding: 0.85rem 0.6rem 0.85rem 0;
+  text-align: right;
+  font-family: var(--mono);
+  font-size: var(--f-xs);
+  line-height: 1.5rem;
+  color: #4a5680;
+  background: rgba(255, 255, 255, 0.015);
+  border-right: 1px solid rgba(140, 160, 255, 0.08);
+  user-select: none;
+  overflow: hidden;
+  white-space: pre;
+  pointer-events: none;
+}
+:root[data-theme="light"] .editor-wrap {
+  background: #f8fafd;
+}
+:root[data-theme="light"] .editor-gutter {
+  color: #8b95b8;
+  background: rgba(23, 44, 110, 0.03);
+  border-right-color: rgba(23, 44, 110, 0.08);
+}
+.editor-area {
+  flex: 1;
+  min-width: 0;
+  padding: 0.85rem 1rem;
+  border: none;
+  background: transparent;
+  color: #b9dcff;
+  font-family: var(--mono);
+  font-size: var(--f-xs);
+  line-height: 1.5rem;
+  outline: none;
+  resize: none !important;
+  -webkit-appearance: none;
+  appearance: none;
+  overflow: auto;
+  white-space: pre;
+  tab-size: 2;
+  unicode-bidi: plaintext;
+  text-align: start;
+  caret-color: var(--vio);
+  -webkit-overflow-scrolling: touch;
+}
+.editor-area::-webkit-resizer {
+  display: none;
+  background: transparent;
+  border: none;
+}
+.editor-area::-webkit-scrollbar-corner {
+  background: transparent;
+}
+.pv-body pre::-webkit-scrollbar-corner {
+  background: transparent;
+}
+:root[data-theme="light"] .editor-area {
+  color: #1f2a4a;
+  caret-color: var(--blu);
+}
+:root[data-theme="light"] .editor-area::placeholder {
+  color: #8b95b8;
+  opacity: 0.7;
+}
+.editor-area::placeholder {
+  color: var(--dim);
+  opacity: 0.55;
+}
+.editor-area::selection {
+  background: rgba(139, 92, 246, 0.35);
+}
+
+.editor-status {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.4rem 1rem;
+  background: var(--deep);
+  border-top: 1px solid var(--line);
+  font-size: var(--f-2xs);
+  color: var(--dim);
+  flex-shrink: 0;
+}
+.editor-status > span {
+  white-space: nowrap;
+}
+.editor-status .es-sep {
+  opacity: 0.5;
+}
+.editor-status .es-spacer {
+  flex: 1;
+}
+.editor-status .es-lang {
+  padding: 2px 10px;
+  border-radius: 999px;
+  background: var(--card2);
+  border: 1px solid var(--line);
+  color: var(--mut);
+  font-weight: 700;
+  font-family: "Vazirmatn", system-ui, sans-serif;
+}
+
+.editor-actions {
+  display: flex;
+  gap: 0.6rem;
+  justify-content: flex-end;
+  padding: 0.8rem 1rem;
+  background: var(--card);
+  border-top: 1px solid var(--line);
+  flex-shrink: 0;
+  border-radius: 0 0 14px 14px;
+}
+.editor-actions .btn {
+  min-width: 6rem;
+}
+
+@media (max-width: 760px) {
+  .editor-back {
+    padding: 0;
+    overflow: hidden;
+    scrollbar-width: none;
+  }
+  .editor-back::-webkit-scrollbar {
+    display: none;
+  }
+
+  .editor-modal {
+    max-width: none;
+    max-height: 100vh;
+    max-height: 100dvh;
+    height: 100vh;
+    height: 100dvh;
+    border-radius: 0;
+    border: none;
+  }
+
+  .editor-titlebar,
+  .editor-meta,
+  .editor-toolbar,
+  .editor-status,
+  .editor-actions,
+  .editor-wrap {
+    background: transparent;
+  }
+
+  .editor-titlebar {
+    padding: 0.55rem 0.75rem;
+    border-radius: 0;
+  }
+  .editor-titlebar .etb-dots {
+    display: none;
+  }
+  .editor-titlebar .etb-title {
+    justify-content: flex-start;
+    font-size: var(--f-sm);
+  }
+  .editor-titlebar .etb-close {
+    width: 2.15rem;
+    height: 2.15rem;
+  }
+
+  .editor-meta {
+    grid-template-columns: 1fr;
+    gap: 0.5rem;
+    padding: 0.65rem 0.75rem;
+  }
+  .editor-meta .em-title {
+    font-size: var(--f-sm);
+    padding: 0.6rem 0.75rem;
+  }
+  .editor-meta .em-tags,
+  .editor-meta .em-desc {
+    padding: 0.55rem 0.75rem;
+    font-size: var(--f-xs);
+  }
+
+  .editor-toolbar {
+    padding: 0.4rem 0.75rem;
+    gap: 0.5rem;
+    border-top: 1px solid var(--line);
+    border-bottom: 1px solid var(--line);
+  }
+  .editor-toolbar .etb-info {
+    display: none;
+  }
+  .editor-toolbar .etb-label {
+    font-size: var(--f-2xs);
+  }
+  .editor-toolbar .etb-toggle {
+    width: 1.85rem;
+    height: 1.85rem;
+  }
+
+  .editor-wrap {
+    border-radius: 0;
+  }
+
+  .editor-gutter {
+    display: block;
+    width: 2.25rem;
+    padding: 0.85rem 0.4rem 0.85rem 0;
+    text-align: right;
+    font-family: var(--mono);
+    font-size: var(--f-2xs);
+    line-height: 1.4rem;
+    color: var(--dim);
+    background: transparent;
+    border-right: none;
+    user-select: none;
+    overflow: hidden;
+    white-space: pre;
+    pointer-events: none;
+  }
+  :root[data-theme="light"] .editor-gutter {
+    color: #8b95b8;
+    background: transparent;
+    border-right: none;
+  }
+
+  .editor-area {
+    padding: 0.85rem 0.75rem;
+    font-size: var(--f-xs);
+    line-height: 1.4rem;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+    resize: none !important;
+    -webkit-appearance: none;
+    appearance: none;
+  }
+  .editor-area::-webkit-resizer {
+    display: none;
+  }
+  .editor-area::-webkit-scrollbar {
+    width: 0;
+    height: 0;
+  }
+
+  .editor-status {
+    padding: 0.4rem 0.75rem;
+    font-size: var(--f-2xs);
+    gap: 5px;
+    border-top: 1px solid var(--line);
+  }
+  .editor-status .es-lang {
+    font-size: var(--f-2xs);
+    padding: 1px 7px;
+  }
+
+  .editor-actions {
+    padding: 0.65rem 0.75rem
+      calc(0.65rem + env(safe-area-inset-bottom, 0px));
+    gap: 0.5rem;
+    border-radius: 0;
+    border-top: 1px solid var(--line);
+  }
+  .editor-actions .btn {
+    flex: 1;
+    min-width: 0;
+    padding: 0.65rem 0.75rem;
+    font-size: var(--f-sm);
+  }
+}
+
+#dialogBack .modal {
+  max-width: 480px;
+}
+.dialog-msg {
+  font-size: var(--f-sm);
+  line-height: 1.9;
+  color: var(--mut);
+  margin-bottom: 1rem;
+  overflow-wrap: anywhere;
+}
+.dialog-msg b {
+  color: var(--txt);
+  font-weight: 700;
+}
+
+/* ══════════════ Drawer تنظیمات ══════════════ */
+.drawer-back {
+  position: fixed;
+  inset: 0;
+  z-index: 90;
+  background: rgba(3, 6, 16, 0.55);
+  backdrop-filter: blur(5px);
+  -webkit-backdrop-filter: blur(5px);
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  transition:
+    opacity 0.42s var(--ease-ios),
+    visibility 0s linear 0.42s;
+}
+.drawer-back.open {
+  opacity: 1;
+  visibility: visible;
+  pointer-events: auto;
+  transition:
+    opacity 0.42s var(--ease-ios),
+    visibility 0s;
+}
+.drawer {
+  position: fixed;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 95;
+  width: min(440px, 100%);
+  background: linear-gradient(160deg, var(--card), var(--deep));
+  border-inline-start: 1px solid var(--line2);
+  box-shadow: var(--shadow);
+  transform: translateX(100%);
+  transition: transform 0.35s var(--ease-ios);
+  display: flex;
+  flex-direction: column;
+}
+.drawer.open {
+  transform: none;
+}
+.drawer-head {
+  padding: 0.9rem 1rem;
+  border-bottom: 1px solid var(--line);
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  flex-shrink: 0;
+}
+.drawer-head h2 {
+  flex: 1;
+  font-size: var(--f-lg);
+  font-weight: 800;
+}
+.drawer-body {
+  padding: 1rem;
+  overflow-y: auto;
+  flex: 1;
+  -webkit-overflow-scrolling: touch;
+}
+.group {
+  margin-bottom: 1.4rem;
+}
+.group:last-child {
+  margin-bottom: 0;
+}
+.group h4 {
+  font-size: var(--f-2xs);
+  color: var(--dim);
+  font-weight: 800;
+  letter-spacing: 0.5px;
+  margin-bottom: 0.65rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+.group h4::after {
+  content: "";
+  flex: 1;
+  height: 1px;
+  background: var(--line);
+}
+.row-pref {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+  padding: 0.65rem 0;
+  border-bottom: 1px solid var(--line);
+}
+.row-pref:last-child {
+  border-bottom: none;
+  padding-bottom: 0;
+}
+.row-pref:first-of-type {
+  padding-top: 0;
+}
+.row-pref .label {
+  flex: 1;
+  min-width: 120px;
+}
+.row-pref .label b {
+  display: block;
+  font-size: var(--f-sm);
+  font-weight: 700;
+}
+.row-pref .label span {
+  font-size: var(--f-2xs);
+  color: var(--mut);
+  line-height: 1.65;
+}
+
+.seg {
+  display: flex;
+  gap: 5px;
+  flex-wrap: wrap;
+  background: var(--deep);
+  padding: 3px;
+  border-radius: 10px;
+  border: 1px solid var(--line);
+}
+.seg:not(.swatches) button {
+  position: relative;
+  padding: 0.4rem 0.9rem;
+  border-radius: 999px;
+  border: none;
+  background: transparent;
+  color: var(--mut);
+  font-size: var(--f-xs);
+  font-weight: 700;
+  cursor: pointer;
+  transition: color 0.22s var(--ease);
+  font-family: inherit;
+  isolation: isolate;
+}
+.seg:not(.swatches) button::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: var(--acc, var(--vio));
+  opacity: 0;
+  transform: scale(0.86);
+  transition:
+    opacity 0.2s var(--ease),
+    transform 0.34s cubic-bezier(0.34, 1.4, 0.5, 1);
+  z-index: -1;
+  pointer-events: none;
+}
+.seg:not(.swatches) button:hover {
+  color: var(--txt);
+}
+.seg:not(.swatches) button.on {
+  color: var(--acc-ink, var(--ink));
+}
+.seg:not(.swatches) button.on::before {
+  opacity: 1;
+  transform: scale(1);
+  box-shadow: 0 3px 10px
+    color-mix(in srgb, var(--acc, var(--vio)) 35%, transparent);
+}
+.seg.swatches {
+  gap: 10px;
+  padding: 0.5rem 0.75rem;
+  background: var(--deep);
+  border-radius: 12px;
+}
+.seg.swatches button {
+  width: 2.25rem;
+  height: 2.25rem;
+  padding: 0;
+  border-radius: 50%;
+  background: transparent;
+  border: 1px solid var(--line);
+  position: relative;
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+  transition:
+    transform 0.2s var(--ease),
+    border-color 0.2s var(--ease),
+    box-shadow 0.25s var(--ease);
+}
+.seg.swatches button::before {
+  content: "";
+  width: 1.65rem;
+  height: 1.65rem;
+  border-radius: 50%;
+  background: var(--sw);
+  transition: transform 0.2s var(--ease);
+}
+.seg.swatches button:hover {
+  border-color: var(--line2);
+  transform: translateY(-1px);
+}
+.seg.swatches button.on {
+  border-color: var(--vio);
+  box-shadow:
+    0 0 0 2px var(--bg),
+    0 0 0 4px var(--vio);
+}
+.seg.swatches button.on::before {
+  transform: scale(1.06);
+}
+.sw-default {
+  --sw: conic-gradient(
+    from 90deg,
+    #a78bfa 0 90deg,
+    #60a5fa 90deg 180deg,
+    #34d399 180deg 270deg,
+    #fbbf24 270deg 360deg
+  );
+}
+.sw-ocean {
+  --sw: linear-gradient(135deg, #60a5fa, #22d3ee);
+}
+.sw-forest {
+  --sw: linear-gradient(135deg, #34d399, #84cc16);
+}
+.sw-sunset {
+  --sw: linear-gradient(135deg, #fb7185, #fbbf24);
+}
+.sw-galaxy {
+  --sw: linear-gradient(135deg, #c084fc, #f472b6);
+}
+.sw-mono {
+  --sw: linear-gradient(135deg, #e2e8f0, #475569);
+}
+
+/* ══════════════ لیست دسته‌ها ══════════════ */
+.cat-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  margin-top: 0.4rem;
+}
+.cat-item {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  padding: 0.55rem 0.75rem;
+  border-radius: 10px;
+  background: var(--deep);
+  border: 1px solid var(--line);
+  transition: 0.18s var(--ease);
+}
+.cat-item:hover {
+  border-color: var(--line2);
+}
+.cat-item .dot {
+  width: 0.55rem;
+  height: 0.55rem;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+.cat-item-name {
+  flex: 1;
+  font-size: var(--f-sm);
+  font-weight: 700;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.cat-item-cnt {
+  font-size: var(--f-2xs);
+  color: var(--dim);
+  padding: 1px 8px;
+  border-radius: 999px;
+  background: var(--card2);
+  border: 1px solid var(--line);
+}
+.cat-item-btn {
+  width: 1.7rem;
+  height: 1.7rem;
+  border-radius: 7px;
+  border: 1px solid var(--line);
+  background: var(--card2);
+  cursor: pointer;
+  color: var(--mut);
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+  transition: 0.18s var(--ease);
+}
+.cat-item-btn svg {
+  width: 0.8rem;
+  height: 0.8rem;
+  display: block;
+}
+.cat-item-btn:hover {
+  color: var(--txt);
+  border-color: var(--focus);
+}
+.cat-item-btn.dgr:hover {
+  color: var(--ros);
+  border-color: var(--ros);
+}
+
+.cat-colors {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  margin-top: 0.4rem;
+}
+.cat-colors button {
+  width: 2.15rem;
+  height: 2.15rem;
+  border-radius: 50%;
+  border: none;
+  cursor: pointer;
+  background: var(--c);
+  box-shadow: inset 0 0 0 6px var(--card);
+  transition: 0.18s var(--ease);
+}
+.cat-colors button.on {
+  box-shadow:
+    inset 0 0 0 6px var(--card),
+    0 0 0 2px var(--card),
+    0 0 0 4px var(--c);
+  transform: scale(1.06);
+}
+
+/* ══════════════ پنل پیش‌نمایش ══════════════ */
+.pv-back {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  background: rgba(3, 6, 16, 0.55);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  transition:
+    opacity 0.42s var(--ease-ios),
+    visibility 0s linear 0.42s;
+}
+.pv-back.open {
+  opacity: 1;
+  visibility: visible;
+  pointer-events: auto;
+  transition:
+    opacity 0.42s var(--ease-ios),
+    visibility 0s;
+}
+.pv-drawer {
+  position: fixed;
+  top: 0;
+  left: 0;
+  bottom: 0;
+  z-index: 105;
+  width: min(580px, 100%);
+  background: linear-gradient(160deg, var(--card), var(--deep));
+  border-inline-end: 1px solid var(--line2);
+  box-shadow: var(--shadow);
+  transform: translateX(-100%);
+  transition: transform 0.4s var(--ease-ios);
+  display: flex;
+  flex-direction: column;
+}
+.pv-drawer.open {
+  transform: none;
+}
+.pv-head {
+  padding: 0.9rem 1rem;
+  border-bottom: 1px solid var(--line);
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+  flex-shrink: 0;
+}
+.pv-titles {
+  flex: 1;
+  min-width: 0;
+}
+.pv-titles b {
+  font-size: var(--f-lg);
+  font-weight: 800;
+  line-height: 1.5;
+  display: block;
+  overflow-wrap: anywhere;
+}
+.pv-meta {
+  display: flex;
+  gap: 0.4rem;
+  flex-wrap: wrap;
+  align-items: center;
+  margin-top: 0.5rem;
+}
+.pv-meta .tag {
+  font-size: var(--f-2xs);
+  padding: 3px 10px;
+  border-radius: 999px;
+  background: var(--card2);
+  border: 1px solid var(--line);
+  color: var(--dim);
+}
+.pv-desc {
+  padding: 0.75rem 1rem 0;
+  color: var(--mut);
+  font-size: var(--f-sm);
+  line-height: 1.85;
+}
+.pv-desc:empty {
+  display: none;
+}
+.pv-desc:empty + .var-hint {
+  margin-top: 0.75rem;
+}
+.pv-body {
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+  padding: 0.85rem 1rem;
+  display: flex;
+}
+.pv-wrap {
+  flex: 1;
+  display: flex;
+  direction: ltr;
+  background: #080d1c;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  overflow: hidden;
+  min-width: 0;
+  min-height: 0;
+}
+:root[data-theme="light"] .pv-wrap {
+  background: #f8fafd;
+}
+.pv-gutter {
+  flex-shrink: 0;
+  width: 3.25rem;
+  padding: 1rem 0.6rem 1rem 0;
+  text-align: right;
+  font-family: var(--mono);
+  font-size: var(--f-xs);
+  line-height: 1.5rem;
+  color: #4a5680;
+  background: rgba(255, 255, 255, 0.015);
+  border-right: 1px solid rgba(140, 160, 255, 0.08);
+  user-select: none;
+  overflow: hidden;
+  white-space: pre;
+  pointer-events: none;
+}
+:root[data-theme="light"] .pv-gutter {
+  color: #8b95b8;
+  background: rgba(23, 44, 110, 0.03);
+  border-right-color: rgba(23, 44, 110, 0.08);
+}
+.pv-body pre {
+  flex: 1;
+  min-width: 0;
+  padding: 1rem;
+  border: none;
+  background: transparent;
+  font-size: var(--f-xs);
+  line-height: 1.5rem;
+  color: #b9dcff;
+  font-family: var(--mono);
+  white-space: pre;
+  overflow: auto;
+  margin: 0;
+  unicode-bidi: plaintext;
+  text-align: start;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: thin;
+  scrollbar-color: #26335c transparent;
+}
+:root[data-theme="light"] .pv-body pre {
+  scrollbar-color: #c2cbe3 transparent;
+}
+:root[data-theme="light"] .pv-body pre {
+  color: #1f2a4a;
+}
+.pv-foot {
+  padding: 0.8rem 1rem;
+  border-top: 1px solid var(--line);
+  display: flex;
+  gap: 0.65rem;
+  align-items: center;
+  flex-shrink: 0;
+  position: relative;
+  z-index: 5;
+  overflow: visible;
+}
+.pv-foot > * {
+  flex-shrink: 0;
+}
+.pv-foot .spacer {
+  flex: 1;
+}
+
+/* ── منوی AI ── */
+.ai-open-wrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+.ai-open-menu {
+  position: absolute;
+  bottom: calc(100% + 8px);
+  left: 0;
+  min-width: 190px;
+  background: var(--card);
+  border: 1px solid var(--line2);
+  border-radius: 12px;
+  box-shadow: var(--shadow);
+  padding: 5px;
+  opacity: 0;
+  visibility: hidden;
+  transform: translateY(6px);
+  transition:
+    opacity 0.15s var(--ease),
+    transform 0.15s var(--ease),
+    visibility 0s linear 0.15s;
+  z-index: 90;
+}
+.ai-open-wrap.open .ai-open-menu {
+  opacity: 1;
+  visibility: visible;
+  transform: none;
+  transition:
+    opacity 0.15s var(--ease),
+    transform 0.15s var(--ease),
+    visibility 0s;
+}
+.ai-open-item {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  width: 100%;
+  text-align: right;
+  padding: 0.5rem 0.7rem;
+  border-radius: 8px;
+  border: none;
+  background: transparent;
+  color: var(--txt);
+  font-size: var(--f-sm);
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.12s;
+  font-family: inherit;
+}
+.ai-open-item:hover {
+  background: var(--card2);
+}
+.ai-open-item .ai-dot {
+  width: 1.5rem;
+  height: 1.5rem;
+  border-radius: 6px;
+  flex-shrink: 0;
+  display: grid;
+  place-items: center;
+  background: var(--ai-c);
+  color: #fff;
+  font-family: var(--mono);
+  font-weight: 800;
+  font-size: var(--f-2xs);
+  letter-spacing: -0.4px;
+  line-height: 1;
+}
+.ai-open-item .ai-tag {
+  font-size: var(--f-2xs);
+  font-weight: 800;
+  color: var(--dim);
+  padding: 1px 7px;
+  border-radius: 999px;
+  background: var(--deep);
+  border: 1px solid var(--line);
+  margin-inline-start: auto;
+  flex-shrink: 0;
+}
+.ai-open-wrap.open #pvOpenInAI {
+  border-color: var(--focus);
+  color: var(--txt);
+  background: var(--card);
+  transform: translateY(-2px);
+}
+
+/* ══════════════ متغیرها ══════════════ */
+.pv-body pre .var {
+  color: var(--amb);
+  background: rgba(251, 191, 36, 0.14);
+  border: 1px solid rgba(251, 191, 36, 0.35);
+  border-radius: 5px;
+  padding: 0 5px;
+  font-weight: 700;
+}
+.var-hint {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: var(--f-xs);
+  color: var(--amb);
+  padding: 0.5rem 0.75rem;
+  margin: 0 1rem 0.5rem;
+  background: rgba(251, 191, 36, 0.08);
+  border: 1px solid rgba(251, 191, 36, 0.25);
+  border-radius: 9px;
+  line-height: 1.6;
+}
+.var-hint b {
+  font-weight: 800;
+}
+.var-hint-ic {
+  width: 0.95rem;
+  height: 0.95rem;
+  flex-shrink: 0;
+  color: currentColor;
+}
+.var-modal-icon {
+  color: var(--amb);
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+}
+.var-modal-icon svg {
+  width: 1.15rem;
+  height: 1.15rem;
+  display: block;
+}
+
+.var-form {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  margin-top: 0.4rem;
+}
+.var-form .var-row label {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 5px;
+}
+.var-form .var-row label code {
+  font-size: var(--f-xs);
+  color: var(--amb);
+}
+.var-form .var-row label small {
+  font-size: var(--f-2xs);
+  color: var(--dim);
+  font-weight: 400;
+}
+.var-form .var-row input {
+  width: 100%;
+  padding: 0.6rem 0.8rem;
+  border-radius: 10px;
+  border: 1px solid var(--line);
+  background: var(--deep);
+  font-size: var(--f-sm);
+  outline: none;
+  transition:
+    border-color 0.2s,
+    box-shadow 0.2s;
+}
+.var-form .var-row input:focus {
+  border-color: var(--focus);
+  box-shadow: 0 0 0 4px rgba(124, 92, 219, 0.14);
+}
+.var-preview {
+  margin-top: 4px;
+  background: var(--deep);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 0.65rem 0.8rem;
+  font-family: var(--mono);
+  font-size: var(--f-xs);
+  line-height: 1.75;
+  color: var(--txt);
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  max-height: 170px;
+  overflow: auto;
+  unicode-bidi: plaintext;
+  text-align: start;
+}
+
+/* ══════════════ توست ══════════════ */
+.toast {
+  position: fixed;
+  bottom: 24px;
+  left: 50%;
+  transform: translateX(-50%) translateY(30px) scale(0.9);
+  background: var(--card);
+  border: 1px solid var(--line2);
+  border-radius: 14px;
+  padding: 0.65rem 1.1rem;
+  font-size: var(--f-sm);
+  font-weight: 600;
+  opacity: 0;
+  pointer-events: none;
+  transition:
+    opacity 0.4s var(--ease-ios),
+    transform 0.5s var(--ease-spring);
+  z-index: 300;
+  box-shadow: var(--shadow);
+  max-width: 90vw;
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+}
+.toast.show {
+  opacity: 1;
+  transform: translateX(-50%) translateY(0);
+}
+.toast-ic {
+  width: 1.5rem;
+  height: 1.5rem;
+  flex-shrink: 0;
+  color: var(--grn);
+}
+.toast-ic .tc,
+.toast-ic .tk,
+.toast-ic .tx1,
+.toast-ic .tx2 {
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2.6;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.toast-ic .tc {
+  stroke-dasharray: 82;
+  stroke-dashoffset: 82;
+}
+.toast-ic .tk {
+  stroke-dasharray: 20;
+  stroke-dashoffset: 20;
+}
+.toast-ic .tx1,
+.toast-ic .tx2 {
+  stroke-dasharray: 16;
+  stroke-dashoffset: 16;
+  display: none;
+}
+
+.toast.show .toast-ic .tc {
+  animation: toastDrawCircle 0.5s var(--ease-ios) forwards;
+}
+.toast.show .toast-ic .tk {
+  animation: toastDrawCheck 0.3s var(--ease-ios) 0.4s forwards;
+}
+
+@keyframes toastDrawCircle {
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+@keyframes toastDrawCheck {
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+@keyframes toastDrawX {
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+
+.toast.err .toast-ic {
+  color: var(--ros);
+}
+.toast.err .toast-ic .tk {
+  display: none;
+}
+.toast.err .toast-ic .tx1,
+.toast.err .toast-ic .tx2 {
+  display: inline;
+}
+
+.toast.err.show .toast-ic .tx1 {
+  animation: toastDrawX 0.18s var(--ease-ios) 0.4s forwards;
+}
+.toast.err.show .toast-ic .tx2 {
+  animation: toastDrawX 0.18s var(--ease-ios) 0.55s forwards;
+}
+.toast.warn .toast-ic {
+  color: var(--amb);
+}
+
+#toastUndo {
+  position: fixed;
+  bottom: 24px;
+  left: 50%;
+  transform: translateX(-50%) translateY(30px) scale(0.9);
+  background: var(--card);
+  border: 1px solid var(--line2);
+  border-radius: 14px;
+  padding: 0.5rem 0.5rem 0.5rem 1rem;
+  font-size: var(--f-sm);
+  font-weight: 600;
+  opacity: 0;
+  pointer-events: none;
+  transition:
+    opacity 0.4s var(--ease-ios),
+    transform 0.5s var(--ease-spring);
+  z-index: 305;
+  box-shadow: var(--shadow);
+  max-width: 90vw;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+#toastUndo.show {
+  opacity: 1;
+  transform: translateX(-50%) translateY(0);
+  pointer-events: auto;
+}
+#toastUndo .undo-txt {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+#toastUndo .undo-btn {
+  padding: 0.4rem 0.85rem;
+  border-radius: 9px;
+  border: none;
+  background: var(--acc);
+  color: var(--acc-ink);
+  font-size: var(--f-xs);
+  font-weight: 800;
+  cursor: pointer;
+  transition: 0.18s var(--ease);
+  font-family: inherit;
+}
+#toastUndo .undo-btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 18px rgba(99, 102, 241, 0.3);
+}
+
+/* ══════════════ تول‌تیپ لمسی (فقط دستگاه‌های بدون hover) ══════════════ */
+@media (hover: none) {
+  .ibtn.tip-show::after,
+  .pin.tip-show::after,
+  .etb-toggle.tip-show::after,
+  .etb-close.tip-show::after,
+  .icon-btn.tip-show::after {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+  }
+  /* در موبایل مکان تول‌تیپ نوار بالا هم اصلاح شود */
+  .etb-close.tip-show::after,
+  .etb-toggle.tip-show::after {
+    transform: translateX(-50%) translateY(0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+html.theme-instant,
+html.theme-instant *,
+html.theme-instant *::before,
+html.theme-instant *::after {
+  transition: none !important;
+  animation-duration: 0s !important;
+}
+
+/* ══════════════ فوتر ══════════════ */
+footer.app-footer {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 55;
+  padding: 0.55rem 0.9rem calc(0.55rem + env(safe-area-inset-bottom, 0px));
+  text-align: center;
+  color: var(--dim);
+  font-size: var(--f-2xs);
+  line-height: 1.6;
+  background: var(--header-bg);
+  backdrop-filter: blur(4px) saturate(1.4);
+  -webkit-backdrop-filter: blur(4px) saturate(1.4);
+  border-top: 1px solid var(--line);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.05);
+  pointer-events: none;
+}
+footer.app-footer .ft-inner {
+  pointer-events: auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 0 6px;
+}
+footer.app-footer .ft-brand {
+  color: var(--mut);
+  font-weight: 600;
+}
+footer.app-footer .ft-sep {
+  opacity: 0.5;
+  margin: 0 2px;
+}
+footer.app-footer .ft-author {
+  color: var(--mut);
+  font-weight: 700;
+  text-decoration: none;
+  transition: color 0.2s var(--ease);
+}
+footer.app-footer .ft-author:hover {
+  color: var(--vio);
+}
+footer.app-footer .ft-ver {
+  font-family: var(--mono);
+  direction: ltr;
+  display: inline-block;
+  unicode-bidi: embed;
+  color: var(--mut);
+  font-weight: 700;
+}
+
+/* ══════════════ ریسپانسیو ══════════════ */
+@media (max-width: 760px) {
+  .searchwrap {
+    display: none !important;
+  }
+  #mSearchBtn {
+    display: grid;
+  }
+  .msearch-back {
+    display: block;
+  }
+  .msearch {
+    display: flex;
+  }
+
+  header.top {
+    display: flex;
+    gap: 0.5rem;
+    padding: 0.55rem 0.75rem;
+  }
+  .brand small {
+    display: none;
+  }
+  .brand h1 {
+    font-size: var(--f-sm);
+  }
+  .hend {
+    gap: 0.4rem;
+    margin-inline-start: auto;
+  }
+  .hend .icon-btn {
+    width: 2.35rem;
+    height: 2.35rem;
+  }
+
+  main {
+    padding: 0.85rem 0.75rem 4rem;
+  }
+  .chip {
+    padding: 0.35rem 0.75rem;
+    font-size: var(--f-xs);
+  }
+  .cselect-btn {
+    padding: 0.4rem 0.65rem;
+    font-size: var(--f-xs);
+  }
+  .filter-actions {
+    width: 100%;
+  }
+  .filter-actions .cselect {
+    flex: 1;
+  }
+  .filter-actions .btn.g {
+    flex: 1;
+  }
+  .modal-back {
+    padding: 1rem 0.65rem;
+  }
+  .modal-back.editor-back {
+    padding: 0;
+  }
+  .modal {
+    padding: 1.1rem;
+  }
+  .modal h2 {
+    font-size: var(--f-lg);
+  }
+  .pv-drawer,
+  .drawer {
+    width: 100%;
+    border-radius: 0;
+    border-inline-start: none;
+    border-inline-end: none;
+  }
+  .row-pref.cols-row {
+    display: none;
+  }
+
+  /* پیش‌نمایش — گاتر باریک و ارتفاع خط متناسب */
+  .pv-body {
+    padding: 0.75rem;
+  }
+  .pv-gutter {
+    width: 2.25rem;
+    padding: 0.85rem 0.4rem 0.85rem 0;
+    font-size: var(--f-2xs);
+    line-height: 1.4rem;
+  }
+  .pv-body pre {
+    padding: 0.85rem 0.75rem;
+    line-height: 1.4rem;
+  }
+
+  /* تول‌تیپ‌های نوار بالای ادیتور → زیر دکمه (نه بالای آن)
+تا از کادر ادیتور بیرون نزنند و بریده نشوند */
+  .etb-close[data-tip]::after,
+  .etb-toggle[data-tip]::after {
+    top: calc(100% + 8px);
+    bottom: auto;
+    transform: translateX(-50%) translateY(-4px);
+  }
+  .etb-close[data-tip]:hover::after,
+  .etb-close[data-tip]:focus-visible::after,
+  .etb-toggle[data-tip]:hover::after,
+  .etb-toggle[data-tip]:focus-visible::after {
+    transform: translateX(-50%) translateY(0);
+  }
+}
+
+/* ═══ Text Engine: Logical Lines + Soft Wrap ═══ */
+/* متن اصلی نرم‌پیچیده می‌شود تا اسکرول افقی نداشته باشیم */
+.editor-area,
+.pv-body pre,
+.var-preview {
+  white-space: pre-wrap !important;
+  overflow-wrap: anywhere !important;
+  word-break: normal !important;
+  hyphens: none !important;
+  tab-size: 2;
+  unicode-bidi: normal !important;
+}
+/* گاتر نباید بشکند؛ هر خط منطقی = یک سلول با ارتفاع ثابت */
+.editor-gutter,
+.pv-gutter {
+  white-space: pre !important;
+  overflow-wrap: normal !important;
+  word-break: normal !important;
+  hyphens: none !important;
+  direction: ltr !important;
+  text-align: right !important;
+  font-variant-numeric: tabular-nums;
+  line-height: 1.5rem !important; /* هماهنگ با خط پایه دسکتاپ */
+}
+@media (max-width: 760px) {
+  .editor-gutter,
+  .pv-gutter {
+    line-height: 1.4rem !important; /* هماهنگ با خط پایه موبایل */
+  }
+}
+/* کاراکتر جای‌گذار برای خطوط خالی */
+.gutter-line-empty {
+  color: var(--dim);
+  opacity: 0.5;
+  user-select: none;
+  font-weight: bold;
+}
+
+
+@media (max-width: 760px) {
+.editor-gutter,
+.pv-gutter {
+line-height: 1.4rem !important;
+}
+}
+/* ═══ Text Direction: RTL/LTR modes ═══ */
+.editor-area[dir="rtl"],
+.pv-body pre[dir="rtl"],
+.var-preview[dir="rtl"] {
+  direction: rtl !important;
+  text-align: right !important;
+}
+
+.editor-area[dir="ltr"],
+.pv-body pre[dir="ltr"],
+.var-preview[dir="ltr"] {
+  direction: ltr !important;
+  text-align: left !important;
+}
+</style>
+</head>
+<body>
+<header class="top" id="topHeader">
+<div class="brand">
+  <div class="logo">
+    <svg
+      viewBox="0 0 64 64"
+      fill="#0b0f1e"
+      xmlns="http://www.w3.org/2000/svg"
+    >
+      <path
+        d="M40 6 A 5 5 0 0 0 36.587891 14.650391L32.976562 21.191406 A 11 11 0 0 0 31 21 A 11 11 0 0 0 24.919922 22.841797L16.455078 15.875 A 5.5 5.5 0 0 0 11.5 8 A 5.5 5.5 0 0 0 11.5 19 A 5.5 5.5 0 0 0 14.132812 18.328125L21.539062 26.414062 A 11 11 0 0 0 21.09375 36.761719L14.410156 43.070312 A 6 6 0 0 0 11 42 A 6 6 0 0 0 11 54 A 6 6 0 0 0 16.554688 45.751953L24.173828 40.613281 A 11 11 0 0 0 31 43 A 11 11 0 0 0 33.808594 42.621094L38.318359 49.625 A 5 5 0 0 0 42 58 A 5 5 0 0 0 42 48 A 5 5 0 0 0 41.332031 48.050781L38.144531 40.359375 A 11 11 0 0 0 41.105469 36.316406L47.042969 36.685547 A 6 6 0 0 0 53 42 A 6 6 0 0 0 53 30 A 6 6 0 0 0 47.662109 33.261719L41.984375 31.521484 A 11 11 0 0 0 37.46875 23.109375L39.708984 15.988281 A 5 5 0 0 0 40 16 A 5 5 0 0 0 40 6 z"
+      />
+    </svg>
+  </div>
+  <h1>Prompt Manager <small>مدیریت پرامپت‌ها</small></h1>
+</div>
+
+<div class="searchwrap">
+  <span class="sic">
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      stroke-width="2"
+      stroke-linecap="round"
+      stroke-linejoin="round"
+    >
+      <circle cx="11" cy="11" r="8" />
+      <path d="m21 21-4.3-4.3" />
+    </svg>
+  </span>
+  <input
+    id="searchIn"
+    type="text"
+    placeholder="جست‌وجو یا دستور… ( / )"
+    autocomplete="off"
+    aria-label="جست‌وجو و دستور"
+    aria-haspopup="listbox"
+    aria-expanded="false"
+  />
+  <div id="searchRes" role="listbox" aria-label="نتایج"></div>
+</div>
+
+<div class="hend">
+  <button
+    class="icon-btn"
+    id="mSearchBtn"
+    type="button"
+    title="جست‌وجو"
+    aria-label="جست‌وجو"
+    aria-expanded="false"
+  >
+    <span class="mi mi-search">
+      <svg
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        stroke-width="2"
+        stroke-linecap="round"
+        stroke-linejoin="round"
+      >
+        <circle cx="11" cy="11" r="8" />
+        <path d="m21 21-4.3-4.3" />
+      </svg>
+    </span>
+    <span class="mi mi-close">
+      <svg
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        stroke-width="2"
+        stroke-linecap="round"
+        stroke-linejoin="round"
+      >
+        <path d="M18 6 6 18M6 6l12 12" />
+      </svg>
+    </span>
+  </button>
+  <button
+    class="icon-btn"
+    id="settingsBtn"
+    type="button"
+    title="تنظیمات"
+    aria-label="تنظیمات"
+  >
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      stroke-width="2"
+      stroke-linecap="round"
+      stroke-linejoin="round"
+    >
+      <circle cx="12" cy="12" r="3" />
+      <path
+        d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"
+      />
+    </svg>
+  </button>
+  <button
+    class="icon-btn"
+    id="themeBtn"
+    type="button"
+    title="تغییر پوسته"
+    aria-label="تغییر پوسته"
+  >
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      stroke-width="2"
+      stroke-linecap="round"
+      stroke-linejoin="round"
+    >
+      <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" />
+    </svg>
+  </button>
+</div>
+</header>
+
+<div class="msearch-back" id="mSearchBack"></div>
+<div class="msearch" id="mSearch" role="dialog" aria-label="جست‌وجو">
+<div class="msearch-bar">
+  <span class="mb-ic">
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      stroke-width="2"
+      stroke-linecap="round"
+      stroke-linejoin="round"
+    >
+      <circle cx="11" cy="11" r="8" />
+      <path d="m21 21-4.3-4.3" />
+    </svg>
+  </span>
+  <input
+    id="mSearchIn"
+    type="text"
+    placeholder="جست‌وجو یا دستور…"
+    autocomplete="off"
+    aria-label="جست‌وجو"
+  />
+</div>
+<div class="msearch-body" id="mSearchBody"></div>
+</div>
+
+<main>
+<div class="filters">
+  <div class="chips" id="chips"></div>
+  <div class="filter-actions">
+    <div class="cselect" id="sortSel" aria-label="مرتب‌سازی">
+      <button class="cselect-btn" type="button">
+        <span class="cs-ic" id="sortSelIcon"></span>
+        <span class="cs-label" id="sortSelLabel">آخرین ویرایش</span>
+        <span class="cs-chev">
+          <svg
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2.4"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          >
+            <path d="m6 9 6 6 6-6" />
+          </svg>
+        </span>
+      </button>
+      <div class="cselect-menu" id="sortSelMenu"></div>
+    </div>
+    <button class="btn g" id="addBtn">＋ پرامپت جدید</button>
+  </div>
+</div>
+<div class="grid" id="grid"></div>
+</main>
+
+<footer class="app-footer">
+<div class="ft-inner">
+  <span class="ft-brand">Prompt Manager</span>
+  <span class="ft-sep">·</span>
+  <span>نسخه <span class="ft-ver">1.0</span></span>
+  <span class="ft-sep">·</span>
+  <span
+    >ساخته‌شده توسط
+    <a
+      class="ft-author"
+      href="https://github.com/PhysLVR"
+      target="_blank"
+      rel="noopener"
+      >@PhysLVR</a
+    ></span
+  >
+</div>
+</footer>
+
+<div
+class="modal-back editor-back"
+id="modalBack"
+role="dialog"
+aria-modal="true"
+aria-labelledby="modalTitle"
+>
+<div class="modal editor-modal" id="editorModal">
+  <div class="editor-titlebar">
+    <div class="etb-dots"><span></span><span></span><span></span></div>
+    <div class="etb-title">
+      <span class="etb-icon">
+        <svg
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+        >
+          <path d="M12 20h9" />
+          <path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4z" />
+        </svg>
+      </span>
+      <span id="modalTitle">افزودن پرامپت</span>
+    </div>
+    <button
+      class="etb-close"
+      id="modalCloseBtn"
+      data-tip="بستن"
+      aria-label="بستن"
+    >
+      <svg
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        stroke-width="2"
+        stroke-linecap="round"
+        stroke-linejoin="round"
+      >
+        <path d="M18 6 6 18M6 6l12 12" />
+      </svg>
+    </button>
+  </div>
+
+  <input type="hidden" id="pId" />
+
+  <div class="editor-meta" id="editorMeta">
+    <input
+      class="em-title"
+      id="pTitle"
+      placeholder="عنوان پرامپت *"
+      spellcheck="false"
+    />
+    <div class="em-row">
+      <div class="cselect full" id="pCatSel">
+        <button class="cselect-btn" type="button">
+          <span class="cs-label" id="pCatLabel">—</span>
+          <span class="cs-chev">
+            <svg
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2.4"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            >
+              <path d="m6 9 6 6 6-6" />
+            </svg>
+          </span>
+        </button>
+        <div class="cselect-menu" id="pCatMenu"></div>
+      </div>
+      <input type="hidden" id="pCat" />
+      <input
+        class="em-tags"
+        id="pTags"
+        placeholder="تگ‌ها، با کاما جدا کنید"
+        spellcheck="false"
+      />
+    </div>
+    <input
+      class="em-desc"
+      id="pDesc"
+      placeholder="توضیح کوتاه (اختیاری)"
+    />
+  </div>
+
+  <div class="editor-toolbar">
+    <button
+      type="button"
+      class="etb-toggle on"
+      id="metaToggle"
+      data-tip="نمایش/مخفی متادیتا"
+      aria-label="نمایش/مخفی متادیتا"
+      aria-pressed="true"
+    >
+      <svg
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        stroke-width="2"
+        stroke-linecap="round"
+        stroke-linejoin="round"
+      >
+        <path d="M3 12h18M3 6h18M3 18h18" />
+      </svg>
+    </button>
+    <span class="etb-label">متن پرامپت</span>
+    <span class="etb-spacer"></span>
+    <span class="etb-info">Ctrl+Enter = ذخیره · Tab = تودرتو</span>
+  </div>
+
+  <div class="editor-wrap">
+    <div class="editor-gutter" id="editorGutter" aria-hidden="true">
+      1
+    </div>
+    <textarea
+      class="editor-area"
+      id="pContent"
+      spellcheck="false"
+      autocomplete="off"
+      autocorrect="off"
+      autocapitalize="off"
+      wrap="off"
+      placeholder="متن کامل پرامپت را اینجا پیست کنید…"
+    ></textarea>
+  </div>
+
+  <div class="editor-status">
+    <span id="statLines">۱ خط</span>
+    <span class="es-sep">·</span>
+    <span id="statChars">۰ کاراکتر</span>
+    <span class="es-sep">·</span>
+    <span id="statWords">۰ کلمه</span>
+    <span class="es-sep">·</span>
+    <span id="statTokens">~۰ توکن</span>
+    <span class="es-spacer"></span>
+    <span class="es-lang">Markdown</span>
+  </div>
+
+  <div class="editor-actions">
+    <button class="btn" id="cancelBtn">انصراف</button>
+    <button class="btn g" id="saveBtn">✔ ذخیره</button>
+  </div>
+</div>
+</div>
+
+<div class="drawer-back" id="drawerBack"></div>
+<aside
+class="drawer"
+id="drawer"
+role="dialog"
+aria-modal="true"
+aria-label="تنظیمات"
+>
+<div class="drawer-head">
+  <h2>تنظیمات</h2>
+  <button
+    class="icon-btn"
+    id="closeDrawer"
+    title="بستن"
+    aria-label="بستن"
+  >
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      stroke-width="2"
+      stroke-linecap="round"
+      stroke-linejoin="round"
+    >
+      <path d="M18 6 6 18M6 6l12 12" />
+    </svg>
+  </button>
+</div>
+<div class="drawer-body">
+  <div class="group">
+    <h4>ظاهر</h4>
+    <div class="row-pref">
+      <div class="label"><b>پوسته</b><span>حالت نمایش</span></div>
+      <div class="seg" data-pref="theme">
+        <button data-v="dark">تاریک</button>
+        <button data-v="light">روشن</button>
+        <button data-v="system">سیستم</button>
+      </div>
+    </div>
+    <div class="row-pref">
+      <div class="label">
+        <b>اندازهٔ متن</b><span>اندازهٔ پایهٔ متن</span>
+      </div>
+      <div class="seg" data-pref="fs">
+        <button data-v="small">کوچک</button>
+        <button data-v="medium">متوسط</button>
+        <button data-v="large">بزرگ</button>
+      </div>
+    </div>
+    <div class="row-pref cols-row">
+      <div class="label">
+        <b>ستون‌ها</b><span>تعداد ستون‌های گرید</span>
+      </div>
+      <div class="seg" data-pref="cols">
+        <button data-v="2">۲</button>
+        <button data-v="3">۳</button>
+        <button data-v="4">۴</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="group">
+    <h4>رنگ</h4>
+    <div class="row-pref">
+      <div class="label">
+        <b>پالت گرادیان</b><span>رنگ برند و تأکیدها</span>
+      </div>
+      <div class="seg swatches" data-pref="accent">
+        <button
+          data-v="default"
+          class="sw-default"
+          data-tip="پیش‌فرض"
+          aria-label="پیش‌فرض"
+        ></button>
+        <button
+          data-v="ocean"
+          class="sw-ocean"
+          data-tip="اقیانوس"
+          aria-label="اقیانوس"
+        ></button>
+        <button
+          data-v="forest"
+          class="sw-forest"
+          data-tip="جنگل"
+          aria-label="جنگل"
+        ></button>
+        <button
+          data-v="sunset"
+          class="sw-sunset"
+          data-tip="غروب"
+          aria-label="غروب"
+        ></button>
+        <button
+          data-v="galaxy"
+          class="sw-galaxy"
+          data-tip="کهکشان"
+          aria-label="کهکشان"
+        ></button>
+        <button
+          data-v="mono"
+          class="sw-mono"
+          data-tip="بی‌رنگ"
+          aria-label="بی‌رنگ"
+        ></button>
+      </div>
+    </div>
+  </div>
+
+  <div class="group">
+    <h4>دسته‌ها</h4>
+    <div class="cat-list" id="catList"></div>
+    <button
+      class="btn sm"
+      id="addCatBtn"
+      style="margin-top: 10px; width: 100%"
+    >
+      ＋ افزودن دسته
+    </button>
+  </div>
+
+  <div class="group">
+    <h4>داده‌ها</h4>
+    <div class="row-pref">
+      <div class="label">
+        <b>خروجی JSON</b><span>پشتیبان‌گیری از همهٔ پرامپت‌ها</span>
+      </div>
+      <button class="btn sm" id="exportBtn">دانلود</button>
+    </div>
+    <div class="row-pref">
+      <div class="label">
+        <b>ورودی JSON</b><span>بازیابی از فایل پشتیبان</span>
+      </div>
+      <button class="btn sm" id="importBtn">انتخاب فایل</button>
+      <input type="file" id="importFile" accept=".json" hidden />
+    </div>
+    <div class="row-pref">
+      <div class="label">
+        <b>۶ پرامپت پیش‌فرض</b><span>نمونه‌های عمومی، فنی و تصویری</span>
+      </div>
+      <button class="btn sm" id="seedBtn">افزودن</button>
+    </div>
+    <div class="row-pref">
+      <div class="label">
+        <b style="color: var(--ros)">بازنشانی همه</b
+        ><span>حذف تمام پرامپت‌ها و دسته‌ها</span>
+      </div>
+      <button class="btn sm dgr" id="resetBtn">حذف</button>
+    </div>
+  </div>
+</div>
+</aside>
+
+<div class="pv-back" id="pvBack"></div>
+<aside
+class="pv-drawer"
+id="pvDrawer"
+aria-hidden="true"
+role="dialog"
+aria-modal="true"
+aria-label="پیش‌نمایش پرامپت"
+>
+<div class="pv-head">
+  <div class="pv-titles">
+    <b id="pvTitle" dir="auto">—</b>
+    <div class="pv-meta" id="pvMeta"></div>
+  </div>
+  <button class="icon-btn" id="pvClose" title="بستن" aria-label="بستن">
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      stroke-width="2"
+      stroke-linecap="round"
+      stroke-linejoin="round"
+    >
+      <path d="M18 6 6 18M6 6l12 12" />
+    </svg>
+  </button>
+</div>
+<div class="pv-desc" id="pvDesc" dir="auto"></div>
+<div class="pv-body">
+  <div class="pv-wrap">
+    <div class="pv-gutter" id="pvGutter" aria-hidden="true">1</div>
+    <pre id="pvContent"></pre>
+  </div>
+</div>
+<div class="pv-foot">
+  <button class="ibtn" id="pvEdit" data-tip="ویرایش" aria-label="ویرایش">
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      stroke-width="2"
+      stroke-linecap="round"
+      stroke-linejoin="round"
+    >
+      <path d="M12 20h9" />
+      <path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4z" />
+    </svg>
+  </button>
+  <span class="spacer"></span>
+  <div class="ai-open-wrap" id="pvAiWrap">
+    <button
+      class="ibtn"
+      id="pvOpenInAI"
+      data-tip="باز کردن در AI"
+      aria-label="باز کردن در AI"
+      aria-haspopup="menu"
+    >
+      <svg
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        stroke-width="2"
+        stroke-linecap="round"
+        stroke-linejoin="round"
+      >
+        <path d="M15 3h6v6" />
+        <path d="M10 14 21 3" />
+        <path
+          d="M21 14v5a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5"
+        />
+      </svg>
+    </button>
+    <div class="ai-open-menu" id="pvAiMenu" role="menu"></div>
+  </div>
+  <button
+    class="ibtn"
+    id="pvCopy"
+    data-tip="کپی متن"
+    aria-label="کپی متن"
+  >
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      stroke-width="2"
+      stroke-linecap="round"
+      stroke-linejoin="round"
+    >
+      <rect x="9" y="9" width="11" height="11" rx="2" />
+      <path d="M5 15V5a2 2 0 0 1 2-2h10" />
+    </svg>
+  </button>
+</div>
+</aside>
+
+<div
+class="modal-back"
+id="varModalBack"
+role="dialog"
+aria-modal="true"
+aria-labelledby="varModalTitle"
+>
+<div class="modal" style="max-width: 620px">
+  <h2>
+    <span class="var-modal-icon" aria-hidden="true">
+      <svg
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        stroke-width="2"
+        stroke-linecap="round"
+        stroke-linejoin="round"
+      >
+        <path
+          d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"
+        />
+      </svg>
+    </span>
+    <span id="varModalTitle">پر کردن متغیرها</span>
+  </h2>
+  <p
+    style="font-size: var(--f-xs); color: var(--mut); margin-bottom: 1rem"
+  >
+    این پرامپت متغیر دارد. هر مقدار را وارد کنید؛ هر فیلدی که خالی بماند،
+    به‌صورت <code>{{var}}</code> در متن نهایی حفظ می‌شود.
+  </p>
+  <div class="var-form" id="varForm"></div>
+  <div style="margin-top: 1rem">
+    <label
+      style="
+        font-size: var(--f-xs);
+        color: var(--mut);
+        font-weight: 600;
+        display: block;
+        margin-bottom: 6px;
+      "
+    >
+      پیش‌نمایش خروجی
+    </label>
+    <div class="var-preview" id="varPreview"></div>
+  </div>
+  <div class="foot">
+    <button class="btn g" id="varCopyBtn">📋 کپی متن نهایی</button>
+    <button class="btn" id="varCopyRawBtn">کپی متن خام</button>
+    <button class="btn" id="varCancelBtn">انصراف</button>
+  </div>
+</div>
+</div>
+
+<div
+class="modal-back"
+id="catModalBack"
+role="dialog"
+aria-modal="true"
+aria-labelledby="catModalTitle"
+>
+<div class="modal" style="max-width: 480px">
+  <h2>
+    <span id="catModalIcon">＋</span>
+    <span id="catModalTitle">دستهٔ جدید</span>
+  </h2>
+  <input type="hidden" id="catId" />
+  <div class="row full">
+    <div>
+      <label>نام دسته *</label>
+      <input
+        class="inp"
+        id="catName"
+        placeholder="مثلاً: پروژه‌های فروش"
+      />
+    </div>
+  </div>
+  <div class="row full">
+    <div>
+      <label>رنگ</label>
+      <div class="cat-colors" id="catColors">
+        <button
+          data-c="b-vio"
+          style="--c: var(--vio)"
+          title="بنفش"
+          type="button"
+        ></button>
+        <button
+          data-c="b-blu"
+          style="--c: var(--blu)"
+          title="آبی"
+          type="button"
+        ></button>
+        <button
+          data-c="b-cyn"
+          style="--c: var(--cyn)"
+          title="فیروزه‌ای"
+          type="button"
+        ></button>
+        <button
+          data-c="b-grn"
+          style="--c: var(--grn)"
+          title="سبز"
+          type="button"
+        ></button>
+        <button
+          data-c="b-amb"
+          style="--c: var(--amb)"
+          title="کهربایی"
+          type="button"
+        ></button>
+        <button
+          data-c="b-ros"
+          style="--c: var(--ros)"
+          title="سرخ"
+          type="button"
+        ></button>
+      </div>
+    </div>
+  </div>
+  <div class="foot">
+    <button class="btn g" id="catSaveBtn">✔ ذخیره</button>
+    <button class="btn" id="catCancelBtn">انصراف</button>
+  </div>
+</div>
+</div>
+
+<div
+class="modal-back"
+id="dialogBack"
+role="dialog"
+aria-modal="true"
+aria-labelledby="dialogTitle"
+>
+<div class="modal">
+  <h2>
+    <span id="dialogIcon">؟</span> <span id="dialogTitle">تأیید</span>
+  </h2>
+  <div class="dialog-msg" id="dialogMsg"></div>
+  <div id="dialogFieldWrap" style="display: none">
+    <label id="dialogFieldLabel">مقدار</label>
+    <input class="inp" id="dialogField" autocomplete="off" />
+  </div>
+  <div class="foot">
+    <button class="btn g" id="dialogOk">تأیید</button>
+    <button class="btn" id="dialogCancel">انصراف</button>
+  </div>
+</div>
+</div>
+
+<div class="toast" id="toast" role="status" aria-live="polite">
+<svg class="toast-ic" viewBox="0 0 32 32" aria-hidden="true">
+  <circle class="tc" cx="16" cy="16" r="13" />
+  <path class="tk" d="M9.5 16.5 L14 21 L22.5 11.5" />
+  <path class="tx1" d="M10.5 10.5 L21.5 21.5" />
+  <path class="tx2" d="M21.5 10.5 L10.5 21.5" />
+</svg>
+<span class="toast-txt" id="toastTxt"></span>
+</div>
+<div id="toastUndo" role="status" aria-live="polite">
+<span class="undo-txt" id="toastUndoTxt"></span>
+<button class="undo-btn" id="toastUndoBtn">↺ بازگردانی</button>
+</div>
+
+<script>
+"use strict";
+
+/* ═══════════════ ابزارها ═══════════════ */
+const $ = (s, r) => (r || document).querySelector(s);
+const $$ = (s, r) => Array.from((r || document).querySelectorAll(s));
+const DATA_KEY = "promptManager_public_v1";
+const PREF_KEY = "promptManagerPrefs_public_v1";
+const CURRENT_VERSION = 3;
+
+function esc(s) {
+  return String(s == null ? "" : s)
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;");
+}
+function uid() {
+  return (
+    "p_" +
+    Date.now().toString(36) +
+    "_" +
+    Math.random().toString(36).slice(2, 7)
+  );
+}
+function norm(s) {
+  return String(s || "")
+    .toLowerCase()
+    .replace(/ي/g, "ی")
+    .replace(/ك/g, "ک")
+    .replace(/[۰-۹]/g, (d) => "۰۱۲۳۴۵۶۷۸۹".indexOf(d))
+    .replace(/[\u200c\u200e\u200f]/g, "")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+function debounce(fn, ms) {
+  let t;
+  return function (...args) {
+    clearTimeout(t);
+    t = setTimeout(() => fn.apply(this, args), ms);
+  };
+}
+function isMobile() {
+  return window.matchMedia("(max-width: 760px)").matches;
+}
+function isTypingContext() {
+  const el = document.activeElement;
+  if (!el) return false;
+  const tag = el.tagName;
+  return tag === "INPUT" || tag === "TEXTAREA" || el.isContentEditable;
+}
+
+const ICONS = {
+  search:
+    '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>',
+  gear: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>',
+  moon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>',
+  sun: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/></svg>',
+  plus: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>',
+  doc: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></svg>',
+  folder:
+    '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>',
+  down: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12M6 9l6 6 6-6M5 21h14"/></svg>',
+  up: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21V9M6 15l6-6 6 6M5 3h14"/></svg>',
+  sparkle:
+    '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m12 3-1.9 5.8L4 10.7l5.8 1.9L12 18.4l2.1-5.8L20 10.7l-5.9-1.9z"/></svg>',
+  sort: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 8h7M3 12h5M3 16h3"/><path d="M17 4v16M13 16l4 4 4-4"/></svg>',
+  chev: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>',
+  check:
+    '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>',
+  edit: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4z"/></svg>',
+  trash:
+    '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6M14 11v6"/></svg>',
+};
+function icon(name) {
+  return ICONS[name] || "";
+}
+
+const AI_TARGETS = [
+  {
+    id: "chatgpt",
+    name: "ChatGPT",
+    abbr: "G",
+    color: "#10a37f",
+    url: (q) => `https://chatgpt.com/?q=${encodeURIComponent(q)}`,
+  },
+  {
+    id: "claude",
+    name: "Claude",
+    abbr: "Cl",
+    color: "#d97757",
+    url: (q) => `https://claude.ai/new?q=${encodeURIComponent(q)}`,
+  },
+  {
+    id: "perplexity",
+    name: "Perplexity",
+    abbr: "P",
+    color: "#20808d",
+    url: (q) =>
+      `https://www.perplexity.ai/search?q=${encodeURIComponent(q)}`,
+  },
+  {
+    id: "grok",
+    name: "Grok",
+    abbr: "X",
+    color: "#1f2937",
+    url: (q) => `https://grok.com/?q=${encodeURIComponent(q)}`,
+  },
+  {
+    id: "gemini",
+    name: "Gemini",
+    abbr: "Ge",
+    color: "#4285f4",
+    noPrefill: true,
+    url: () => "https://gemini.google.com/app",
+  },
+  {
+    id: "deepseek",
+    name: "DeepSeek",
+    abbr: "D",
+    color: "#4d6bfe",
+    noPrefill: true,
+    url: () => "https://chat.deepseek.com/",
+  },
+  {
+    id: "copilot",
+    name: "Copilot",
+    abbr: "Co",
+    color: "#0a7cd6",
+    noPrefill: true,
+    url: () => "https://copilot.microsoft.com/",
+  },
+  {
+    id: "qwen",
+    name: "Qwen",
+    abbr: "Q",
+    color: "#615ced",
+    noPrefill: true,
+    url: () => "https://chat.qwen.ai/",
+  },
+  {
+    id: "mistral",
+    name: "Le Chat",
+    abbr: "M",
+    color: "#fa520f",
+    noPrefill: true,
+    url: () => "https://chat.mistral.ai/chat",
+  },
+];
+
+let DATA = { version: CURRENT_VERSION, categories: [], prompts: [] };
+
+function commit(mutator) {
+  if (typeof mutator === "function") mutator(DATA);
+  save();
+  renderChips();
+  renderGrid();
+  renderCatList();
+}
+
+const DEFAULT_CATEGORIES = [
+  { id: "write", name: "نوشتن و محتوا", color: "b-blu" },
+  { id: "code", name: "کد و فنی", color: "b-grn" },
+  { id: "image", name: "تصویرسازی", color: "b-vio" },
+  { id: "general", name: "عمومی", color: "b-amb" },
+];
+const MIGRATIONS = {};
+function migrate(d) {
+  if (!d || typeof d !== "object") return d;
+  const v = Number(d.version) || 1;
+  let cur = d;
+  for (let i = v; i < CURRENT_VERSION; i++) {
+    if (typeof MIGRATIONS[i] === "function") cur = MIGRATIONS[i](cur);
+  }
+  cur.version = CURRENT_VERSION;
+  if (!Array.isArray(cur.categories) || !cur.categories.length)
+    cur.categories = JSON.parse(JSON.stringify(DEFAULT_CATEGORIES));
+  if (!Array.isArray(cur.prompts)) cur.prompts = [];
+  return cur;
+}
+
+const PREF_DEFAULTS = {
+  theme: "system",
+  accent: "default",
+  fs: "medium",
+  cols: "3",
+  sort: "updated",
+};
+let PREFS = Object.assign({}, PREF_DEFAULTS);
+function loadPrefs() {
+  try {
+    const raw = localStorage.getItem(PREF_KEY);
+    if (raw) {
+      const p = JSON.parse(raw);
+      Object.keys(PREF_DEFAULTS).forEach((k) => {
+        if (typeof p[k] === "string") PREFS[k] = p[k];
+      });
+    }
+  } catch (e) {}
+}
+function savePrefs() {
+  try {
+    localStorage.setItem(PREF_KEY, JSON.stringify(PREFS));
+  } catch (e) {}
+}
+function resolveTheme(val) {
+  if (val === "system")
+    return matchMedia("(prefers-color-scheme: dark)").matches
+      ? "dark"
+      : "light";
+  return val;
+}
+let _lastTheme = null;
+function applyPrefs() {
+  const html = document.documentElement;
+  const newTheme = resolveTheme(PREFS.theme);
+  const themeChanged = _lastTheme !== null && _lastTheme !== newTheme;
+
+  if (themeChanged) {
+    html.classList.add("theme-instant");
+    void html.offsetWidth;
+  }
+
+  html.dataset.theme = newTheme;
+  html.dataset.accent = PREFS.accent;
+  html.dataset.fs = PREFS.fs;
+  html.style.setProperty("--cols", PREFS.cols);
+  $("#themeBtn").innerHTML =
+    newTheme === "light" ? icon("sun") : icon("moon");
+
+  _lastTheme = newTheme;
+
+  if (themeChanged) {
+    requestAnimationFrame(() =>
+      requestAnimationFrame(() => {
+        html.classList.remove("theme-instant");
+      }),
+    );
+  }
+}
+
+function save() {
+  try {
+    localStorage.setItem(DATA_KEY, JSON.stringify(DATA));
+  } catch (e) {
+    toast("ذخیره‌سازی ناموفق", "err");
+  }
+}
+function load() {
+  try {
+    const raw = localStorage.getItem(DATA_KEY);
+    if (!raw) {
+      DATA.categories = JSON.parse(JSON.stringify(DEFAULT_CATEGORIES));
+      DATA.prompts = [];
+      return;
+    }
+    const p = JSON.parse(raw);
+    const m = migrate(p);
+    DATA.categories = m.categories;
+    DATA.prompts = m.prompts;
+  } catch (e) {
+    DATA.categories = JSON.parse(JSON.stringify(DEFAULT_CATEGORIES));
+    DATA.prompts = [];
+  }
+}
+
+let activeCat = "all";
+let query = "";
+
+let toastT;
+function toast(msg, kind) {
+  const el = $("#toast");
+  $("#toastTxt").textContent = msg;
+  el.classList.remove("err", "warn");
+  if (kind === "err") el.classList.add("err");
+  else if (kind === "warn") el.classList.add("warn");
+  hideUndoToast();
+  el.classList.remove("show");
+  void el.offsetWidth;
+  el.classList.add("show");
+  clearTimeout(toastT);
+  toastT = setTimeout(() => el.classList.remove("show"), 2200);
+}
+let undoFn = null,
+  undoTimer = null;
+function toastWithUndo(msg, fn, ms) {
+  const el = $("#toastUndo");
+  $("#toastUndoTxt").textContent = msg;
+  undoFn = fn;
+  $("#toast").classList.remove("show");
+  clearTimeout(toastT);
+  el.classList.add("show");
+  clearTimeout(undoTimer);
+  undoTimer = setTimeout(hideUndoToast, ms || 5000);
+}
+function hideUndoToast() {
+  $("#toastUndo").classList.remove("show");
+  clearTimeout(undoTimer);
+  undoFn = null;
+}
+
+function copyText(txt, msg) {
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(txt).then(
+      () => toast(msg || "کپی شد"),
+      () => legacyCopy(txt, msg),
+    );
+  } else legacyCopy(txt, msg);
+}
+function legacyCopy(txt, msg) {
+  const ta = document.createElement("textarea");
+  ta.value = txt;
+  ta.style.cssText = "position:fixed;opacity:0;top:0;left:0";
+  document.body.appendChild(ta);
+  ta.select();
+  try {
+    document.execCommand("copy");
+    toast(msg || "کپی شد");
+  } catch (e) {
+    toast("کپی ناموفق", "err");
+  }
+  ta.remove();
+}
+
+const VAR_RE = /\{\{\s*([\w\u0600-\u06FF][\w\u0600-\u06FF-]*)\s*\}\}/g;
+function extractVars(text) {
+  const seen = new Set();
+  let m;
+  VAR_RE.lastIndex = 0;
+  const s = String(text || "");
+  while ((m = VAR_RE.exec(s))) seen.add(m[1]);
+  return [...seen];
+}
+function fillVars(text, map) {
+  VAR_RE.lastIndex = 0;
+  return String(text || "").replace(VAR_RE, (full, key) => {
+    const v = map && map[key];
+    return v != null && String(v).trim() !== "" ? v : full;
+  });
+}
+function renderContentWithVars(raw) {
+  const s = String(raw || "");
+  VAR_RE.lastIndex = 0;
+  let out = "",
+    last = 0,
+    m;
+  while ((m = VAR_RE.exec(s))) {
+    out += esc(s.slice(last, m.index));
+    out += `<span class="var">{{${esc(m[1])}}}</span>`;
+    last = m.index + m[0].length;
+  }
+  out += esc(s.slice(last));
+  return out;
+}
+
+let activeDialogEl = null;
+let activeDialogCleanup = null;
+
+function refreshFocusTrap() {
+  const dialogEl = document.querySelector(
+    ".modal-back.open, .drawer.open, .pv-drawer.open",
+  );
+  const msearchEl = document.querySelector(".msearch.open");
+  /* قفل اسکرول فقط برای پنل‌های تمام‌صفحه.
+     سرچ موبایل قفل نمی‌کند تا هدر sticky سر جایش بماند. */
+  setActiveDialog(dialogEl || msearchEl, !!dialogEl);
+}
+/* ── قفل/آزادسازی اسکرول — هم روی html هم body ── */
+function lockScroll() {
+  document.documentElement.classList.add("no-scroll");
+  document.body.classList.add("no-scroll");
+}
+function unlockScroll() {
+  document.documentElement.classList.remove("no-scroll");
+  document.body.classList.remove("no-scroll");
+}
+
+function setActiveDialog(el, forceScrollLock) {
+  if (activeDialogCleanup) {
+    activeDialogCleanup();
+    activeDialogCleanup = null;
+  }
+  activeDialogEl = el;
+  /* اگر صریحاً false داده شد، قفل نکن حتی اگر el هست
+     (برای سرچ موبایل که هدر sticky را جابه‌جا می‌کند) */
+  const shouldLock =
+    forceScrollLock === undefined ? !!el : !!forceScrollLock;
+  if (shouldLock) lockScroll();
+  else unlockScroll();
+  if (!el) return;
+  const prev = document.activeElement;
+  const sel =
+    'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])';
+  const handler = (e) => {
+    if (e.key !== "Tab") return;
+    const nodes = Array.from(el.querySelectorAll(sel)).filter(
+      (n) => n.offsetParent !== null,
+    );
+    if (!nodes.length) {
+      e.preventDefault();
+      return;
+    }
+    const first = nodes[0],
+      last = nodes[nodes.length - 1];
+    if (e.shiftKey && document.activeElement === first) {
+      e.preventDefault();
+      last.focus();
+    } else if (!e.shiftKey && document.activeElement === last) {
+      e.preventDefault();
+      first.focus();
+    }
+  };
+  el.addEventListener("keydown", handler);
+  activeDialogCleanup = () => {
+    el.removeEventListener("keydown", handler);
+    if (prev && prev.focus) {
+      try {
+        prev.focus();
+      } catch (_) {}
+    }
+  };
+}
+
+let dialogResolve = null;
+let dialogMode = "confirm";
+
+/* ── بازسازی دکمه‌های پیش‌فرض مودال دیالوگ ──
+askImportMode دکمه‌های این فوتر را جایگزین می‌کند؛
+بعد از آن، دیالوگ‌های بعدی باید دکمه‌های استاندارد را برگردانند. */
+function restoreDialogFoot() {
+  const foot = document.querySelector("#dialogBack .modal .foot");
+  if (!foot) return;
+  foot.innerHTML =
+    '<button class="btn g" id="dialogOk">تأیید</button>' +
+    '<button class="btn" id="dialogCancel">انصراف</button>';
+  $("#dialogOk").onclick = () => {
+    if (dialogMode === "prompt") closeDialog($("#dialogField").value);
+    else closeDialog(true);
+  };
+  $("#dialogCancel").onclick = () =>
+    closeDialog(dialogMode === "prompt" ? null : false);
+}
+
+function openDialog(opts) {
+  return new Promise((resolve) => {
+    restoreDialogFoot();
+    dialogResolve = resolve;
+    dialogMode = opts.mode || "confirm";
+    $("#dialogIcon").textContent =
+      opts.icon || (dialogMode === "prompt" ? "✎" : "؟");
+    $("#dialogTitle").textContent = opts.title || "تأیید";
+    $("#dialogMsg").innerHTML = opts.message || "";
+    const ok = $("#dialogOk");
+    ok.textContent = opts.okText || "تأیید";
+    ok.classList.toggle("dgr", !!opts.danger);
+    if (dialogMode === "prompt") {
+      $("#dialogFieldWrap").style.display = "";
+      $("#dialogFieldLabel").textContent = opts.label || "مقدار";
+      $("#dialogField").value = opts.value || "";
+      $("#dialogField").placeholder = opts.placeholder || "";
+      setTimeout(() => $("#dialogField").focus(), 100);
+    } else {
+      $("#dialogFieldWrap").style.display = "none";
+    }
+    $("#dialogBack").classList.add("open");
+    refreshFocusTrap();
+    if (dialogMode !== "prompt") setTimeout(() => ok.focus(), 100);
+  });
+}
+function closeDialog(value) {
+  $("#dialogBack").classList.remove("open");
+  refreshFocusTrap();
+  const r = dialogResolve;
+  dialogResolve = null;
+  if (r) r(value);
+}
+const uiConfirm = (opts) =>
+  openDialog(Object.assign({ mode: "confirm" }, opts));
+const uiPrompt = (opts) =>
+  openDialog(Object.assign({ mode: "prompt" }, opts));
+
+function buildCSelect(rootId, { items, value, onChange }) {
+  const root = $("#" + rootId);
+  const menu = root.querySelector(".cselect-menu");
+  const label = root.querySelector(".cs-label");
+  let current = value;
+
+  function render() {
+    menu.innerHTML = items
+      .map(
+        (it) => `
+<button type="button" class="cselect-item ${it.v === current ? "on" : ""}" data-v="${esc(it.v)}">
+<span class="ci-check">${icon("check")}</span>
+<span>${esc(it.label)}</span>
+</button>
+`,
+      )
+      .join("");
+    const found = items.find((i) => i.v === current);
+    label.textContent = found ? found.label : "—";
+  }
+  function close() {
+    root.classList.remove("open");
+  }
+
+  root.querySelector(".cselect-btn").addEventListener("click", (e) => {
+    e.stopPropagation();
+    const isOpen = root.classList.contains("open");
+    $$(".cselect.open").forEach((c) => c.classList.remove("open"));
+    if (!isOpen) root.classList.add("open");
+  });
+  menu.addEventListener("click", (e) => {
+    const b = e.target.closest(".cselect-item");
+    if (!b) return;
+    current = b.dataset.v;
+    render();
+    close();
+    if (onChange) onChange(current);
+  });
+  render();
+  return {
+    get value() {
+      return current;
+    },
+    set value(v) {
+      current = v;
+      render();
+    },
+    refresh(newItems) {
+      items = newItems;
+      render();
+    },
+  };
+}
+document.addEventListener("click", (e) => {
+  if (!e.target.closest(".cselect"))
+    $$(".cselect.open").forEach((c) => c.classList.remove("open"));
+});
+
+function renderChips() {
+  const c = $("#chips");
+  const total = DATA.prompts.length;
+  let html = `<button class="chip ${activeCat === "all" ? "on" : ""}" data-c="all">
+همه <span class="cnt">${total}</span>
+</button>`;
+  DATA.categories.forEach((cat) => {
+    const n = DATA.prompts.filter((p) => p.category === cat.id).length;
+    html += `<button class="chip ${activeCat === cat.id ? "on" : ""}" data-c="${cat.id}">
+<span class="dot ${cat.color}"></span>${esc(cat.name)}
+<span class="cnt">${n}</span>
+</button>`;
+  });
+  c.innerHTML = html;
+  c.querySelectorAll(".chip").forEach((b) => {
+    b.onclick = () => {
+      if (activeCat === b.dataset.c) return;
+      activeCat = b.dataset.c;
+      renderChips();
+      renderGrid();
+      const g = $("#grid");
+      g.classList.remove("filtering");
+      void g.offsetWidth;
+      g.classList.add("filtering");
+    };
+  });
+}
+
+function renderCatList() {
+  const el = $("#catList");
+  if (!el) return;
+  if (!DATA.categories.length) {
+    el.innerHTML = `<div style="font-size:var(--f-xs);color:var(--dim);padding:6px 2px">هنوز دسته‌ای نداری.</div>`;
+    return;
+  }
+  el.innerHTML = DATA.categories
+    .map((c) => {
+      const n = DATA.prompts.filter((p) => p.category === c.id).length;
+      return `<div class="cat-item" data-id="${c.id}">
+<span class="dot ${c.color}"></span>
+<span class="cat-item-name">${esc(c.name)}</span>
+<span class="cat-item-cnt">${n}</span>
+<button class="cat-item-btn" data-act="edit-cat" title="ویرایش" aria-label="ویرایش">${icon("edit")}</button>
+<button class="cat-item-btn dgr" data-act="del-cat" title="حذف" aria-label="حذف">${icon("trash")}</button>
+</div>`;
+    })
+    .join("");
+}
+
+function catById(id) {
+  return (
+    DATA.categories.find((x) => x.id === id) || {
+      id: "",
+      name: "—",
+      color: "b-blu",
+    }
+  );
+}
+function filtered() {
+  const q = norm(query);
+  const terms = q.split(" ").filter(Boolean);
+  const arr = DATA.prompts.filter((p) => {
+    if (activeCat !== "all" && p.category !== activeCat) return false;
+    if (!terms.length) return true;
+    const hay = norm(
+      [
+        p.title,
+        p.description || "",
+        (p.tags || []).join(" "),
+        p.content,
+      ].join(" "),
+    );
+    return terms.every((t) => hay.indexOf(t) >= 0);
+  });
+  const sort = PREFS.sort || "updated";
+  return arr.sort((a, b) => {
+    const pa = a.pinned ? 1 : 0,
+      pb = b.pinned ? 1 : 0;
+    if (pb - pa) return pb - pa;
+    if (sort === "title")
+      return (a.title || "").localeCompare(b.title || "", "fa");
+    if (sort === "created")
+      return (b.createdAt || 0) - (a.createdAt || 0);
+    return (b.updatedAt || 0) - (a.updatedAt || 0);
+  });
+}
+
+let _firstRenderDone = false;
+function renderGrid() {
+  const g = $("#grid");
+  if (_firstRenderDone) g.classList.add("no-anim");
+  else _firstRenderDone = true;
+  const list = filtered();
+  if (!list.length) {
+    const empty = DATA.prompts.length === 0;
+    g.innerHTML = `<div class="empty" style="grid-column:1/-1">
+<svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
+stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+<path d="M14 2v6h6"/>
+<path d="M9 13h6"/>
+<path d="M9 17h4"/>
+</svg>
+${
+empty
+? `<h3>هنوز پرامپتی نداری</h3>
+<p>روی «＋ پرامپت جدید» بزن یا از تنظیمات «۶ پرامپت پیش‌فرض» را اضافه کن.</p>`
+: `<h3>موردی پیدا نشد</h3>
+<p>دستهٔ دیگری را امتحان کن یا متن جست‌وجو را کوتاه‌تر کن.</p>`
+}
+</div>`;
+    return;
+  }
+  g.innerHTML = list
+    .map((p) => {
+      const cat = catById(p.category);
+      const tags = (p.tags || [])
+        .map((t) => `<span class="tag">#${esc(t)}</span>`)
+        .join("");
+      const varCount = extractVars(p.content).length;
+      const copyTip = varCount ? `کپی (${varCount} متغیر)` : "کپی متن";
+      return `
+<div class="card" data-id="${p.id}">
+<div class="phead">
+<button class="pin ${p.pinned ? "on" : ""}" data-act="pin"
+data-tip="${p.pinned ? "برداشتن سنجاق" : "سنجاق"}"
+aria-label="${p.pinned ? "برداشتن سنجاق" : "سنجاق"}"
+aria-pressed="${p.pinned ? "true" : "false"}">
+<svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
+stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+<line x1="12" y1="17" x2="12" y2="22"/>
+<path d="M5 17h14v-1.76a2 2 0 0 0-1.11-1.79l-1.78-.9A2 2 0 0 1 15 10.76V6h1a2 2 0 0 0 0-4H8a2 2 0 0 0 0 4h1v4.76a2 2 0 0 1-1.11 1.79l-1.78.9A2 2 0 0 0 5 15.24Z"/>
+</svg>
+</button>
+<b dir="auto">${esc(p.title)}</b>
+<span class="pcat ${cat.color}">${esc(cat.name)}</span>
+</div>
+${p.description ? `<div class="pdesc" dir="auto">${esc(p.description)}</div>` : ""}
+${tags ? `<div class="ptags">${tags}</div>` : ""}
+<div class="pfoot">
+<button class="ibtn" data-act="toggle" data-tip="نمایش متن" aria-label="نمایش متن">
+<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+<path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+<circle cx="12" cy="12" r="3"/>
+</svg>
+</button>
+<button class="ibtn" data-act="copy" data-tip="${copyTip}" aria-label="${copyTip}">
+<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+<rect x="9" y="9" width="11" height="11" rx="2"/>
+<path d="M5 15V5a2 2 0 0 1 2-2h10"/>
+</svg>
+</button>
+<div class="grow"></div>
+<button class="ibtn" data-act="edit" data-tip="ویرایش" aria-label="ویرایش">${icon("edit")}</button>
+<button class="ibtn dgr" data-act="del" data-tip="حذف" aria-label="حذف">${icon("trash")}</button>
+</div>
+</div>
+`;
+    })
+    .join("");
+}
+
+async function deletePrompt(id) {
+  const idx = DATA.prompts.findIndex((p) => p.id === id);
+  if (idx < 0) return;
+  const p = DATA.prompts[idx];
+  const ok = await uiConfirm({
+    title: "حذف پرامپت",
+    icon: "⚠",
+    message: `پرامپت «<b>${esc(p.title)}</b>» حذف شود؟`,
+    okText: "حذف",
+    danger: true,
+  });
+  if (!ok) return;
+  const snapshot = { p, index: idx };
+  commit((d) => {
+    d.prompts = d.prompts.filter((x) => x.id !== id);
+  });
+  toastWithUndo(`«${p.title}» حذف شد`, () => {
+    commit((d) => {
+      d.prompts.splice(snapshot.index, 0, snapshot.p);
+    });
+    toast("بازگردانی شد");
+  });
+}
+
+$("#grid").addEventListener("click", (e) => {
+  const btn = e.target.closest("[data-act]");
+  if (!btn) return;
+  const card = btn.closest(".card");
+  if (!card) return;
+  const id = card.dataset.id;
+  const p = DATA.prompts.find((x) => x.id === id);
+  if (!p) return;
+  e.stopPropagation();
+  const act = btn.dataset.act;
+  if (act === "toggle") openPreview(p);
+  else if (act === "copy") requestCopy(p);
+  else if (act === "edit") openModal(p);
+  else if (act === "del") deletePrompt(id);
+  else if (act === "pin") {
+    commit((d) => {
+      const t = d.prompts.find((x) => x.id === id);
+      if (t) {
+        t.pinned = !t.pinned;
+        t.updatedAt = Date.now();
+      }
+    });
+  }
+});
+
+let currentPvId = null;
+
+/* ═══ Gutter Engine: VSCode-style ═══
+   شماره فقط روی اولین خط بصری هر خط منطقی می‌نشیند.
+   خطوطی که به‌خاطر wrap بصری ادامه دارند، بدون شماره می‌مانند. */
+const _gutterMeasureEl = document.createElement("div");
+_gutterMeasureEl.setAttribute("aria-hidden", "true");
+_gutterMeasureEl.style.cssText =
+  "position:absolute;top:-99999px;left:-99999px;visibility:hidden;" +
+  "pointer-events:none;white-space:pre-wrap;overflow-wrap:anywhere;" +
+  "word-break:normal;hyphens:none;tab-size:2;margin:0;border:0;padding:0;";
+document.body.appendChild(_gutterMeasureEl);
+
+function _measureVisualRows(lines, contentWidth, cs, lineHeightPx) {
+  const counts = new Array(lines.length);
+  if (!lines.length) return counts;
+  _gutterMeasureEl.style.width = Math.max(1, contentWidth) + "px";
+  _gutterMeasureEl.style.fontFamily = cs.fontFamily;
+  _gutterMeasureEl.style.fontSize = cs.fontSize;
+  _gutterMeasureEl.style.fontWeight = cs.fontWeight;
+  _gutterMeasureEl.style.fontStyle = cs.fontStyle;
+  _gutterMeasureEl.style.letterSpacing = cs.letterSpacing;
+  _gutterMeasureEl.style.lineHeight = cs.lineHeight;
+  _gutterMeasureEl.textContent = lines.join("\n");
+  const node = _gutterMeasureEl.firstChild;
+  if (!node) {
+    for (let i = 0; i < lines.length; i++) counts[i] = 1;
+    return counts;
+  }
+  let off = 0;
+  for (let i = 0; i < lines.length; i++) {
+    const len = lines[i].length;
+    if (len === 0) {
+      counts[i] = 1;
+    } else {
+      const r = document.createRange();
+      r.setStart(node, off);
+      r.setEnd(node, off + len);
+      const rects = r.getClientRects();
+      let rows = 0;
+      let lastTop = -Infinity;
+      for (let j = 0; j < rects.length; j++) {
+        const t = rects[j].top;
+        if (Math.abs(t - lastTop) > 1) {
+          rows++;
+          lastTop = t;
+        }
+      }
+      counts[i] = Math.max(1, rows);
+    }
+    off += len + 1;
+  }
+  return counts;
+}
+
+function _buildGutterText(text, sourceEl) {
+  const s = String(text || "");
+  const lines = s.split(/\r?\n/);
+  if (!sourceEl || !sourceEl.isConnected || sourceEl.clientWidth === 0) {
+    const arr = new Array(lines.length);
+    for (let i = 0; i < lines.length; i++) arr[i] = i + 1;
+    return arr.join("\n");
+  }
+  _gutterMeasureEl.dir = sourceEl.getAttribute("dir") || "auto";
+  const cs = getComputedStyle(sourceEl);
+  const pl = parseFloat(cs.paddingLeft) || 0;
+  const pr = parseFloat(cs.paddingRight) || 0;
+  const contentWidth = sourceEl.clientWidth - pl - pr;
+  const lineHeightPx = parseFloat(cs.lineHeight) || 20;
+  const counts = _measureVisualRows(lines, contentWidth, cs, lineHeightPx);
+  const out = [];
+  let n = 1;
+  for (let i = 0; i < counts.length; i++) {
+    out.push(String(n));
+    for (let k = 1; k < counts[i]; k++) out.push("");
+    n++;
+  }
+  return out.join("\n");
+}
+
+function updatePreviewGutter(text) {
+  const gutter = document.getElementById("pvGutter");
+  if (!gutter) return;
+  const pre = document.getElementById("pvContent");
+  gutter.textContent = _buildGutterText(text, pre);
+  gutter.scrollTop = 0;
+}
+
+/* هم‌زمانی اسکرول عمودی گاتر با متن پیش‌نمایش */
+(function bindPreviewGutterSync() {
+  const pre = document.getElementById("pvContent");
+  const gutter = document.getElementById("pvGutter");
+  if (!pre || !gutter) return;
+  pre.addEventListener("scroll", () => {
+    gutter.scrollTop = pre.scrollTop;
+  });
+})();
+
+function openPreview(p) {
+  currentPvId = p.id;
+  const cat = catById(p.category);
+  const vars = extractVars(p.content);
+  $("#pvTitle").textContent = p.title;
+  $("#pvDesc").textContent = p.description || "";
+  $("#pvContent").innerHTML = renderContentWithVars(p.content);
+  updatePreviewGutter(p.content);
+  const pre = $("#pvContent");
+  if (pre) {
+    applyTextDir(pre, p.content);
+    pre.scrollTop = 0;
+    scrollLogicalStart(pre);
+  }
+
+  $$("#pvDrawer .var-hint").forEach((el) => el.remove());
+  if (vars.length) {
+    const hint = document.createElement("div");
+    hint.className = "var-hint";
+    hint.innerHTML =
+      `<svg class="var-hint-ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">` +
+      `<path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/>` +
+      `</svg>` +
+      ` این پرامپت <b>${vars.length}</b> متغیر دارد — هنگام کپی، فرم پر کردن باز می‌شود.`;
+    $("#pvDesc").insertAdjacentElement("afterend", hint);
+  }
+
+  let metaHtml = `<span class="pcat ${cat.color}">${esc(cat.name)}</span>`;
+  (p.tags || []).forEach((t) => {
+    metaHtml += `<span class="tag">#${esc(t)}</span>`;
+  });
+  $("#pvMeta").innerHTML = metaHtml;
+
+  $("#pvDrawer").classList.add("open");
+  $("#pvDrawer").setAttribute("aria-hidden", "false");
+  $("#pvBack").classList.add("open");
+  refreshFocusTrap();
+}
+function closePreview() {
+  currentPvId = null;
+  $("#pvDrawer").classList.remove("open");
+  $("#pvDrawer").setAttribute("aria-hidden", "true");
+  $("#pvBack").classList.remove("open");
+  closeAiMenu();
+  refreshFocusTrap();
+}
+
+function renderAiMenu() {
+  const menu = $("#pvAiMenu");
+  if (!menu || menu.dataset.built === "1") return;
+  menu.innerHTML = AI_TARGETS.map(
+    (t) => `
+<button type="button" class="ai-open-item" data-ai="${t.id}" role="menuitem">
+<span class="ai-dot" style="--ai-c:${t.color}">${esc(t.abbr)}</span>
+<span>${esc(t.name)}</span>
+${t.noPrefill ? '<span class="ai-tag">کپی</span>' : ""}
+</button>`,
+  ).join("");
+  menu.dataset.built = "1";
+}
+function openAiMenu() {
+  renderAiMenu();
+  $("#pvAiWrap").classList.add("open");
+}
+function closeAiMenu() {
+  $("#pvAiWrap").classList.remove("open");
+}
+function toggleAiMenu() {
+  if ($("#pvAiWrap").classList.contains("open")) closeAiMenu();
+  else openAiMenu();
+}
+
+function openInAI(p, target) {
+  const vars = extractVars(p.content);
+  if (vars.length) {
+    openVarModal(p, vars, { aiTarget: target });
+    return;
+  }
+  const url = target.url(p.content);
+  const win = window.open(url, "_blank", "noopener,noreferrer");
+  if (!win) {
+    toast("مرورگر اجازهٔ باز کردن تب جدید نداد", "err");
+    return;
+  }
+  copyText(p.content, `کپی شد — باز شد در ${target.name}`);
+}
+
+let varState = null;
+function requestCopy(p) {
+  const vars = extractVars(p.content);
+  if (!vars.length) {
+    copyText(p.content, "متن پرامپت کپی شد");
+    return;
+  }
+  openVarModal(p, vars);
+}
+function openVarModal(p, vars, opts) {
+  varState = {
+    prompt: p,
+    values: {},
+    pendingAI: (opts && opts.aiTarget) || null,
+  };
+  const form = $("#varForm");
+  form.innerHTML = vars
+    .map(
+      (v) => `
+<div class="var-row">
+<label>
+<code>{{${esc(v)}}}</code>
+<small>خالی = بدون جای‌گذاری</small>
+</label>
+<input type="text" data-var="${esc(v)}" placeholder="مقدار…" autocomplete="off">
+</div>
+`,
+    )
+    .join("");
+  form.querySelectorAll("input[data-var]").forEach((inp) => {
+    inp.addEventListener("input", () => {
+      varState.values[inp.dataset.var] = inp.value;
+      updateVarPreview();
+    });
+  });
+  updateVarPreview();
+  const varPreviewEl = $("#varPreview");
+  if (varPreviewEl) {
+    varPreviewEl.scrollTop = 0;
+    scrollLogicalStart(varPreviewEl);
+  }
+  $("#varModalBack").classList.add("open");
+  refreshFocusTrap();
+  setTimeout(() => {
+    const f = form.querySelector("input");
+    if (f) f.focus();
+  }, 100);
+}
+function updateVarPreview() {
+  if (!varState) return;
+
+  const varPreviewEl = $("#varPreview");
+  if (varPreviewEl) {
+    varPreviewEl.scrollTop = 0;
+    scrollLogicalStart(varPreviewEl);
+  }
+
+  varPreviewEl.textContent = filled;
+  applyTextDir(varPreviewEl, filled);
+}
+function closeVarModal() {
+  $("#varModalBack").classList.remove("open");
+  refreshFocusTrap();
+  varState = null;
+}
+function copyVarFinal() {
+  if (!varState) return;
+  const txt = fillVars(varState.prompt.content, varState.values);
+  const target = varState.pendingAI;
+
+  if (target) {
+    const url = target.url(txt);
+    const win = window.open(url, "_blank", "noopener,noreferrer");
+    if (!win) {
+      toast("مرورگر اجازهٔ باز کردن تب جدید نداد", "err");
+      closeVarModal();
+      return;
+    }
+    copyText(txt, `کپی شد — باز شد در ${target.name}`);
+  } else {
+    copyText(txt, "متن نهایی کپی شد");
+  }
+  closeVarModal();
+}
+function copyVarRaw() {
+  if (!varState) return;
+  copyText(varState.prompt.content, "متن خام کپی شد");
+  closeVarModal();
+}
+
+const editorArea = $("#pContent");
+const editorGutter = $("#editorGutter");
+const editorModal = $("#editorModal");
+const metaToggleBtn = $("#metaToggle");
+
+const FA_DIGITS = "۰۱۲۳۴۵۶۷۸۹";
+function toFaNum(n) {
+  return String(n)
+    .replace(/\B(?=(\d{3})+(?!\d))/g, "٬")
+    .replace(/\d/g, (d) => FA_DIGITS[+d]);
+}
+function countWords(text) {
+  const s = String(text || "").trim();
+  if (!s) return 0;
+  return s.split(/\s+/).filter(Boolean).length;
+}
+function estimateTokens(text) {
+  const s = String(text || "");
+  if (!s) return 0;
+  return Math.round(s.length / 3.5);
+}
+function updateEditorGutter() {
+  editorGutter.textContent = _buildGutterText(
+    editorArea.value,
+    editorArea,
+  );
+  editorGutter.scrollTop = editorArea.scrollTop;
+}
+
+function updateEditorStats() {
+  const v = editorArea.value;
+  const lines = v.split("\n").length;
+  $("#statLines").textContent = toFaNum(lines) + " خط";
+  $("#statChars").textContent = toFaNum(v.length) + " کاراکتر";
+  $("#statWords").textContent = toFaNum(countWords(v)) + " کلمه";
+  $("#statTokens").textContent =
+    "~" + toFaNum(estimateTokens(v)) + " توکن";
+}
+function syncEditor() {
+  updateEditorGutter();
+  updateEditorStats();
+  applyTextDir(editorArea, editorArea.value);
+}
+
+editorArea.addEventListener("input", syncEditor);
+editorArea.addEventListener("scroll", () => {
+  editorGutter.scrollTop = editorArea.scrollTop;
+});
+editorArea.addEventListener("keydown", (e) => {
+  if (
+    e.key === "Tab" &&
+    !e.shiftKey &&
+    !e.ctrlKey &&
+    !e.metaKey &&
+    !e.altKey
+  ) {
+    e.preventDefault();
+    const s = editorArea.selectionStart;
+    const en = editorArea.selectionEnd;
+    editorArea.setRangeText("  ", s, en, "end");
+    syncEditor();
+  }
+});
+
+metaToggleBtn.addEventListener("click", () => {
+  const hidden = editorModal.classList.toggle("meta-hidden");
+  metaToggleBtn.classList.toggle("on", !hidden);
+  metaToggleBtn.setAttribute("aria-pressed", hidden ? "false" : "true");
+});
+
+let pCatSelect = null;
+
+function initPromptCatSelect() {
+  pCatSelect = buildCSelect("pCatSel", {
+    items: [],
+    value: "",
+    onChange: (v) => {
+      $("#pCat").value = v;
+    },
+  });
+}
+function refreshPromptCatSelect(selected) {
+  const items = DATA.categories.map((c) => ({ v: c.id, label: c.name }));
+  const fallback = selected || (items[0] && items[0].v) || "";
+  if (pCatSelect) {
+    pCatSelect.refresh(items);
+    pCatSelect.value = fallback;
+  }
+  $("#pCat").value = fallback;
+}
+function openModal(p) {
+  $("#modalTitle").textContent = p ? "ویرایش پرامپت" : "افزودن پرامپت";
+  $("#pId").value = p ? p.id : "";
+  $("#pTitle").value = p ? p.title : "";
+  $("#pTags").value = p ? (p.tags || []).join(", ") : "";
+  $("#pDesc").value = p ? p.description || "" : "";
+  editorArea.value = p ? p.content : "";
+  refreshPromptCatSelect(p ? p.category : null);
+
+  editorModal.classList.remove("meta-hidden");
+  metaToggleBtn.classList.add("on");
+  metaToggleBtn.setAttribute("aria-pressed", "true");
+
+  applyTextDir(editorArea, editorArea.value);
+  editorArea.scrollTop = 0;
+  scrollLogicalStart(editorArea);
+
+  $("#modalBack").classList.add("open");
+  refreshFocusTrap();
+  syncEditor();
+
+  setTimeout(() => {
+    if (!$("#pTitle").value) $("#pTitle").focus();
+    else editorArea.focus();
+  }, 100);
+}
+function closeModal() {
+  $("#modalBack").classList.remove("open");
+  refreshFocusTrap();
+}
+function ensureMetaVisible() {
+  if (editorModal.classList.contains("meta-hidden")) {
+    editorModal.classList.remove("meta-hidden");
+    metaToggleBtn.classList.add("on");
+    metaToggleBtn.setAttribute("aria-pressed", "true");
+  }
+}
+function flashField(el) {
+  if (!el) return;
+  el.classList.remove("field-error");
+  el.classList.add("field-error");
+  clearTimeout(el._errT);
+  el._errT = setTimeout(() => el.classList.remove("field-error"), 800);
+}
+
+function savePrompt() {
+  const id = $("#pId").value;
+  const title = $("#pTitle").value.trim();
+  const content = $("#pContent").value;
+
+  if (!title) {
+    ensureMetaVisible();
+    flashField($("#pTitle"));
+    toast("عنوان لازم است", "err");
+    setTimeout(() => $("#pTitle").focus(), 60);
+    return;
+  }
+  if (!content.trim()) {
+    flashField($("#pContent"));
+    toast("متن پرامپت لازم است", "err");
+    setTimeout(() => $("#pContent").focus(), 60);
+    return;
+  }
+  const tags = $("#pTags")
+    .value.split(",")
+    .map((s) => s.trim())
+    .filter(Boolean);
+  const cat = $("#pCat").value;
+  const desc = $("#pDesc").value.trim();
+  const now = Date.now();
+
+  if (id) {
+    commit((d) => {
+      const p = d.prompts.find((x) => x.id === id);
+      if (p)
+        Object.assign(p, {
+          title,
+          content,
+          tags,
+          category: cat,
+          description: desc,
+          updatedAt: now,
+        });
+    });
+  } else {
+    commit((d) => {
+      d.prompts.push({
+        id: uid(),
+        title,
+        content,
+        tags,
+        category: cat,
+        description: desc,
+        pinned: false,
+        createdAt: now,
+        updatedAt: now,
+      });
+    });
+  }
+  closeModal();
+  toast(id ? "ویرایش شد" : "افزوده شد");
+}
+
+function openCatModal(cat) {
+  const isEdit = !!cat;
+  $("#catModalIcon").textContent = isEdit ? "✎" : "＋";
+  $("#catModalTitle").textContent = isEdit ? "ویرایش دسته" : "دستهٔ جدید";
+  $("#catId").value = isEdit ? cat.id : "";
+  $("#catName").value = isEdit ? cat.name : "";
+  const cur = isEdit ? cat.color : "b-vio";
+  $$("#catColors button").forEach((b) => {
+    b.classList.toggle("on", b.dataset.c === cur);
+  });
+  $("#catModalBack").classList.add("open");
+  refreshFocusTrap();
+  setTimeout(() => $("#catName").focus(), 100);
+}
+function closeCatModal() {
+  $("#catModalBack").classList.remove("open");
+  refreshFocusTrap();
+}
+function saveCatModal() {
+  const id = $("#catId").value;
+  const name = $("#catName").value.trim();
+  const color = ($("#catColors button.on") || {}).dataset?.c || "b-vio";
+  if (!name) {
+    toast("نام دسته لازم است", "err");
+    $("#catName").focus();
+    return;
+  }
+  if (id) {
+    commit((d) => {
+      const c = d.categories.find((x) => x.id === id);
+      if (c) {
+        c.name = name;
+        c.color = color;
+      }
+    });
+    toast("دسته ویرایش شد");
+  } else {
+    const newId =
+      "c_" +
+      Date.now().toString(36) +
+      "_" +
+      Math.random().toString(36).slice(2, 5);
+    commit((d) => {
+      d.categories.push({ id: newId, name, color });
+    });
+    toast("دسته افزوده شد");
+  }
+  closeCatModal();
+}
+
+async function deleteCategory(id) {
+  const cat = DATA.categories.find((x) => x.id === id);
+  if (!cat) return;
+  const n = DATA.prompts.filter((p) => p.category === id).length;
+  const msg = n
+    ? `دستهٔ «<b>${esc(cat.name)}</b>» حذف شود؟<br><span style="color:var(--dim);font-size:var(--f-xs)">${n} پرامپت این دسته به دستهٔ اول منتقل می‌شوند.</span>`
+    : `دستهٔ «<b>${esc(cat.name)}</b>» حذف شود؟`;
+  const ok = await uiConfirm({
+    title: "حذف دسته",
+    icon: "⚠",
+    message: msg,
+    okText: "حذف",
+    danger: true,
+  });
+  if (!ok) return;
+
+  const snapshot = {
+    cat,
+    index: DATA.categories.findIndex((c) => c.id === id),
+    movedIds: DATA.prompts
+      .filter((p) => p.category === id)
+      .map((p) => p.id),
+  };
+
+  commit((d) => {
+    d.categories = d.categories.filter((c) => c.id !== id);
+    if (!d.categories.length)
+      d.categories = JSON.parse(JSON.stringify(DEFAULT_CATEGORIES));
+    d.prompts.forEach((p) => {
+      if (p.category === id) p.category = d.categories[0].id;
+    });
+    if (activeCat === id) activeCat = "all";
+  });
+
+  toastWithUndo(`دستهٔ «${cat.name}» حذف شد`, () => {
+    commit((d) => {
+      d.categories.splice(snapshot.index, 0, snapshot.cat);
+      d.prompts.forEach((p) => {
+        if (snapshot.movedIds.includes(p.id))
+          p.category = snapshot.cat.id;
+      });
+    });
+    toast("بازگردانی شد");
+  });
+}
+
+const searchIn = $("#searchIn");
+const searchRes = $("#searchRes");
+const mSearchBtn = $("#mSearchBtn");
+const mSearchBack = $("#mSearchBack");
+const mSearch = $("#mSearch");
+const mSearchIn = $("#mSearchIn");
+const mSearchBody = $("#mSearchBody");
+
+const ACTIONS = [
+  {
+    id: "new",
+    ic: "plus",
+    label: "افزودن پرامپت جدید",
+    run: () => openModal(),
+  },
+  {
+    id: "settings",
+    ic: "gear",
+    label: "تنظیمات",
+    run: () => openDrawer(),
+  },
+  {
+    id: "theme",
+    ic: "moon",
+    label: "تغییر پوسته",
+    run: () => toggleTheme(),
+  },
+  {
+    id: "export",
+    ic: "down",
+    label: "خروجی JSON",
+    run: () => exportData(),
+  },
+  {
+    id: "import",
+    ic: "up",
+    label: "ورودی JSON",
+    run: () => $("#importFile").click(),
+  },
+  {
+    id: "addcat",
+    ic: "folder",
+    label: "افزودن دستهٔ جدید",
+    run: () => openCatModal(),
+  },
+  {
+    id: "seed",
+    ic: "sparkle",
+    label: "افزودن ۶ پرامپت پیش‌فرض",
+    run: () => seedDefaults(),
+  },
+];
+
+let spItems = [];
+let spActive = 0;
+
+function fuzzyMatch(text, q) {
+  if (!q) return true;
+  const t = norm(text),
+    n = norm(q);
+  if (t.indexOf(n) >= 0) return true;
+  let i = 0;
+  for (const ch of n) {
+    const j = t.indexOf(ch, i);
+    if (j < 0) return false;
+    i = j + 1;
+  }
+  return true;
+}
+function highlight(text, q) {
+  const raw = String(text || "");
+  if (!q) return esc(raw);
+  const terms = q.split(/\s+/).filter(Boolean);
+  if (!terms.length) return esc(raw);
+  const pattern = terms
+    .map((x) => x.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"))
+    .join("|");
+  if (!pattern) return esc(raw);
+  try {
+    const re = new RegExp("(" + pattern + ")", "gi");
+    let out = "",
+      last = 0,
+      m;
+    while ((m = re.exec(raw))) {
+      out += esc(raw.slice(last, m.index));
+      out += "<mark>" + esc(m[0]) + "</mark>";
+      last = m.index + m[0].length;
+      if (m.index === re.lastIndex) re.lastIndex++;
+    }
+    out += esc(raw.slice(last));
+    return out;
+  } catch (e) {
+    return esc(raw);
+  }
+}
+
+function buildSearchResults(q) {
+  const actions = ACTIONS.filter((a) => !q || fuzzyMatch(a.label, q));
+  const prompts = q ? filtered().slice(0, 8) : [];
+  const items = [];
+  let html = "";
+
+  if (actions.length) {
+    html += `<div class="sp-group-label">${q ? "دستورها" : "دستورهای سریع"}</div>`;
+    actions.forEach((a) => {
+      html += `
+<button class="sp-item" type="button" data-idx="${items.length}">
+<span class="sp-item-ic">${icon(a.ic)}</span>
+<span class="sp-item-body"><span class="sp-item-title">${esc(a.label)}</span></span>
+</button>`;
+      items.push({ run: a.run });
+    });
+  }
+  if (prompts.length) {
+    html += `<div class="sp-group-label">پرامپت‌ها</div>`;
+    prompts.forEach((p) => {
+      const cat = catById(p.category);
+      const sub = (p.description || p.content || "")
+        .replace(/\s+/g, " ")
+        .slice(0, 80);
+      html += `
+<button class="sp-item" type="button" data-idx="${items.length}">
+<span class="sp-item-ic">${icon("doc")}</span>
+<span class="sp-item-body">
+<span class="sp-item-title">${highlight(p.title, q)}</span>
+<span class="sp-item-sub">${esc(sub)}</span>
+</span>
+<span class="sp-item-meta">${esc(cat.name)}</span>
+</button>`;
+      items.push({ run: () => openPreview(p) });
+    });
+  }
+  if (!actions.length && !prompts.length) {
+    html = `<div class="sp-empty">موردی پیدا نشد</div>`;
+  }
+  return { html, items };
+}
+
+function updateSpActive() {
+  const container = mSearch.classList.contains("open")
+    ? mSearchBody
+    : searchRes;
+  const nodes = container.querySelectorAll(".sp-item");
+  nodes.forEach((n, i) => n.classList.toggle("active", i === spActive));
+  const active = nodes[spActive];
+  if (active && active.scrollIntoView)
+    active.scrollIntoView({ block: "nearest" });
+}
+function activateSPItem(idx) {
+  const it = spItems[idx];
+  if (!it) return;
+  closeAllSearchPanels();
+  setTimeout(() => {
+    try {
+      it.run();
+    } catch (e) {}
+  }, 50);
+}
+function closeAllSearchPanels() {
+  closeDesktopSearchPanel();
+  closeMobileSearchPanel();
+}
+
+function renderDesktopSearchPanel() {
+  const r = buildSearchResults(query.trim());
+  searchRes.innerHTML = r.html;
+  spItems = r.items;
+  spActive = 0;
+  updateSpActive();
+}
+function openDesktopSearchPanel() {
+  renderDesktopSearchPanel();
+  searchRes.classList.add("show");
+  searchIn.setAttribute("aria-expanded", "true");
+}
+function closeDesktopSearchPanel() {
+  searchRes.classList.remove("show");
+  searchIn.setAttribute("aria-expanded", "false");
+}
+
+function updateHeaderHeight() {
+  const h = document.querySelector("header.top").offsetHeight;
+  document.documentElement.style.setProperty("--header-h", h + "px");
+}
+function renderMobileSearchPanel() {
+  const r = buildSearchResults(query.trim());
+  mSearchBody.innerHTML = r.html;
+  spItems = r.items;
+  spActive = 0;
+  updateSpActive();
+}
+function openMobileSearchPanel() {
+  updateHeaderHeight();
+  mSearchIn.value = query;
+  renderMobileSearchPanel();
+  document.body.classList.add("msearch-open");
+  mSearchBack.classList.add("open");
+  mSearch.classList.add("open");
+  mSearchBtn.classList.add("on");
+  mSearchBtn.setAttribute("title", "بستن");
+  mSearchBtn.setAttribute("aria-label", "بستن");
+  mSearchBtn.setAttribute("aria-expanded", "true");
+  refreshFocusTrap();
+  setTimeout(() => {
+    mSearchIn.focus();
+    mSearchIn.select();
+  }, 120);
+}
+function closeMobileSearchPanel() {
+  document.body.classList.remove("msearch-open");
+  mSearchBack.classList.remove("open");
+  mSearch.classList.remove("open");
+  mSearchBtn.classList.remove("on");
+  mSearchBtn.setAttribute("title", "جست‌وجو");
+  mSearchBtn.setAttribute("aria-label", "جست‌وجو");
+  mSearchBtn.setAttribute("aria-expanded", "false");
+  mSearchIn.blur();
+  refreshFocusTrap();
+}
+
+const debouncedGridRender = debounce(renderGrid, 160);
+
+searchIn.addEventListener("focus", openDesktopSearchPanel);
+searchIn.addEventListener("input", () => {
+  query = searchIn.value;
+  renderDesktopSearchPanel();
+  debouncedGridRender();
+});
+searchIn.addEventListener("keydown", (e) => {
+  if (e.key === "ArrowDown") {
+    e.preventDefault();
+    if (spItems.length) {
+      spActive = (spActive + 1) % spItems.length;
+      updateSpActive();
+    }
+  } else if (e.key === "ArrowUp") {
+    e.preventDefault();
+    if (spItems.length) {
+      spActive = (spActive - 1 + spItems.length) % spItems.length;
+      updateSpActive();
+    }
+  } else if (e.key === "Enter") {
+    e.preventDefault();
+    activateSPItem(spActive);
+  } else if (e.key === "Escape") {
+    e.stopPropagation();
+    closeDesktopSearchPanel();
+    searchIn.blur();
+  }
+});
+
+mSearchIn.addEventListener("input", () => {
+  query = mSearchIn.value;
+  renderMobileSearchPanel();
+  debouncedGridRender();
+});
+mSearchIn.addEventListener("keydown", (e) => {
+  if (e.key === "ArrowDown") {
+    e.preventDefault();
+    if (spItems.length) {
+      spActive = (spActive + 1) % spItems.length;
+      updateSpActive();
+    }
+  } else if (e.key === "ArrowUp") {
+    e.preventDefault();
+    if (spItems.length) {
+      spActive = (spActive - 1 + spItems.length) % spItems.length;
+      updateSpActive();
+    }
+  } else if (e.key === "Enter") {
+    e.preventDefault();
+    activateSPItem(spActive);
+  } else if (e.key === "Escape") {
+    e.stopPropagation();
+    closeMobileSearchPanel();
+  }
+});
+
+mSearchBtn.addEventListener("click", (e) => {
+  e.stopPropagation();
+  if (mSearch.classList.contains("open")) closeMobileSearchPanel();
+  else openMobileSearchPanel();
+});
+mSearchBack.addEventListener("click", closeMobileSearchPanel);
+
+searchRes.addEventListener("click", (e) => {
+  const item = e.target.closest(".sp-item");
+  if (!item) return;
+  activateSPItem(Number(item.dataset.idx));
+});
+mSearchBody.addEventListener("click", (e) => {
+  const item = e.target.closest(".sp-item");
+  if (!item) return;
+  activateSPItem(Number(item.dataset.idx));
+});
+
+document.addEventListener("click", (e) => {
+  if (!e.target.closest(".searchwrap")) closeDesktopSearchPanel();
+});
+
+function openDrawer() {
+  $("#drawer").classList.add("open");
+  $("#drawerBack").classList.add("open");
+  renderCatList();
+  refreshFocusTrap();
+}
+function closeDrawer() {
+  $("#drawer").classList.remove("open");
+  $("#drawerBack").classList.remove("open");
+  refreshFocusTrap();
+}
+function renderPrefs() {
+  $$(".seg[data-pref]").forEach((seg) => {
+    const key = seg.dataset.pref;
+    seg.querySelectorAll("button").forEach((b) => {
+      b.classList.toggle("on", b.dataset.v === PREFS[key]);
+      b.onclick = () => {
+        PREFS[key] = b.dataset.v;
+        savePrefs();
+        applyPrefs();
+
+        const doToggle = () => {
+          seg
+            .querySelectorAll("button")
+            .forEach((x) => x.classList.toggle("on", x === b));
+        };
+        if (key === "theme") {
+          requestAnimationFrame(() => requestAnimationFrame(doToggle));
+        } else {
+          doToggle();
+        }
+      };
+    });
+  });
+}
+
+let sortSelect = null;
+function initSortSelect() {
+  sortSelect = buildCSelect("sortSel", {
+    items: [
+      { v: "updated", label: "آخرین ویرایش" },
+      { v: "created", label: "تاریخ ایجاد" },
+      { v: "title", label: "عنوان" },
+    ],
+    value: PREFS.sort || "updated",
+    onChange: (v) => {
+      PREFS.sort = v;
+      savePrefs();
+      renderGrid();
+    },
+  });
+  $("#sortSelIcon").innerHTML = icon("sort");
+}
+
+function exportData() {
+  try {
+    const blob = new Blob([JSON.stringify(DATA, null, 2)], {
+      type: "application/json;charset=utf-8",
+    });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download =
+      "prompts-" + new Date().toISOString().slice(0, 10) + ".json";
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 1500);
+    toast("خروجی دانلود شد");
+  } catch (e) {
+    toast("خروجی ناموفق", "err");
+  }
+}
+/* ═══════════ پارسر بردبار برای import ═══════════ */
+
+function cleanJSONText(raw) {
+  let s = String(raw || "");
+  s = s.replace(/^\uFEFF/, "");
+  s = s.replace(/[\u200B-\u200D\uFEFF]/g, "");
+  return s;
+}
+
+/* استخراج آبجکت‌های JSON با شمارش آکولاد
+— حتی وقتی داخل رشته‌ها آکولاد باشد، درست عمل می‌کند */
+function extractJSONObjects(text) {
+  const objects = [];
+  let i = 0;
+  const n = text.length;
+
+  while (i < n) {
+    /* اولین { را پیدا کن */
+    while (i < n && text[i] !== "{") i++;
+    if (i >= n) break;
+
+    const start = i;
+    let depth = 0;
+    let inStr = false;
+    let esc = false;
+    let closed = false;
+
+    while (i < n) {
+      const ch = text[i];
+
+      if (esc) {
+        esc = false;
+        i++;
+        continue;
+      }
+      if (ch === "\\") {
+        esc = true;
+        i++;
+        continue;
+      }
+      if (ch === '"') {
+        inStr = !inStr;
+        i++;
+        continue;
+      }
+
+      if (!inStr) {
+        if (ch === "{") depth++;
+        else if (ch === "}") {
+          depth--;
+          if (depth === 0) {
+            i++;
+            closed = true;
+            break;
+          }
+        }
+      }
+      i++;
+    }
+
+    if (closed) {
+      objects.push(text.slice(start, i));
+    }
+  }
+  return objects;
+}
+
+/* استراتژی‌های متعدد parse — از سخت‌گیرانه به آسان‌گیر */
+function parseJSONLenient(raw) {
+  const text = cleanJSONText(raw);
+
+  /* اگر متن خالی است، پیام دقیق بده */
+  if (!text.trim()) {
+    throw new Error("فایل خالی است");
+  }
+
+  /* اگر شبیه HTML است، پیام دقیق بده */
+  const trimmed = text.trim();
+  if (/^<!doctype|^<html/i.test(trimmed)) {
+    throw new Error("فایل HTML است نه JSON — فایل .json را انتخاب کن");
+  }
+
+  const stripComments = (s) =>
+    s.replace(/\/\/[^\n\r]*/g, "").replace(/\/\*[\s\S]*?\*\//g, "");
+
+  const stripTrailing = (s) => s.replace(/,\s*([\]}])/g, "$1");
+
+  /* فقط newlines داخل رشته‌ها را escape می‌کند (خارج از رشته دست نمی‌زند) */
+  const escapeNewlines = (s) => {
+    let out = "",
+      inStr = false,
+      esc = false;
+    for (let i = 0; i < s.length; i++) {
+      const ch = s[i];
+      if (esc) {
+        out += ch;
+        esc = false;
+        continue;
+      }
+      if (ch === "\\") {
+        out += ch;
+        esc = true;
+        continue;
+      }
+      if (ch === '"') {
+        inStr = !inStr;
+        out += ch;
+        continue;
+      }
+      if (inStr && (ch === "\n" || ch === "\r")) {
+        out += "\\n";
+        continue;
+      }
+      out += ch;
+    }
+    return out;
+  };
+
+  const attempts = [
+    /* اول: حالت معمول — یک JSON کامل */
+    { name: "strict", fn: () => JSON.parse(text) },
+
+    /* چند آبجکت جدا با کاما: {..}, {..}, {..} */
+    {
+      name: "brace-extract",
+      fn: () => {
+        const objs = extractJSONObjects(text);
+        if (!objs.length) throw new Error("هیچ آبجکت JSON پیدا نشد");
+        const parsed = objs.map((o) =>
+          JSON.parse(escapeNewlines(stripTrailing(o))),
+        );
+        if (parsed.length === 1) return parsed[0];
+        return parsed; /* آرایه برمی‌گرداند */
+      },
+    },
+
+    { name: "strip-comments", fn: () => JSON.parse(stripComments(text)) },
+    { name: "strip-trailing", fn: () => JSON.parse(stripTrailing(text)) },
+    {
+      name: "escape-newlines",
+      fn: () => JSON.parse(escapeNewlines(text)),
+    },
+    {
+      name: "all-combos-1",
+      fn: () => JSON.parse(stripTrailing(stripComments(text))),
+    },
+    {
+      name: "all-combos-2",
+      fn: () => JSON.parse(escapeNewlines(stripComments(text))),
+    },
+    {
+      name: "all-combos-3",
+      fn: () =>
+        JSON.parse(escapeNewlines(stripTrailing(stripComments(text)))),
+    },
+    /* پیدا کردن اولین { یا [ و آخرین } یا ] و از آنجا parse */
+    {
+      name: "extract-object",
+      fn: () => {
+        const firstBrace = text.search(/[\{\[]/);
+        if (firstBrace < 0) throw new Error("نشانه‌ای از JSON پیدا نشد");
+        const isArr = text[firstBrace] === "[";
+        const closeCh = isArr ? "]" : "}";
+        const lastBrace = text.lastIndexOf(closeCh);
+        if (lastBrace <= firstBrace)
+          throw new Error("بسته شدن JSON پیدا نشد");
+        const sliced = text.slice(firstBrace, lastBrace + 1);
+        return JSON.parse(
+          escapeNewlines(stripTrailing(stripComments(sliced))),
+        );
+      },
+    },
+
+    /* حالت: چند آبجکت جدا با کاما، بدون [] */
+    /* مثل: { obj1 }, { obj2 }, { obj3 } */
+    {
+      name: "wrap-in-array",
+      fn: () => {
+        const first = text.search(/[\{\[]/);
+        const last = text.lastIndexOf(text[first] === "[" ? "]" : "}");
+        if (first < 0 || last < 0) throw new Error("JSON پیدا نشد");
+        const inner = escapeNewlines(
+          stripTrailing(stripComments(text.slice(first, last + 1))),
+        );
+        /* دور همه‌چیز [] بگذار */
+        return JSON.parse("[" + inner + "]");
+      },
+    },
+
+    /* همان کاری که قبلاً، ولی فقط برای [] تکی */
+    {
+      name: "wrap-in-object",
+      fn: () => {
+        const first = text.search(/[\{\[]/);
+        const last = text.lastIndexOf(text[first] === "[" ? "]" : "}");
+        if (first < 0 || last < 0) throw new Error("JSON پیدا نشد");
+        const inner = escapeNewlines(
+          stripTrailing(stripComments(text.slice(first, last + 1))),
+        );
+        return JSON.parse('{ "prompts": [' + inner + "] }");
+      },
+    },
+  ];
+
+  const errors = [];
+  for (const { name, fn } of attempts) {
+    try {
+      return fn();
+    } catch (e) {
+      errors.push(name + ": " + (e.message || "خطا"));
+    }
+  }
+
+  /* اطلاعات تشخیصی */
+  console.group("❌ Import — همهٔ استراتژی‌ها شکست خوردند");
+  errors.forEach((e) => console.warn(e));
+  console.warn("طول فایل:", text.length);
+  console.warn(
+    "تعداد آبجکت‌های یافت‌شده:",
+    extractJSONObjects(text).length,
+  );
+  console.warn("اولین ۴۰۰ کاراکتر:", text.slice(0, 400));
+  console.warn("آخرین ۲۰۰ کاراکتر:", text.slice(-200));
+  console.groupEnd();
+
+  throw new Error("ساختار JSON قابل خواندن نیست — کنسول را باز کن (F12)");
+}
+
+/* نرمال‌سازی: از هر شکلی، ساختار نهایی را می‌سازد */
+const IMPORT_COLORS = [
+  "b-vio",
+  "b-blu",
+  "b-cyn",
+  "b-grn",
+  "b-amb",
+  "b-ros",
+];
+
+function normalizeImport(raw) {
+  let data = parseJSONLenient(raw);
+
+  /* حالت ۱: فقط آرایهٔ پرامپت‌ها */
+  if (Array.isArray(data)) data = { prompts: data };
+
+  /* حالت ۲: یک پرامپت تکی (title/content دارد ولی prompts ندارد) */
+  if (
+    data &&
+    typeof data === "object" &&
+    !Array.isArray(data) &&
+    !data.prompts &&
+    (data.title || data.content)
+  ) {
+    data = { prompts: [data] };
+  }
+
+  if (!data || typeof data !== "object")
+    throw new Error("ساختار فایل قابل تشخیص نیست");
+
+  if (!Array.isArray(data.prompts))
+    throw new Error("آرایهٔ prompts در فایل پیدا نشد");
+
+  /* ── نرمال‌سازی دسته‌ها ── */
+  let categories = Array.isArray(data.categories) ? data.categories : [];
+  categories = categories
+    .filter((c) => c && typeof c === "object")
+    .map((c, i) => ({
+      id: String(
+        c.id ||
+          "c_imp_" + i + "_" + Math.random().toString(36).slice(2, 6),
+      ),
+      name:
+        String(c.name || c.title || "دسته " + (i + 1)).trim() ||
+        "دسته " + (i + 1),
+      color: IMPORT_COLORS.includes(c.color)
+        ? c.color
+        : IMPORT_COLORS[i % IMPORT_COLORS.length],
+    }));
+
+  if (!categories.length)
+    categories = JSON.parse(JSON.stringify(DEFAULT_CATEGORIES));
+
+  /* حذف idهای تکراری */
+  const seenIds = new Set();
+  categories = categories.filter((c) => {
+    if (seenIds.has(c.id)) return false;
+    seenIds.add(c.id);
+    return true;
+  });
+
+  const validCatIds = new Set(categories.map((c) => c.id));
+  const fallbackCat = categories[0].id;
+
+  /* ── نرمال‌سازی پرامپت‌ها ── */
+  const now = Date.now();
+  const prompts = [];
+  const rejected = [];
+
+  data.prompts.forEach((p, i) => {
+    if (!p || typeof p !== "object") {
+      rejected.push(`#${i + 1}: ساختار نامعتبر`);
+      return;
+    }
+    const title = String(p.title || "").trim();
+    const content = String(p.content || "");
+
+    if (!title) {
+      rejected.push(`#${i + 1}: بدون عنوان`);
+      return;
+    }
+    if (!content.trim()) {
+      rejected.push(`#${i + 1}: بدون متن`);
+      return;
+    }
+
+    let category = String(p.category || "");
+    if (!validCatIds.has(category)) category = fallbackCat;
+
+    /* tags: اگر رشته بود، به آرایه تبدیل کن */
+    let tags;
+    if (Array.isArray(p.tags)) {
+      tags = p.tags.map((t) => String(t || "").trim()).filter(Boolean);
+    } else if (typeof p.tags === "string") {
+      tags = p.tags
+        .split(",")
+        .map((s) => s.trim())
+        .filter(Boolean);
+    } else {
+      tags = [];
+    }
+
+    prompts.push({
+      id: String(p.id || uid()),
+      category,
+      title,
+      description: String(p.description || "").trim(),
+      tags,
+      pinned: !!p.pinned,
+      content,
+      createdAt: Number(p.createdAt) || now,
+      updatedAt: Number(p.updatedAt) || now,
+    });
+  });
+
+  return { categories, prompts, rejected };
+}
+
+/* ── تشخیص تکراری بر اساس id یا (عنوان + متن) ── */
+function findDuplicate(incoming, existing) {
+  const byId = existing.find((p) => p.id === incoming.id);
+  if (byId) return byId;
+  return (
+    existing.find(
+      (p) => p.title === incoming.title && p.content === incoming.content,
+    ) || null
+  );
+}
+
+/* ── ادغام: پرامپت‌های جدید اضافه، تکراری‌ها به‌روز، دسته‌های جدید اضافه ── */
+function mergeImport(result) {
+  /* دسته‌ها: هر دستهٔ جدید که id تکراری ندارد اضافه شود */
+  const existingCatIds = new Set(DATA.categories.map((c) => c.id));
+  result.categories.forEach((c) => {
+    if (!existingCatIds.has(c.id)) {
+      DATA.categories.push(c);
+      existingCatIds.add(c.id);
+    }
+  });
+  const validCatIds = new Set(DATA.categories.map((c) => c.id));
+
+  let added = 0,
+    updated = 0,
+    skipped = 0;
+  result.prompts.forEach((p) => {
+    /* اگر دستهٔ ورودی حالا معتبر نیست، به اولین دسته وصل کن */
+    const category = validCatIds.has(p.category)
+      ? p.category
+      : DATA.categories[0].id;
+
+    const dup = findDuplicate({ ...p, category }, DATA.prompts);
+    if (dup) {
+      /* به‌روزرسانی محتوا ولی حفظ id قبلی و تاریخ ایجاد */
+      Object.assign(dup, {
+        title: p.title,
+        content: p.content,
+        description: p.description,
+        tags: p.tags,
+        category,
+        pinned: p.pinned || dup.pinned,
+        updatedAt: Date.now(),
+      });
+      updated++;
+    } else {
+      DATA.prompts.push({ ...p, category });
+      added++;
+    }
+  });
+  return { added, updated, skipped };
+}
+
+/* ── مودال تأیید: جایگزینی یا ادغام ── */
+function askImportMode(count, rejectedN, onDone) {
+  return new Promise((resolve) => {
+    dialogResolve = (choice) => {
+      /* choice: 'merge' | 'replace' | 'cancel' */
+      if (choice === "cancel" || !choice) {
+        resolve();
+        return;
+      }
+      onDone(choice);
+      resolve();
+    };
+    dialogMode = "confirm";
+
+    const existing = DATA.prompts.length;
+    const msg = rejectedN
+      ? `این فایل ${count} پرامپت معتبر دارد (${rejectedN} مورد رد شد).<br>
+در اپ فعلی ${existing} پرامپت داری.<br>
+<span style="color:var(--dim);font-size:var(--f-xs)">
+ادغام: پرامپت‌های جدید اضافه می‌شوند، تکراری‌ها به‌روز می‌شوند.<br>
+جایگزینی: همهٔ پرامپت‌های فعلی حذف و این فایل جایگزین می‌شود.</span>`
+      : `این فایل ${count} پرامپت دارد.<br>
+در اپ فعلی ${existing} پرامپت داری.`;
+
+    $("#dialogIcon").textContent = "⬇";
+    $("#dialogTitle").textContent = "ورودی فایل";
+    $("#dialogMsg").innerHTML = msg;
+    $("#dialogFieldWrap").style.display = "none";
+
+    /* سه دکمه: ادغام / جایگزینی / انصراف */
+    const foot = document.querySelector("#dialogBack .modal .foot");
+    foot.innerHTML = `
+<button class="btn g" id="importMergeBtn">ادغام کن</button>
+<button class="btn dgr" id="importReplaceBtn">جایگزین کن</button>
+<button class="btn" id="importCancelBtn">انصراف</button>
+`;
+
+    $("#importMergeBtn").onclick = () => {
+      closeDialog("merge");
+    };
+    $("#importReplaceBtn").onclick = () => {
+      /* حتی در جایگزینی، یک تأیید دوباره */
+      const ok = confirm(
+        "همهٔ پرامپت‌ها و دسته‌های فعلی حذف می‌شوند. مطمئن هستی؟",
+      );
+      if (ok) closeDialog("replace");
+    };
+    $("#importCancelBtn").onclick = () => {
+      closeDialog("cancel");
+    };
+
+    $("#dialogBack").classList.add("open");
+    refreshFocusTrap();
+    setTimeout(() => $("#importMergeBtn").focus(), 100);
+  });
+}
+
+/* ── تابع اصلی import ── */
+function importData(file) {
+  if (!file) {
+    toast("فایلی انتخاب نشد", "err");
+    return;
+  }
+  if (file.size > 5 * 1024 * 1024) {
+    toast("فایل بزرگ‌تر از ۵ مگابایت است", "err");
+    return;
+  }
+
+  const r = new FileReader();
+  r.onerror = () => toast("خواندن فایل ناموفق بود", "err");
+  r.onload = (e) => {
+    let result;
+    try {
+      result = normalizeImport(e.target.result);
+    } catch (err) {
+      const msg = err && err.message ? err.message : "خطای ناشناخته";
+      toast("فایل نامعتبر: " + msg, "err");
+      console.group("❌ Import error — جزئیات کامل");
+      console.error(err);
+      console.groupEnd();
+      return;
+    }
+
+    if (!result.prompts.length) {
+      toast("هیچ پرامپت معتبری در فایل پیدا نشد", "err");
+      if (result.rejected.length)
+        console.warn("Import — موارد رد شده:", result.rejected);
+      return;
+    }
+
+    /* از کاربر بپرس: ادغام یا جایگزینی */
+    askImportMode(
+      result.prompts.length,
+      result.rejected.length,
+      (choice) => {
+        if (choice === "merge") {
+          const { added, updated } = mergeImport(result);
+          save();
+          renderChips();
+          renderGrid();
+          renderCatList();
+          const parts = [];
+          if (added) parts.push(`${added} افزوده`);
+          if (updated) parts.push(`${updated} به‌روز`);
+          toast("ادغام شد — " + (parts.join("، ") || "تغییری نبود"));
+        } else if (choice === "replace") {
+          /* پشتیبان خودکار قبل از جایگزینی */
+          try {
+            localStorage.setItem(
+              DATA_KEY + "_backup",
+              localStorage.getItem(DATA_KEY),
+            );
+          } catch (_) {}
+          DATA.categories = result.categories;
+          DATA.prompts = result.prompts;
+          save();
+          renderChips();
+          renderGrid();
+          renderCatList();
+          const n = result.prompts.length;
+          const rej = result.rejected.length;
+          toast(
+            rej
+              ? `جایگزین شد — ${n} پرامپت (${rej} رد شد)`
+              : `جایگزین شد — ${n} پرامپت`,
+            rej ? "warn" : undefined,
+          );
+        }
+      },
+    );
+
+    if (result.rejected.length) {
+      console.warn("Import — موارد رد شده:", result.rejected);
+    }
+  };
+  r.readAsText(file, "utf-8");
+}
+async function resetAll() {
+  const ok = await uiConfirm({
+    title: "بازنشانی همه",
+    icon: "⚠",
+    message:
+      'همهٔ پرامپت‌ها و دسته‌ها حذف شوند؟<br><span style="color:var(--dim);font-size:var(--f-xs)">این کار قابل بازگشت نیست.</span>',
+    okText: "حذف همه",
+    danger: true,
+  });
+  if (!ok) return;
+  commit((d) => {
+    d.categories = JSON.parse(JSON.stringify(DEFAULT_CATEGORIES));
+    d.prompts = [];
+    activeCat = "all";
+  });
+  closeDrawer();
+  toast("بازنشانی شد");
+}
+
+async function seedDefaults() {
+  if (DATA.prompts.length > 0) {
+    const ok = await uiConfirm({
+      title: "افزودن پرامپت‌های پیش‌فرض",
+      message:
+        "پرامپت‌های موجود باقی می‌مانند. شش پرامپت پیش‌فرض اضافه شوند؟",
+      okText: "افزودن",
+    });
+    if (!ok) return;
+  }
+  const now = Date.now();
+  const seeds = [
+    {
+      id: uid(),
+      category: "write",
+      title: "نویسندهٔ مقاله",
+      description: "نوشتن مقالهٔ فارسی روان با ساختار مقدمه/بدنه/نتیجه.",
+      tags: ["نوشتن", "مقاله", "محتوا"],
+      pinned: true,
+      content:
+        "# نقش تو\nنویسندهٔ حرفه‌ای فارسی هستی. متن‌های روان، دقیق و بدون حاشیه می‌نویسی.\n\n# موضوع\n{{موضوع}}\n\n# لحن\n{{لحن}}   (رسمی / دوستانه / آموزشی / طنز)\n\n# طول\nحدود {{طول}} کلمه.\n\n# قواعد\n1. پاراگراف‌های کوتاه.\n2. از تکرار کلمات پرهیز کن.\n3. هر ادعا با مثال یا پشتوانه.\n4. کلمات انگلیسی را با معادل رایج فارسی بنویس.\n5. بدون مقدمه‌چینی و تعارف.\n\n# ساختار\n- مقدمه: قلاب + طرح مسئله\n- بدنه: ۳ تا ۵ بخش با زیرعنوان\n- نتیجه: جمع‌بندی + یک جملهٔ ماندگار\n",
+    },
+    {
+      id: uid(),
+      category: "general",
+      title: "مترجم حرفه‌ای",
+      description: "ترجمهٔ معنایی با حفظ لحن و یادداشت انتخاب‌ها.",
+      tags: ["ترجمه", "زبان", "متن"],
+      pinned: false,
+      content:
+        "# نقش تو\nمترجم حرفه‌ای از {{مبدأ}} به {{مقصد}} هستی.\n\n# متن\n{{متن}}\n\n# قواعد\n1. ترجمهٔ معنایی، نه تحت‌اللفظی.\n2. اصطلاحات را با معادل طبیعی همان زبان برگردان.\n3. لحن اصلی را حفظ کن.\n4. اسم‌های خاص را ترجمه نکن.\n5. اگر جمله مبهم بود، ترجمهٔ محتمل بده و علامت بزن.\n\n# خروجی\n- ترجمه\n- ۳ یادداشت کوتاه دربارهٔ انتخاب‌های مهم\n",
+    },
+    {
+      id: uid(),
+      category: "code",
+      title: "بازبینی کد",
+      description: "مرور دقیق کد با تفکیک بحرانی/معماری/خوانایی/کارایی.",
+      tags: ["کد", "بازبینی", "review"],
+      pinned: true,
+      content:
+        "# نقش تو\nمهندس نرم‌افزار ارشد هستی. کد را دقیق، بی‌تعارف و با پیشنهاد مشخص بازبینی می‌کنی.\n\n# زبان\n{{زبان}}\n\n# کد\n{{کد}}\n\n# خروجی مورد انتظار\n1. مشکلات بحرانی — باگ، امنیت، نشت حافظه.\n2. مشکلات معماری — ساختار، جداسازی مسئولیت‌ها.\n3. بهبود خوانایی — نام‌گذاری، کامنت، پیچیدگی.\n4. بهبود کارایی — تنها اگر مسئله واقعی است.\n5. پیشنهاد بازنویسی — فقط بخش‌های مشکل‌دار.\n\n# قواعد\n- برای هر مورد بگو «چرا».\n- تعریف بی‌دلیل نکن.\n- اگر بخشی خوب است، بگو.\n",
+    },
+    {
+      id: uid(),
+      category: "image",
+      title: "تصویر — واقع‌گرا",
+      description:
+        "پرامپت عکس فتوریالیستیک با کنترل نور، زاویه و حال‌وهوا.",
+      tags: ["تصویر", "واقع‌گرا", "photo"],
+      pinned: true,
+      content:
+        "# پرامپت تصویر — فتوریالیستیک\n\n## سوژه\n{{سوژه}}\n\n## جزئیات\n- زاویهٔ دوربین: {{زاویه}}   (close-up / medium / wide)\n- نور: {{نور}}   (طلوع / غروب / ابری / نئون شبانه)\n- پس‌زمینه: {{پس‌زمینه}}\n- حال‌وهوا: {{حال}}\n\n## پرامپت\nphotorealistic, {{سوژه}}, {{زاویه}} shot,\n{{نور}} lighting, {{پس‌زمینه}} in background,\nmood: {{حال}},\n35mm lens, f/1.8, shallow depth of field,\nnatural skin texture, subsurface scattering,\nfilm grain, shot on Kodak Portra 400,\n4K, ultra detailed, sharp focus\n\n## منفی (Negative)\ncartoon, painting, illustration, 3d render,\nlow res, blurry, deformed hands, extra fingers,\nwatermark, text, signature\n",
+    },
+    {
+      id: uid(),
+      category: "image",
+      title: "تصویر — هنری",
+      description: "پرامپت تصویرسازی با انتخاب سبک، پالت و نسبت.",
+      tags: ["تصویر", "هنری", "illustration"],
+      pinned: false,
+      content:
+        "# پرامپت تصویر — تصویرسازی هنری\n\n## ایده\n{{ایده}}\n\n## سبک\n{{سبک}}   (آبرنگ / دیجیتال آرت / مینیمال تخت / رترو / سورئال)\n\n## پالت\n{{پالت}}   (گرم / سرد / تک‌رنگ / پاستلی / نئون)\n\n## نسبت\n{{نسبت}}   (1:1 / 16:9 / 9:16 / 4:5)\n\n## پرامپت\n{{ایده}},\n{{سبک}} style, {{پالت}} palette,\nelegant composition, rule of thirds,\nsoft shadow, artstation trending,\nmasterwork, highly detailed, 8k\n\n## منفی\nphoto, realistic, 3d render, low quality,\ncluttered, watermark, text, signature\n",
+    },
+    {
+      id: uid(),
+      category: "image",
+      title: "لوگو",
+      description: "پرامپت لوگوی مینیمال با کنترل سبک و رنگ برند.",
+      tags: ["لوگو", "برند", "logo"],
+      pinned: false,
+      content:
+        "# پرامپت لوگو\n\n## برند\nنام: {{نام برند}}\nصنعت: {{صنعت}}\nمخاطب: {{مخاطب}}\nپیام اصلی: {{پیام}}\n\n## مشخصات بصری\n- نوع: {{نوع}}   (wordmark / lettermark / abstract / mascot)\n- سبک: {{سبک}}   (مینیمال / فلت / ژئومتریک / ارگانیک)\n- رنگ: {{رنگ}}\n\n## پرامپت\nminimalist logo for {{نام برند}},\n{{صنعت}} brand, {{نوع}} style,\n{{سبک}} design, {{رنگ}} color scheme,\nclean vector lines, professional branding,\nwhite background, centered composition,\nhigh contrast, scalable\n\n## منفی\n3d, gradient mesh, drop shadow, text,\nwatermark, photo, cluttered, complex details\n",
+    },
+  ];
+  if (!DATA.categories.length)
+    DATA.categories = JSON.parse(JSON.stringify(DEFAULT_CATEGORIES));
+  const ensureSeedCat = (id) =>
+    DATA.categories.some((c) => c.id === id) ? id : DATA.categories[0].id;
+  seeds.forEach((s) => {
+    s.category = ensureSeedCat(s.category);
+    s.createdAt = now;
+    s.updatedAt = now;
+  });
+  commit((d) => {
+    seeds.forEach((s) => d.prompts.push(s));
+  });
+  closeDrawer();
+  toast("۶ پرامپت پیش‌فرض افزوده شد");
+}
+
+function toggleTheme() {
+  const resolved = resolveTheme(PREFS.theme);
+  PREFS.theme = resolved === "dark" ? "light" : "dark";
+  savePrefs();
+  applyPrefs();
+  renderPrefs();
+  toast("پوسته: " + (PREFS.theme === "dark" ? "تاریک" : "روشن"));
+}
+
+$("#addBtn").onclick = () => openModal();
+
+$("#pvClose").onclick = closePreview;
+$("#pvBack").onclick = closePreview;
+$("#pvCopy").onclick = () => {
+  const p = DATA.prompts.find((x) => x.id === currentPvId);
+  if (p) requestCopy(p);
+};
+$("#pvEdit").onclick = () => {
+  const p = DATA.prompts.find((x) => x.id === currentPvId);
+  if (p) {
+    closePreview();
+    openModal(p);
+  }
+};
+
+$("#pvOpenInAI").addEventListener("click", (e) => {
+  e.stopPropagation();
+  toggleAiMenu();
+});
+$("#pvAiMenu").addEventListener("click", (e) => {
+  const btn = e.target.closest("[data-ai]");
+  if (!btn) return;
+  const target = AI_TARGETS.find((t) => t.id === btn.dataset.ai);
+  if (!target) return;
+  const p = DATA.prompts.find((x) => x.id === currentPvId);
+  closeAiMenu();
+  if (p) openInAI(p, target);
+});
+document.addEventListener("click", (e) => {
+  if (!e.target.closest(".ai-open-wrap")) closeAiMenu();
+});
+
+$("#settingsBtn").onclick = () => {
+  closeMobileSearchPanel();
+  openDrawer();
+};
+$("#themeBtn").onclick = () => {
+  closeMobileSearchPanel();
+  toggleTheme();
+};
+$("#closeDrawer").onclick = closeDrawer;
+$("#drawerBack").onclick = closeDrawer;
+$("#addCatBtn").onclick = () => openCatModal();
+$("#exportBtn").onclick = exportData;
+$("#importBtn").onclick = () => $("#importFile").click();
+$("#importFile").addEventListener("change", (e) => {
+  const f = e.target.files && e.target.files[0];
+  e.target.value = "";
+  if (f) importData(f);
+});
+$("#seedBtn").onclick = seedDefaults;
+$("#resetBtn").onclick = resetAll;
+
+$("#catList").addEventListener("click", (e) => {
+  const btn = e.target.closest("[data-act]");
+  if (!btn) return;
+  const item = btn.closest(".cat-item");
+  if (!item) return;
+  const id = item.dataset.id;
+  const act = btn.dataset.act;
+  if (act === "edit-cat") {
+    const c = DATA.categories.find((x) => x.id === id);
+    if (c) openCatModal(c);
+  } else if (act === "del-cat") {
+    deleteCategory(id);
+  }
+});
+
+$("#catColors").addEventListener("click", (e) => {
+  const b = e.target.closest("button");
+  if (!b) return;
+  $$("#catColors button").forEach((x) =>
+    x.classList.toggle("on", x === b),
+  );
+});
+
+$("#saveBtn").onclick = savePrompt;
+$("#cancelBtn").onclick = closeModal;
+$("#modalCloseBtn").onclick = closeModal;
+$("#modalBack").addEventListener("click", (e) => {
+  if (e.target.id === "modalBack") closeModal();
+});
+
+$("#varCopyBtn").onclick = copyVarFinal;
+$("#varCopyRawBtn").onclick = copyVarRaw;
+$("#varCancelBtn").onclick = closeVarModal;
+$("#varModalBack").addEventListener("click", (e) => {
+  if (e.target.id === "varModalBack") closeVarModal();
+});
+
+$("#catSaveBtn").onclick = saveCatModal;
+$("#catCancelBtn").onclick = closeCatModal;
+$("#catModalBack").addEventListener("click", (e) => {
+  if (e.target.id === "catModalBack") closeCatModal();
+});
+
+$("#dialogOk").onclick = () => {
+  if (dialogMode === "prompt") closeDialog($("#dialogField").value);
+  else closeDialog(true);
+};
+$("#dialogCancel").onclick = () =>
+  closeDialog(dialogMode === "prompt" ? null : false);
+$("#dialogBack").addEventListener("click", (e) => {
+  if (e.target.id === "dialogBack")
+    closeDialog(dialogMode === "prompt" ? null : false);
+});
+$("#dialogField").addEventListener("keydown", (e) => {
+  if (e.key === "Enter") {
+    e.preventDefault();
+    $("#dialogOk").click();
+  }
+});
+
+$("#toastUndoBtn").onclick = () => {
+  if (typeof undoFn === "function") {
+    const fn = undoFn;
+    hideUndoToast();
+    try {
+      fn();
+    } catch (e) {}
+  }
+};
+
+document.addEventListener("keydown", (e) => {
+  const k = e.key;
+  const overlayOpen = !!document.querySelector(
+    ".modal-back.open, .drawer.open, .pv-drawer.open, .msearch.open",
+  );
+  if (
+    k === "/" &&
+    !overlayOpen &&
+    !isTypingContext() &&
+    !e.ctrlKey &&
+    !e.metaKey &&
+    !e.altKey
+  ) {
+    e.preventDefault();
+    if (isMobile()) openMobileSearchPanel();
+    else {
+      searchIn.focus();
+      searchIn.select();
+    }
+    return;
+  }
+
+  if (k === "Escape") {
+    if ($("#dialogBack").classList.contains("open")) {
+      closeDialog(dialogMode === "prompt" ? null : false);
+      return;
+    }
+    if ($("#catModalBack").classList.contains("open")) {
+      closeCatModal();
+      return;
+    }
+    if ($("#varModalBack").classList.contains("open")) {
+      closeVarModal();
+      return;
+    }
+    if (mSearch.classList.contains("open")) {
+      closeMobileSearchPanel();
+      return;
+    }
+    if (searchRes.classList.contains("show")) {
+      closeDesktopSearchPanel();
+      searchIn.blur();
+      return;
+    }
+    if ($("#modalBack").classList.contains("open")) {
+      closeModal();
+      return;
+    }
+    if ($("#drawer").classList.contains("open")) {
+      closeDrawer();
+      return;
+    }
+    if ($("#pvDrawer").classList.contains("open")) {
+      closePreview();
+      return;
+    }
+    return;
+  }
+
+  if ((e.ctrlKey || e.metaKey) && k.toLowerCase() === "s") {
+    if ($("#modalBack").classList.contains("open")) {
+      e.preventDefault();
+      savePrompt();
+      return;
+    }
+  }
+
+  if ((e.ctrlKey || e.metaKey) && k === "Enter") {
+    if ($("#modalBack").classList.contains("open")) {
+      savePrompt();
+      return;
+    }
+    if ($("#varModalBack").classList.contains("open")) {
+      copyVarFinal();
+      return;
+    }
+    if ($("#catModalBack").classList.contains("open")) {
+      saveCatModal();
+      return;
+    }
+    if ($("#dialogBack").classList.contains("open")) {
+      $("#dialogOk").click();
+      return;
+    }
+  }
+});
+
+matchMedia("(prefers-color-scheme: dark)").addEventListener(
+  "change",
+  () => {
+    if (PREFS.theme === "system") applyPrefs();
+  },
+);
+
+window.addEventListener("resize", () => {
+  updateHeaderHeight();
+  /* بازسازی گاترها بعد از تغییر عرض */
+  if (document.getElementById("pvContent")) {
+    updatePreviewGutter($("#pvContent").textContent);
+  }
+  if (editorArea && $("#modalBack").classList.contains("open")) {
+    updateEditorGutter();
+  }
+});
+
+/* ═══════════════ تول‌تیپ لمسی ═══════════════ */
+/* روی دستگاه‌های بدون hover: لمسِ دکمه → نمایش تول‌تیپ به‌مدت ۱.۶ ثانیه */
+(function setupTouchTooltips() {
+  if (!matchMedia("(hover: none)").matches) return;
+
+  const HOLD = 1600;
+  let timer = null;
+  let lastEl = null;
+
+  function show(el) {
+    if (!el) return;
+    if (lastEl && lastEl !== el) lastEl.classList.remove("tip-show");
+    el.classList.add("tip-show");
+    lastEl = el;
+    clearTimeout(timer);
+    timer = setTimeout(() => {
+      el.classList.remove("tip-show");
+      if (lastEl === el) lastEl = null;
+    }, HOLD);
+  }
+
+  document.addEventListener(
+    "touchstart",
+    (e) => {
+      const el = e.target.closest("[data-tip]");
+      if (!el) return;
+      show(el);
+    },
+    { passive: true },
+  );
+
+  /* با شروع اسکرول یا لمس جای دیگر، پاک شود */
+  document.addEventListener(
+    "scroll",
+    () => {
+      if (lastEl) {
+        lastEl.classList.remove("tip-show");
+        lastEl = null;
+      }
+      clearTimeout(timer);
+    },
+    { passive: true },
+  );
+  document.addEventListener(
+    "touchstart",
+    (e) => {
+      if (!e.target.closest("[data-tip]")) {
+        if (lastEl) {
+          lastEl.classList.remove("tip-show");
+          lastEl = null;
+        }
+        clearTimeout(timer);
+      }
+    },
+    { passive: true },
+  );
+})();
+
+/* ═══ Text Engine: robust logical lines ═══ */
+const LINE_SPLIT = /\r?\n/;
+
+function updateEditorStats() {
+  const v = editorArea.value;
+  const lines = v.split(LINE_SPLIT).length;
+  $("#statLines").textContent = toFaNum(lines) + " خط";
+  $("#statChars").textContent = toFaNum(v.length) + " کاراکتر";
+  $("#statWords").textContent = toFaNum(countWords(v)) + " کلمه";
+  $("#statTokens").textContent =
+    "~" + toFaNum(estimateTokens(v)) + " توکن";
+}
+
+/* ═══ Text Direction: auto detection ═══ */
+function detectTextDir(text) {
+  const s = String(text || "");
+  const limit = Math.min(s.length, 2000);
+
+  for (let i = 0; i < limit; i++) {
+    const ch = s[i];
+
+    /* حروف لاتین و مشابه آن */
+    if (
+      /[A-Za-z\u00C0-\u00D6\u00D8-\u00F6\u00F8-\u02AF\u1E00-\u1EFF]/.test(
+        ch,
+      )
+    )
+      return "ltr";
+
+    /* حروف عبری/عربی/فارسی و مرتبط */
+    if (
+      /[\u0590-\u05FF\u0600-\u06FF\u0700-\u074F\u08A0-\u08FF\uFB1D-\uFDFF\uFE70-\uFEFF]/.test(
+        ch,
+      )
+    )
+      return "rtl";
+  }
+
+  return "ltr";
+}
+
+function applyTextDir(el, text) {
+  if (!el) return;
+  const source =
+    text == null ? (el.value != null ? el.value : el.textContent) : text;
+  const dir = detectTextDir(source);
+
+  if (el.dir !== dir) el.dir = dir;
+  el.dataset.dirMode = dir;
+}
+
+function scrollLogicalStart(el) {
+  if (!el) return;
+
+  /* اگر مرورگر پشتیبانی کند، در RTL به ابتدای منطقی یعنی راست می‌رود */
+  try {
+    el.scrollTo({ top: 0, inline: "start" });
+  } catch (_) {
+    el.scrollTop = 0;
+    el.scrollLeft = 0;
+  }
+}
+
+initPromptCatSelect();
+initSortSelect();
+loadPrefs();
+load();
+applyPrefs();
+renderPrefs();
+renderChips();
+renderCatList();
+renderGrid();
+updateHeaderHeight();
+setTimeout(updateHeaderHeight, 200);
+</script>
+</body>
+</html>
