@@ -367,10 +367,18 @@ function refreshFocusTrap() {
 function lockScroll() {
   document.documentElement.classList.add("no-scroll");
   document.body.classList.add("no-scroll");
+  /* موقعیت فعلی اسکرول رو ذخیره کن، بعد قفل کن */
+  const y = window.scrollY;
+  document.body.style.top = `-${y}px`;
+  document.body.dataset.savedScroll = String(y);
 }
 function unlockScroll() {
   document.documentElement.classList.remove("no-scroll");
   document.body.classList.remove("no-scroll");
+  const y = Number(document.body.dataset.savedScroll || 0);
+  document.body.style.top = "";
+  delete document.body.dataset.savedScroll;
+  window.scrollTo(0, y);
 }
 
 function setActiveDialog(el, forceScrollLock) {
@@ -801,21 +809,64 @@ function _measureVisualRows(lines, contentWidth, cs, lineHeightPx) {
   return counts;
 }
 
+/* کش خط‌به‌خط: فقط خط‌های واقعاً تغییرکرده دوباره اندازه‌گیری می‌شن */
+let _gutterCache = { lines: [], counts: [], width: -1 };
+
 function _buildGutterText(text, sourceEl) {
   const s = String(text || "");
   const lines = s.split(/\r?\n/);
+
   if (!sourceEl || !sourceEl.isConnected || sourceEl.clientWidth === 0) {
     const arr = new Array(lines.length);
     for (let i = 0; i < lines.length; i++) arr[i] = i + 1;
     return arr.join("\n");
   }
+
   _gutterMeasureEl.dir = sourceEl.getAttribute("dir") || "auto";
   const cs = getComputedStyle(sourceEl);
   const pl = parseFloat(cs.paddingLeft) || 0;
   const pr = parseFloat(cs.paddingRight) || 0;
   const contentWidth = sourceEl.clientWidth - pl - pr;
   const lineHeightPx = parseFloat(cs.lineHeight) || 20;
-  const counts = _measureVisualRows(lines, contentWidth, cs, lineHeightPx);
+
+  /* اگه عرض عوض شده (ریسایز، toggle متا و…)، کش کلاً بی‌اعتباره */
+  const widthChanged = Math.abs(contentWidth - _gutterCache.width) > 0.5;
+  const cachedLines = widthChanged ? [] : _gutterCache.lines;
+  const cachedCounts = widthChanged ? [] : _gutterCache.counts;
+
+  /* پیدا کردن پیشوند و پسوند مشترک با نسخهٔ قبلی */
+  let prefixLen = 0;
+  const maxCommon = Math.min(lines.length, cachedLines.length);
+  while (prefixLen < maxCommon && lines[prefixLen] === cachedLines[prefixLen]) {
+    prefixLen++;
+  }
+  let suffixLen = 0;
+  const maxSuffix = maxCommon - prefixLen;
+  while (
+    suffixLen < maxSuffix &&
+    lines[lines.length - 1 - suffixLen] ===
+      cachedLines[cachedLines.length - 1 - suffixLen]
+  ) {
+    suffixLen++;
+  }
+
+  /* فقط تکهٔ وسط (تغییرکرده) رو دوباره اندازه بگیر */
+  const midStart = prefixLen;
+  const midEnd = lines.length - suffixLen;
+  const midLines = lines.slice(midStart, midEnd);
+  const midCounts = midLines.length
+    ? _measureVisualRows(midLines, contentWidth, cs, lineHeightPx)
+    : [];
+
+  const counts = new Array(lines.length);
+  for (let i = 0; i < prefixLen; i++) counts[i] = cachedCounts[i];
+  for (let i = 0; i < midCounts.length; i++) counts[midStart + i] = midCounts[i];
+  for (let i = 0; i < suffixLen; i++) {
+    counts[lines.length - 1 - i] = cachedCounts[cachedLines.length - 1 - i];
+  }
+
+  _gutterCache = { lines, counts, width: contentWidth };
+
   const out = [];
   let n = 1;
   for (let i = 0; i < counts.length; i++) {
@@ -1118,6 +1169,10 @@ editorArea.addEventListener("input", syncEditor);
 editorArea.addEventListener("scroll", () => {
   editorGutter.scrollTop = editorArea.scrollTop;
 });
+/* موبایل: وقتی فوکوس میره رو متن (یعنی کیبورد باز می‌شه)، متادیتا رو جمع کن
+   تا فضای متن + دکمه‌های پایین همیشه تضمین‌شده باشه —
+   مستقل از موقعیت تو سند، بدون نیاز به اسکرول کل مودال */
+
 editorArea.addEventListener("keydown", (e) => {
   if (
     e.key === "Tab" &&
@@ -1188,7 +1243,6 @@ function openModal(p) {
 }
 function closeModal() {
   $("#modalBack").classList.remove("open");
-  document.documentElement.style.removeProperty("--vvh");
   refreshFocusTrap();
 }
 function ensureMetaVisible() {
@@ -2957,17 +3011,3 @@ $("#updateBtn")?.addEventListener("click", () => {
   toast("به‌روزرسانی در حال اعمال…");
 });
 
-/* ═══ تنظیم ارتفاع ادیتور با کیبورد موبایل ═══ */
-(function keyboardResize() {
-  if (!window.visualViewport) return;
-  const vv = window.visualViewport;
-  const editorBack = document.getElementById("modalBack");
-  if (!editorBack) return;
-
-  function update() {
-    if (!editorBack.classList.contains("open")) return;
-    document.documentElement.style.setProperty("--vvh", vv.height + "px");
-  }
-  vv.addEventListener("resize", update);
-  vv.addEventListener("scroll", update);
-})();

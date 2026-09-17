@@ -3,8 +3,8 @@
 <head>
   <meta charset="UTF-8" />
   <meta
-    name="viewport"
-    content="width=device-width, initial-scale=1.0, viewport-fit=cover"
+  name="viewport"
+  content="width=device-width, initial-scale=1.0, viewport-fit=cover"
   />
   <title>پرامپتـام</title>
   <link rel="manifest" href="./manifest.json" />
@@ -265,6 +265,26 @@ aria-labelledby="modalTitle"
       <span id="modalTitle">افزودن پرامپت</span>
     </div>
     <button
+      type="button"
+      class="etb-toggle"
+      id="metaToggle"
+      data-tip="نمایش/مخفی متادیتا"
+      aria-label="نمایش/مخفی متادیتا"
+      aria-pressed="true"
+    >
+      <svg
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        stroke-width="2"
+        stroke-linecap="round"
+        stroke-linejoin="round"
+      >
+        <path d="M3 12h18M3 6h18M3 18h18" />
+      </svg>
+    </button>
+
+    <button
       class="etb-close"
       id="modalCloseBtn"
       data-tip="بستن"
@@ -324,31 +344,6 @@ aria-labelledby="modalTitle"
       id="pDesc"
       placeholder="توضیح کوتاه (اختیاری)"
     />
-  </div>
-
-  <div class="editor-toolbar">
-    <button
-      type="button"
-      class="etb-toggle on"
-      id="metaToggle"
-      data-tip="نمایش/مخفی متادیتا"
-      aria-label="نمایش/مخفی متادیتا"
-      aria-pressed="true"
-    >
-      <svg
-        viewBox="0 0 24 24"
-        fill="none"
-        stroke="currentColor"
-        stroke-width="2"
-        stroke-linecap="round"
-        stroke-linejoin="round"
-      >
-        <path d="M3 12h18M3 6h18M3 18h18" />
-      </svg>
-    </button>
-    <span class="etb-label">متن پرامپت</span>
-    <span class="etb-spacer"></span>
-    <span class="etb-info">Ctrl+Enter = ذخیره · Tab = تودرتو</span>
   </div>
 
   <div class="editor-wrap">
