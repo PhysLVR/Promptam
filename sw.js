@@ -1,4 +1,4 @@
-const CACHE = "pm-v3";
+const CACHE = "pm-v4";
 
 const ASSETS = [
   "./",
@@ -67,4 +67,7 @@ self.addEventListener("fetch", (e) => {
       )
     );
   }
+});
+self.addEventListener("message", (e) => {
+  if (e.data === "SKIP_WAITING") self.skipWaiting();
 });

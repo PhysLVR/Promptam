@@ -14,6 +14,93 @@
 <link rel="apple-touch-icon" href="./icons/icon-192.png" />
 <meta name="apple-mobile-web-app-capable" content="yes" />
 <meta name="apple-mobile-web-app-title" content="پرامپتـام" />
+<style>
+/* دکمهٔ نصب PWA */
+#installBtn {
+  display: none;
+}
+#installBtn.show {
+  display: grid;
+}
+/* بنر آپدیت SW */
+#swUpdate {
+  position: fixed;
+  bottom: 80px;
+  left: 50%;
+  transform: translateX(-50%) translateY(30px) scale(0.9);
+  background: var(--card);
+  border: 1px solid var(--line2);
+  border-radius: 14px;
+  padding: 0.65rem 1.1rem;
+  font-size: var(--f-sm);
+  font-weight: 600;
+  opacity: 0;
+  pointer-events: none;
+  transition:
+    opacity 0.4s var(--ease-ios),
+    transform 0.5s var(--ease-spring);
+  z-index: 320;
+  box-shadow: var(--shadow);
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  max-width: 90vw;
+}
+#swUpdate.show {
+  opacity: 1;
+  transform: translateX(-50%) translateY(0);
+  pointer-events: auto;
+}
+#swUpdate button {
+  padding: 0.4rem 0.85rem;
+  border-radius: 9px;
+  border: none;
+  background: var(--acc);
+  color: var(--acc-ink);
+  font-size: var(--f-xs);
+  font-weight: 800;
+  cursor: pointer;
+  font-family: inherit;
+}
+/* راهنمای iOS */
+#iosHint {
+  position: fixed;
+  bottom: 80px;
+  left: 50%;
+  transform: translateX(-50%) translateY(30px) scale(0.9);
+  background: var(--card);
+  border: 1px solid var(--line2);
+  border-radius: 14px;
+  padding: 0.75rem 1rem;
+  font-size: var(--f-xs);
+  font-weight: 600;
+  opacity: 0;
+  pointer-events: none;
+  transition:
+    opacity 0.4s var(--ease-ios),
+    transform 0.5s var(--ease-spring);
+  z-index: 320;
+  box-shadow: var(--shadow);
+  line-height: 1.7;
+  max-width: 90vw;
+  text-align: center;
+}
+#iosHint.show {
+  opacity: 1;
+  transform: translateX(-50%) translateY(0);
+  pointer-events: auto;
+}
+#iosHint b {
+  color: var(--vio);
+}
+#iosHint .close-x {
+  display: block;
+  margin-top: 6px;
+  font-size: var(--f-2xs);
+  color: var(--dim);
+  cursor: pointer;
+}
+</style>
 <link
 rel="stylesheet"
 href="https://cdn.jsdelivr.net/npm/@fontsource/vazirmatn@5.0.16/arabic-400.css"
@@ -1029,15 +1116,11 @@ main {
   gap: 0.5rem;
   margin-bottom: 0.7rem;
 }
-.phead .pcat {
-  align-self: start;
-}
 .phead b {
   grid-column: 2;
 }
 .phead .pcat {
   grid-column: 3;
-  align-self: start;
 }
 
 .phead .pin {
@@ -1090,9 +1173,7 @@ main {
   font-size: var(--f-md);
   font-weight: 800;
   line-height: 1.5;
-  flex: 1;
   min-width: 0;
-  min-height: 3em;
   overflow: hidden;
   text-overflow: ellipsis;
   display: -webkit-box;
@@ -1163,6 +1244,18 @@ main {
   background: var(--card2);
   border: 1px solid var(--line);
   color: var(--dim);
+  display: inline-flex;
+  align-items: center;
+  gap: 1px;
+  line-height: 1;
+}
+.tag .th {
+  color: var(--vio);
+  opacity: 0.55;
+  font-weight: 800;
+}
+.tag .tw {
+  line-height: 1;
 }
 .pfoot {
   margin-top: auto;
@@ -1276,10 +1369,11 @@ main {
   font-size: var(--f-md);
 }
 .empty svg {
-  width: 4rem;
-  height: 4rem;
-  opacity: 0.4;
+  width: 3.5rem;
+  height: 3.5rem;
+  opacity: 0.35;
   margin-bottom: 1rem;
+  color: var(--vio);
 }
 .empty h3 {
   font-size: var(--f-lg);
@@ -3056,6 +3150,25 @@ line-height: 1.4rem !important;
 <div class="hend">
   <button
     class="icon-btn"
+    id="installBtn"
+    type="button"
+    title="نصب اپ"
+    aria-label="نصب اپ"
+  >
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      stroke-width="2"
+      stroke-linecap="round"
+      stroke-linejoin="round"
+    >
+      <path d="M12 3v12M6 9l6 6 6-6M5 21h14" />
+    </svg>
+  </button>
+
+  <button
+    class="icon-btn"
     id="mSearchBtn"
     type="button"
     title="جست‌وجو"
@@ -3750,6 +3863,15 @@ aria-labelledby="dialogTitle"
 </div>
 </div>
 
+<div id="swUpdate" role="status">
+  <span>نسخهٔ جدید موجود است</span>
+  <button id="swUpdateBtn">به‌روزرسانی</button>
+</div>
+<div id="iosHint" role="status">
+  برای نصب: <b>Share</b> → <b>Add to Home Screen</b>
+  <span class="close-x" id="iosHintClose">بستن</span>
+</div>
+
 <div class="toast" id="toast" role="status" aria-live="polite">
 <svg class="toast-ic" viewBox="0 0 32 32" aria-hidden="true">
   <circle class="tc" cx="16" cy="16" r="13" />
@@ -4419,7 +4541,7 @@ empty
     .map((p) => {
       const cat = catById(p.category);
       const tags = (p.tags || [])
-        .map((t) => `<span class="tag">#${esc(t)}</span>`)
+        .map((t) => `<span class="tag"><span class="th">#</span><span class="tw">${esc(t)}</span></span>`)
         .join("");
       const varCount = extractVars(p.content).length;
       const copyTip = varCount ? `کپی (${varCount} متغیر)` : "کپی متن";
@@ -4640,7 +4762,7 @@ function openPreview(p) {
 
   let metaHtml = `<span class="pcat ${cat.color}">${esc(cat.name)}</span>`;
   (p.tags || []).forEach((t) => {
-    metaHtml += `<span class="tag">#${esc(t)}</span>`;
+    metaHtml += `<span class="tag"><span class="th">#</span><span class="tw">${esc(t)}</span></span>`;
   });
   $("#pvMeta").innerHTML = metaHtml;
 
@@ -6515,12 +6637,92 @@ renderGrid();
 updateHeaderHeight();
 setTimeout(updateHeaderHeight, 200);
 
-/* ═══ Service Worker ═══ */
+/* ═══ PWA: نصب ═══ */
+let deferredInstall = null;
+const installBtn = $("#installBtn");
+const iosHint = $("#iosHint");
+
+// قبل از نصب
+window.addEventListener("beforeinstallprompt", (e) => {
+  e.preventDefault();
+  deferredInstall = e;
+  installBtn.classList.add("show");
+});
+
+// نصب انجام شد
+window.addEventListener("appinstalled", () => {
+  deferredInstall = null;
+  installBtn.classList.remove("show");
+  toast("اپ نصب شد ✓");
+});
+
+// کلیک روی دکمهٔ نصب
+installBtn.addEventListener("click", async () => {
+  if (!deferredInstall) return;
+  deferredInstall.prompt();
+  const { outcome } = await deferredInstall.userChoice;
+  if (outcome === "accepted") {
+    installBtn.classList.remove("show");
+  }
+  deferredInstall = null;
+});
+
+// iOS: راهنما (چون iOS beforeinstallprompt نداره)
+(function iosInstallHint() {
+  const isIos = /iphone|ipad|ipod/i.test(navigator.userAgent);
+  const isStandalone =
+    window.navigator.standalone === true ||
+    matchMedia("(display-mode: standalone)").matches;
+  const dismissed = localStorage.getItem("iosHintDismissed") === "1";
+
+  if (isIos && !isStandalone && !dismissed) {
+    setTimeout(() => iosHint.classList.add("show"), 3000);
+  }
+  $("#iosHintClose")?.addEventListener("click", () => {
+    iosHint.classList.remove("show");
+    localStorage.setItem("iosHintDismissed", "1");
+  });
+})();
+
+/* ═══ Service Worker + آپدیت ═══ */
 if ("serviceWorker" in navigator) {
   window.addEventListener("load", () => {
     navigator.serviceWorker
       .register("./sw.js")
+      .then((reg) => {
+        // اگر نسخهٔ جدید پیدا شد
+        reg.addEventListener("updatefound", () => {
+          const newWorker = reg.installing;
+          if (!newWorker) return;
+          newWorker.addEventListener("statechange", () => {
+            if (
+              newWorker.state === "installed" &&
+              navigator.serviceWorker.controller
+            ) {
+              // نسخهٔ جدید آماده‌ست
+              $("#swUpdate").classList.add("show");
+            }
+          });
+        });
+      })
       .catch((err) => console.warn("SW register failed:", err));
+
+    // وقتی کاربر «به‌روزرسانی» رو زد
+    let refreshing = false;
+    navigator.serviceWorker.addEventListener("controllerchange", () => {
+      if (refreshing) return;
+      refreshing = true;
+      window.location.reload();
+    });
+
+    $("#swUpdateBtn")?.addEventListener("click", () => {
+      navigator.serviceWorker.getRegistration().then((reg) => {
+        if (reg && reg.waiting) {
+          reg.waiting.postMessage("SKIP_WAITING");
+        }
+      });
+      $("#swUpdate").classList.remove("show");
+    });
   });
 }
 </script>
