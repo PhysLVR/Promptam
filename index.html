@@ -645,14 +645,7 @@ aria-label="پیش‌نمایش پرامپت"
 </div>
 </aside>
 
-<div
-class="modal-back"
-id="varModalBack"
-role="dialog"
-aria-modal="true"
-aria-labelledby="varModalTitle"
->
-<div class="modal" style="max-width: 620px">
+<div class="modal var-modal" style="max-width: 620px">
   <h2>
     <span class="var-modal-icon" aria-hidden="true">
       <svg
@@ -670,33 +663,22 @@ aria-labelledby="varModalTitle"
     </span>
     <span id="varModalTitle">پر کردن متغیرها</span>
   </h2>
-  <p
-    style="font-size: var(--f-xs); color: var(--mut); margin-bottom: 1rem"
-  >
-    این پرامپت متغیر دارد. هر مقدار را وارد کنید؛ هر فیلدی که خالی بماند،
-    به‌صورت <code>{{var}}</code> در متن نهایی حفظ می‌شود.
+  <p class="var-intro">
+    هر مقدار را وارد کن؛ هر فیلدی که خالی بمونه، به‌صورت
+    <code>{{var}}</code> تو متن نهایی می‌مونه.
   </p>
   <div class="var-form" id="varForm"></div>
-  <div style="margin-top: 1rem">
-    <label
-      style="
-        font-size: var(--f-xs);
-        color: var(--mut);
-        font-weight: 600;
-        display: block;
-        margin-bottom: 6px;
-      "
-    >
-      پیش‌نمایش خروجی
-    </label>
+  <details class="var-preview-box" id="varPreviewBox">
+    <summary>
+      <span>پیش‌نمایش خروجی</span>
+    </summary>
     <div class="var-preview" id="varPreview"></div>
-  </div>
-  <div class="foot">
-    <button class="btn g" id="varCopyBtn">📋 کپی متن نهایی</button>
-    <button class="btn" id="varCopyRawBtn">کپی متن خام</button>
+  </details>
+  <div class="var-foot">
     <button class="btn" id="varCancelBtn">انصراف</button>
+    <button class="btn" id="varCopyRawBtn">کپی خام</button>
+    <button class="btn g" id="varCopyBtn">📋 کپی نهایی</button>
   </div>
-</div>
 </div>
 
 <div
