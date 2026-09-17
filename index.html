@@ -4710,9 +4710,8 @@ function openInAI(p, target) {
     openVarModal(p, vars, { aiTarget: target });
     return;
   }
+  const win = window.open("", "_blank");
   copyTextAsync(p.content).then((ok) => {
-    const url = target.url(p.content);
-    const win = window.open(url, "_blank", "noopener,noreferrer");
     if (!win) {
       toast(
         ok
@@ -4722,6 +4721,7 @@ function openInAI(p, target) {
       );
       return;
     }
+    win.location.href = target.url(p.content);
     toast(
       ok
         ? `کپی شد — باز شد در ${target.name}`
@@ -4802,9 +4802,8 @@ function copyVarFinal() {
   const target = varState.pendingAI;
 
   if (target) {
+    const win = window.open("", "_blank");
     copyTextAsync(txt).then((ok) => {
-      const url = target.url(txt);
-      const win = window.open(url, "_blank", "noopener,noreferrer");
       if (!win) {
         toast(
           ok
@@ -4814,6 +4813,7 @@ function copyVarFinal() {
         );
         return;
       }
+      win.location.href = target.url(txt);
       toast(
         ok
           ? `کپی شد — باز شد در ${target.name}`
