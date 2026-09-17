@@ -1188,6 +1188,7 @@ function openModal(p) {
 }
 function closeModal() {
   $("#modalBack").classList.remove("open");
+  document.documentElement.style.removeProperty("--vvh");
   refreshFocusTrap();
 }
 function ensureMetaVisible() {
@@ -2966,9 +2967,6 @@ $("#updateBtn")?.addEventListener("click", () => {
   function update() {
     if (!editorBack.classList.contains("open")) return;
     document.documentElement.style.setProperty("--vvh", vv.height + "px");
-    setTimeout(() => {
-      document.documentElement.style.setProperty("--vvh", vv.height + "px");
-    }, 100);
   }
   vv.addEventListener("resize", update);
   vv.addEventListener("scroll", update);

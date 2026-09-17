@@ -1926,10 +1926,17 @@ main {
     display: none;
   }
 
+  .editor-back.open {
+    height: var(--vvh, 100dvh);
+    max-height: var(--vvh, 100dvh);
+    align-items: stretch;
+    place-items: stretch;
+    overflow: hidden;
+  }
   .editor-modal {
     max-width: none;
-    max-height: var(--vvh, 100dvh);
-    height: var(--vvh, 100dvh);
+    max-height: 100%;
+    height: 100%;
     border-radius: 0;
     border: none;
   }
