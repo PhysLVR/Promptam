@@ -2813,48 +2813,70 @@ main {
   box-shadow: 0 0 0 4px rgba(124, 92, 219, 0.14);
 }
 
-/* پیش‌نمایش — collapsible */
 .var-preview-box {
   margin-top: 1rem;
-  border: 1px solid var(--line);
-  border-radius: 10px;
-  background: var(--deep);
+  border: 1px solid color-mix(in srgb, var(--vio) 25%, var(--line));
+  border-radius: 12px;
+  background: linear-gradient(
+    135deg,
+    color-mix(in srgb, var(--vio) 8%, transparent),
+    color-mix(in srgb, var(--cyn) 4%, transparent)
+  );
   overflow: hidden;
+  transition: border-color 0.2s var(--ease);
+}
+.var-preview-box[open] {
+  border-color: color-mix(in srgb, var(--vio) 45%, var(--line));
+  background: color-mix(in srgb, var(--vio) 5%, var(--deep));
 }
 .var-preview-box summary {
-  padding: 0.55rem 0.9rem;
+  padding: 0.7rem 0.9rem;
   cursor: pointer;
   font-size: var(--f-xs);
   font-weight: 700;
-  color: var(--mut);
+  color: var(--txt);
   display: flex;
   align-items: center;
-  gap: 0.5rem;
+  gap: 0.55rem;
   user-select: none;
   list-style: none;
-  transition: background 0.15s, color 0.15s;
+  transition: background 0.18s var(--ease);
 }
 .var-preview-box summary::-webkit-details-marker {
   display: none;
 }
+/* آیکون چشم سمت راست */
+.var-preview-box summary::before {
+  content: "";
+  width: 1rem;
+  height: 1rem;
+  flex-shrink: 0;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23a78bfa' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z'/%3E%3Ccircle cx='12' cy='12' r='3'/%3E%3C/svg%3E");
+  background-size: contain;
+  background-repeat: no-repeat;
+}
+/* فلش سمت چپ با انیمیشن */
 .var-preview-box summary::after {
   content: "";
   width: 0.5rem;
   height: 0.5rem;
-  border-right: 2px solid currentColor;
-  border-bottom: 2px solid currentColor;
-  transform: rotate(-45deg);
+  border-right: 2px solid var(--vio);
+  border-bottom: 2px solid var(--vio);
+  transform: rotate(45deg) translateY(-2px);
   margin-inline-start: auto;
-  opacity: 0.6;
-  transition: transform 0.2s var(--ease);
+  transition: transform 0.25s var(--ease);
+  opacity: 0.7;
 }
 .var-preview-box[open] summary::after {
-  transform: rotate(45deg);
+  transform: rotate(-135deg) translateY(-2px);
 }
 .var-preview-box summary:hover {
-  color: var(--txt);
-  background: var(--card);
+  background: color-mix(in srgb, var(--vio) 12%, transparent);
 }
+.var-preview-box[open] summary {
+  border-bottom: 1px solid color-mix(in srgb, var(--vio) 20%, var(--line));
+}
+
 .var-preview {
   margin: 0;
   border: none;
