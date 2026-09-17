@@ -7,7 +7,6 @@ const ASSETS = [
   "./icons/icon-192.png",
   "./icons/icon-512.png",
   "./icons/icon-maskable-512.png",
-  // فونت‌ها
   "https://cdn.jsdelivr.net/npm/@fontsource/vazirmatn@5.0.16/arabic-400.css",
   "https://cdn.jsdelivr.net/npm/@fontsource/vazirmatn@5.0.16/arabic-700.css",
   "https://cdn.jsdelivr.net/npm/@fontsource/vazirmatn@5.0.16/arabic-800.css",
@@ -19,9 +18,7 @@ const ASSETS = [
 self.addEventListener("install", (e) => {
   e.waitUntil(
     caches.open(CACHE).then((c) =>
-      Promise.all(
-        ASSETS.map((u) => c.add(u).catch(() => {}))
-      )
+      Promise.all(ASSETS.map((u) => c.add(u).catch(() => {})))
     )
   );
   self.skipWaiting();
@@ -44,7 +41,6 @@ self.addEventListener("fetch", (e) => {
   const sameOrigin = url.origin === self.location.origin;
   const isCdn = url.hostname.includes("jsdelivr.net");
 
-  // ناوبری: network-first با fallback به index.html
   if (req.mode === "navigate") {
     e.respondWith(
       fetch(req)
@@ -58,7 +54,6 @@ self.addEventListener("fetch", (e) => {
     return;
   }
 
-  // فونت یا same-origin: cache-first
   if (isCdn || sameOrigin) {
     e.respondWith(
       caches.match(req).then(
