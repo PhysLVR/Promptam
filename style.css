@@ -400,6 +400,22 @@ textarea {
   font-family: inherit;
   color: inherit;
 }
+
+/* غیرفعال‌سازی منوی بومی long-press روی عناصر تعاملی */
+.ibtn,
+.pin,
+.icon-btn,
+.etb-toggle,
+.etb-close,
+.sel-act,
+.sel-close,
+.qf-part,
+.tag-clickable,
+.chip {
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  user-select: none;
+}
 code {
   font-family: var(--mono);
   direction: ltr;
@@ -2748,14 +2764,14 @@ main {
   padding: 1.3rem 1.3rem 1rem;
 }
 
-/* روی موبایل، مودال از بالا شروع شه تا با کیبورد اسکرول بشه */
+/* روی موبایل، فقط مودال متغیرها از بالا شروع شه تا با کیبورد اسکرول بشه */
 @media (max-width: 760px) {
-  .modal-back {
+  #varModalBack {
     place-items: start center;
     padding: 0.75rem;
     align-content: start;
   }
-  .modal-back .modal {
+  #varModalBack .modal {
     margin: 0 0 1rem;
     max-height: none;
   }
@@ -2897,28 +2913,74 @@ main {
 /* دکمه‌های انتهایی */
 .var-foot {
   display: grid;
-  grid-template-columns: 1fr 1fr 1.4fr;
-  gap: 0.5rem;
-  margin-top: 1.1rem;
+  grid-template-columns: auto auto 1fr;
+  gap: 0.55rem;
+  margin-top: 1.2rem;
+  align-items: stretch;
 }
 .var-foot .btn {
-  padding: 0.6rem 0.75rem;
-  font-size: var(--f-xs);
+  padding: 0.7rem 0.9rem;
+  font-size: var(--f-sm);
   min-width: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.45rem;
 }
-.var-foot .btn.g {
+.var-foot .btn svg {
+  width: 1rem;
+  height: 1rem;
+  display: block;
+  flex-shrink: 0;
+}
+.var-foot .var-btn-primary {
   font-weight: 800;
+}
+.var-foot .var-btn-sec {
+  color: var(--mut);
+  background: transparent;
+  border-color: var(--line);
+  font-weight: 700;
+}
+.var-foot .var-btn-sec:hover {
+  color: var(--txt);
+  border-color: var(--line2);
+  background: var(--card2);
+  box-shadow: none;
+}
+.var-foot .var-btn-ghost {
+  background: transparent;
+  border-color: var(--line);
+  color: var(--mut);
+  font-weight: 700;
+  padding-inline: 0.75rem;
+}
+.var-foot .var-btn-ghost:hover {
+  color: var(--txt);
+  background: var(--card2);
+  box-shadow: none;
+  border-color: var(--line2);
 }
 
 @media (max-width: 520px) {
   .var-foot {
-    grid-template-columns: 1fr 1fr;
+    grid-template-columns: auto 1fr;
+    grid-template-areas:
+      "primary primary"
+      "ghost   sec";
+    gap: 0.5rem;
   }
-  .var-foot .btn.g {
-    grid-column: 1 / -1;
+  .var-foot .var-btn-primary {
+    grid-area: primary;
     order: -1;
-    padding: 0.7rem;
-    font-size: var(--f-sm);
+    padding: 0.8rem;
+    font-size: var(--f-md);
+  }
+  .var-foot .var-btn-ghost {
+    grid-area: ghost;
+  }
+  .var-foot .var-btn-sec {
+    grid-area: sec;
   }
 }
 
@@ -3033,7 +3095,7 @@ main {
   background: var(--card);
   border: 1px solid var(--line2);
   border-radius: 14px;
-  padding: 0.5rem 0.5rem 0.5rem 1rem;
+  padding: 0.35rem 0.35rem 0.35rem 0.85rem;
   font-size: var(--f-sm);
   font-weight: 600;
   opacity: 0;
@@ -3043,10 +3105,110 @@ main {
     transform 0.5s var(--ease-spring);
   z-index: 305;
   box-shadow: var(--shadow);
-  max-width: 90vw;
   display: flex;
   align-items: center;
-  gap: 0.75rem;
+  gap: 0.55rem;
+  max-width: calc(100vw - 24px);
+  overflow: hidden;
+  direction: rtl;
+}
+#toastUndo.show {
+  opacity: 1;
+  transform: translateX(-50%) translateY(0) scale(1);
+  pointer-events: auto;
+}
+#toastUndo .undo-txt {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  line-height: 1.4;
+  padding-inline-end: 0.1rem;
+}
+#toastUndo .undo-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.1rem;
+  height: 2.1rem;
+  padding: 0;
+  margin: 0;
+  border: none;
+  border-radius: 10px;
+  background: var(--acc);
+  color: var(--acc-ink);
+  font-size: 0;
+  line-height: 0;
+  cursor: pointer;
+  flex: 0 0 auto;
+  transition:
+    transform 0.18s var(--ease),
+    background 0.18s var(--ease);
+  -webkit-tap-highlight-color: transparent;
+}
+#toastUndo .undo-btn svg {
+  width: 1.1rem;
+  height: 1.1rem;
+  display: block;
+  margin: 0;
+  flex-shrink: 0;
+}
+#toastUndo .undo-btn:hover {
+  background: color-mix(in srgb, var(--acc) 88%, #fff);
+}
+#toastUndo .undo-btn:active {
+  transform: scale(0.92);
+}
+.undo-progress {
+  position: absolute;
+  bottom: 0;
+  right: 0;
+  left: 0;
+  height: 3px;
+  background: linear-gradient(
+    to left,
+    color-mix(in srgb, var(--acc) 40%, transparent),
+    var(--acc)
+  );
+  transform-origin: right center;
+  transform: scaleX(1);
+  pointer-events: none;
+  opacity: 1;
+  border-radius: 0 0 14px 14px;
+}
+#toastUndo.show .undo-progress {
+  animation: undoCountdown var(--undo-dur, 5000ms) linear forwards;
+}
+#toastUndo.show:hover .undo-progress {
+  animation-play-state: paused;
+}
+@keyframes undoCountdown {
+  from {
+    transform: scaleX(1);
+  }
+  to {
+    transform: scaleX(0);
+  }
+}
+
+@media (max-width: 480px) {
+  #toastUndo {
+    bottom: 20px;
+    padding: 0.3rem 0.3rem 0.3rem 0.75rem;
+    gap: 0.5rem;
+  }
+  #toastUndo .undo-txt {
+    font-size: var(--f-xs);
+  }
+  #toastUndo .undo-btn {
+    width: 2rem;
+    height: 2rem;
+  }
+  #toastUndo .undo-btn svg {
+    width: 1rem;
+    height: 1rem;
+  }
 }
 #toastUndo.show {
   opacity: 1;

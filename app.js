@@ -332,23 +332,31 @@ function toast(msg, kind) {
   clearTimeout(toastT);
   toastT = setTimeout(() => el.classList.remove("show"), 2200);
 }
-let undoFn = null,
-  undoTimer = null;
+let undoFn = null;
 function toastWithUndo(msg, fn, ms) {
   const el = $("#toastUndo");
+  const dur = ms || 5000;
   $("#toastUndoTxt").textContent = msg;
   undoFn = fn;
   $("#toast").classList.remove("show");
   clearTimeout(toastT);
+  el.classList.remove("show");
+  el.style.setProperty("--undo-dur", dur + "ms");
+  void el.offsetWidth;
   el.classList.add("show");
-  clearTimeout(undoTimer);
-  undoTimer = setTimeout(hideUndoToast, ms || 5000);
 }
 function hideUndoToast() {
   $("#toastUndo").classList.remove("show");
-  clearTimeout(undoTimer);
   undoFn = null;
 }
+(function bindUndoAutoHide() {
+  const el = $("#toastUndo");
+  const bar = el?.querySelector(".undo-progress");
+  if (!bar) return;
+  bar.addEventListener("animationend", () => {
+    if (el.classList.contains("show")) hideUndoToast();
+  });
+})();
 
 function copyText(txt, msg) {
   if (navigator.clipboard && navigator.clipboard.writeText) {
@@ -781,7 +789,7 @@ async function deletePrompt(id) {
   commit((d) => {
     d.prompts = d.prompts.filter((x) => x.id !== id);
   });
-  toastWithUndo(`«${p.title}» حذف شد`, () => {
+  toastWithUndo("پرامپت حذف شد", () => {
     commit((d) => {
       d.prompts.splice(snapshot.index, 0, snapshot.p);
     });
@@ -960,6 +968,33 @@ function bulkPin() {
       : `سنجاق از ${toFaNum(count)} پرامپت برداشته شد`,
   );
 }
+function bulkDuplicate() {
+  const ids = [...selectedIds];
+  if (!ids.length) return;
+  const idSet = new Set(ids);
+  const now = Date.now();
+  let count = 0;
+  commit((d) => {
+    const additions = [];
+    d.prompts.forEach((p) => {
+      if (idSet.has(p.id)) {
+        additions.push({
+          ...p,
+          id: uid(),
+          title: p.title + " (کپی)",
+          pinned: false,
+          createdAt: now,
+          updatedAt: now,
+        });
+        count++;
+      }
+    });
+    d.prompts.push(...additions);
+  });
+  exitSelectMode();
+  toast(`${toFaNum(count)} پرامپت تکثیر شد`);
+}
+
 function openBulkMove() {
   if (!selectedIds.size) return;
   const list = $("#bulkMoveList");
@@ -1743,7 +1778,7 @@ async function deleteCategory(id) {
     if (activeCat === id) activeCat = "all";
   });
 
-  toastWithUndo(`دستهٔ «${cat.name}» حذف شد`, () => {
+  toastWithUndo("دسته حذف شد", () => {
     commit((d) => {
       d.categories.splice(snapshot.index, 0, snapshot.cat);
       d.prompts.forEach((p) => {
@@ -3187,6 +3222,7 @@ $("#quickFab")?.addEventListener("click", (e) => {
 $("#selAllBtn")?.addEventListener("click", toggleSelectAll);
 $("#selPinBtn")?.addEventListener("click", bulkPin);
 $("#selMoveBtn")?.addEventListener("click", openBulkMove);
+$("#selDupBtn")?.addEventListener("click", bulkDuplicate);
 $("#selDelBtn")?.addEventListener("click", bulkDelete);
 $("#selCancelBtn")?.addEventListener("click", exitSelectMode);
 $("#bulkMoveCancelBtn")?.addEventListener("click", closeBulkMove);
@@ -3318,21 +3354,26 @@ ${
     ctxPrompt = null;
   }
 
+  /* کانتکست منو فقط دسکتاپ (در موبایل long-press معنایی نداره) */
+  const isTouchDevice = matchMedia("(hover: none)").matches;
+
   /* راست-کلیک روی کارت */
   $("#grid").addEventListener("contextmenu", (e) => {
+    e.preventDefault();
+    if (isTouchDevice) return;
     if (selectMode) return;
     const card = e.target.closest(".card");
     if (!card) return;
     const p = DATA.prompts.find((x) => x.id === card.dataset.id);
     if (!p) return;
-    e.preventDefault();
     show(e.clientX, e.clientY, p);
   });
 
   /* راست-کلیک روی فضای خالی گرید → پرامپت جدید */
   $("#grid").addEventListener("contextmenu", (e) => {
-    if (e.target.closest(".card")) return;
     e.preventDefault();
+    if (isTouchDevice) return;
+    if (e.target.closest(".card")) return;
     openModal();
   });
 

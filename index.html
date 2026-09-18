@@ -271,6 +271,10 @@
       <span class="sel-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg></span>
       <span class="sel-lbl">انتقال</span>
     </button>
+    <button class="sel-act" id="selDupBtn" type="button" data-sel-act aria-label="تکثیر">
+      <span class="sel-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="8" y="8" width="13" height="13" rx="2"/><path d="M16 8V5a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h3"/></svg></span>
+      <span class="sel-lbl">تکثیر</span>
+    </button>
     <button class="sel-act dgr" id="selDelBtn" type="button" data-sel-act aria-label="حذف">
       <span class="sel-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg></span>
       <span class="sel-lbl">حذف</span>
@@ -745,9 +749,27 @@ aria-labelledby="varModalTitle"
     <div class="var-preview" id="varPreview"></div>
   </details>
   <div class="var-foot">
-    <button class="btn" id="varCancelBtn">انصراف</button>
-    <button class="btn" id="varCopyRawBtn">کپی خام</button>
-    <button class="btn g" id="varCopyBtn">📋 کپی نهایی</button>
+    <button class="btn var-btn-ghost" id="varCancelBtn" type="button">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <path d="M18 6 6 18M6 6l12 12"/>
+      </svg>
+      <span>انصراف</span>
+    </button>
+    <button class="btn var-btn-sec" id="varCopyRawBtn" type="button">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <rect x="9" y="9" width="11" height="11" rx="2"/>
+        <path d="M5 15V5a2 2 0 0 1 2-2h10"/>
+      </svg>
+      <span>خام</span>
+    </button>
+    <button class="btn g var-btn-primary" id="varCopyBtn" type="button">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <rect x="9" y="9" width="11" height="11" rx="2"/>
+        <path d="M5 15V5a2 2 0 0 1 2-2h10"/>
+        <path d="m12 14.5 1.8 1.8L17.5 12"/>
+      </svg>
+      <span>کپی نهایی</span>
+    </button>
   </div>
 </div>
 </div>
@@ -904,8 +926,14 @@ aria-labelledby="dialogTitle"
 <span class="toast-txt" id="toastTxt"></span>
 </div>
 <div id="toastUndo" role="status" aria-live="polite">
+<button class="undo-btn" id="toastUndoBtn" type="button" aria-label="بازگردانی">
+<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+<polyline points="9 14 4 9 9 4"/>
+<path d="M20 20v-7a4 4 0 0 0-4-4H4"/>
+</svg>
+</button>
 <span class="undo-txt" id="toastUndoTxt"></span>
-<button class="undo-btn" id="toastUndoBtn">↺ بازگردانی</button>
+<span class="undo-progress" aria-hidden="true"></span>
 </div>
 
 <script src="./app.js" defer></script>
