@@ -5,7 +5,7 @@ const $ = (s, r) => (r || document).querySelector(s);
 const $$ = (s, r) => Array.from((r || document).querySelectorAll(s));
 const DATA_KEY = "promptManager_public_v1";
 const PREF_KEY = "promptManagerPrefs_public_v1";
-const CURRENT_VERSION = 3;
+const CURRENT_VERSION = 4;
 
 function esc(s) {
   return String(s == null ? "" : s)
@@ -55,18 +55,36 @@ const SFX = (() => {
   let master = null;
   let volPct = 70;
   let currentTheme = "soft";
-  const BASE_VOL = 0.16;
+  const BASE_VOL = 0.22;
 
   function ensure() {
     if (!ctx) {
       const C = window.AudioContext || window.webkitAudioContext;
       if (!C) return null;
-      ctx = new C();
-      master = ctx.createBiquadFilter();
-      master.type = "lowpass";
-      master.frequency.value = 2400;
-      master.Q.value = 0.5;
-      master.connect(ctx.destination);
+      ctx = new C({ latencyHint: "interactive" });
+
+      /* زنجیره: source → hp → presence → lp → destination
+         بهینه برای هدفون/TWS: حذف sub-bass، تقویت وضوح 3kHz */
+      const hp = ctx.createBiquadFilter();
+      hp.type = "highpass";
+      hp.frequency.value = 70;
+      hp.Q.value = 0.6;
+
+      const presence = ctx.createBiquadFilter();
+      presence.type = "peaking";
+      presence.frequency.value = 3000;
+      presence.Q.value = 0.9;
+      presence.gain.value = 2.5;
+
+      const lp = ctx.createBiquadFilter();
+      lp.type = "lowpass";
+      lp.frequency.value = 14000;
+      lp.Q.value = 0.3;
+
+      hp.connect(presence);
+      presence.connect(lp);
+      lp.connect(ctx.destination);
+      master = hp;
     }
     if (ctx.state === "suspended") ctx.resume();
     return ctx;
@@ -190,6 +208,27 @@ const SFX = (() => {
         tone({ freq: 140, dur: 0.11, delay: 0.1, vol: 0.8, release: 0.16 });
       },
       tick: () => tone({ freq: 520, dur: 0.03, vol: 0.5 }),
+    },
+
+    /* ── زنگی: sine با هارمونیک بالا، شبیه ناقوس ── */
+    bell: {
+      copy: () => {
+        tone({ freq: 1046.5, dur: 0.12, vol: 0.55, attack: 0.003, release: 0.55 });
+        tone({ freq: 2093, dur: 0.1, delay: 0.005, vol: 0.22, attack: 0.003, release: 0.4 });
+      },
+      del: () => {
+        tone({ freq: 784, dur: 0.12, vol: 0.5, attack: 0.003, release: 0.5 });
+        tone({ freq: 1568, dur: 0.1, delay: 0.005, vol: 0.2, attack: 0.003, release: 0.4 });
+      },
+      undo: () => {
+        tone({ freq: 659.25, dur: 0.12, vol: 0.5, attack: 0.003, release: 0.5 });
+        tone({ freq: 1318.5, dur: 0.1, delay: 0.005, vol: 0.2, attack: 0.003, release: 0.4 });
+      },
+      err: () => {
+        tone({ freq: 523.25, dur: 0.1, vol: 0.45, attack: 0.003, release: 0.45 });
+        tone({ freq: 392, dur: 0.15, delay: 0.13, vol: 0.4, attack: 0.003, release: 0.6 });
+      },
+      tick: () => tone({ freq: 1318.5, dur: 0.03, vol: 0.32, attack: 0.002, release: 0.15 }),
     },
   };
 
@@ -365,7 +404,7 @@ function pickDailyItems(all, n) {
   return copy.slice(0, n);
 }
 
-let DATA = { version: CURRENT_VERSION, categories: [], prompts: [] };
+let DATA = { version: CURRENT_VERSION, categories: [], prompts: [], trash: [] };
 
 function commit(mutator) {
   if (typeof mutator === "function") mutator(DATA);
@@ -373,6 +412,9 @@ function commit(mutator) {
   renderChips();
   renderGrid();
   renderCatList();
+  /* صفحهٔ سطل باز باشه → refresh */
+  if ($("#trashList")) renderTrash();
+  renderSettingsValues();
 }
 
 const DEFAULT_CATEGORIES = [
@@ -393,12 +435,14 @@ function migrate(d) {
   if (!Array.isArray(cur.categories) || !cur.categories.length)
     cur.categories = JSON.parse(JSON.stringify(DEFAULT_CATEGORIES));
   if (!Array.isArray(cur.prompts)) cur.prompts = [];
+  if (!Array.isArray(cur.trash)) cur.trash = [];
   return cur;
 }
 
 const PREF_DEFAULTS = {
   theme: "system",
   accent: "default",
+  bg: "default",
   fs: "medium",
   cols: "3",
   sort: "updated",
@@ -446,6 +490,7 @@ function applyPrefs() {
 
   html.dataset.theme = newTheme;
   html.dataset.accent = PREFS.accent;
+  html.dataset.bg = PREFS.bg || "default";
   html.dataset.fs = PREFS.fs;
   html.style.setProperty("--cols", PREFS.cols);
   $("#themeBtn").innerHTML =
@@ -478,6 +523,7 @@ function load() {
   if (!raw) {
     DATA.categories = JSON.parse(JSON.stringify(DEFAULT_CATEGORIES));
     DATA.prompts = [];
+    DATA.trash = [];
     return;
   }
 
@@ -495,6 +541,7 @@ function load() {
     console.error("load: JSON.parse failed, raw backup saved", e);
     DATA.categories = JSON.parse(JSON.stringify(DEFAULT_CATEGORIES));
     DATA.prompts = [];
+    DATA.trash = [];
     setTimeout(
       () =>
         toast(
@@ -521,6 +568,7 @@ function load() {
     const m = migrate(parsed);
     DATA.categories = m.categories;
     DATA.prompts = m.prompts;
+    DATA.trash = Array.isArray(m.trash) ? m.trash : [];
   } catch (e) {
     /* migration شکست خورد — دادهٔ اصلی دست‌نخورده می‌مونه */
     try {
@@ -532,6 +580,7 @@ function load() {
     console.error("load: migrate failed, raw backup saved", e);
     DATA.categories = JSON.parse(JSON.stringify(DEFAULT_CATEGORIES));
     DATA.prompts = [];
+    DATA.trash = [];
     setTimeout(
       () =>
         toast(
@@ -1028,19 +1077,21 @@ async function deletePrompt(id) {
     title: "حذف پرامپت",
     icon: "warn",
     warn: true,
-    message: `پرامپت «<b>${esc(p.title)}</b>» حذف شود؟`,
+    message: `پرامپت «<b>${esc(p.title)}</b>» به سطل آشغال منتقل شود؟`,
     okText: "حذف",
     danger: true,
   });
   if (!ok) return;
-  const snapshot = { p, index: idx };
+  const trashItem = { ...p, deletedAt: Date.now(), originalIndex: idx };
   commit((d) => {
     d.prompts = d.prompts.filter((x) => x.id !== id);
+    d.trash.unshift(trashItem);
   });
   SFX.play("del");
-  toastWithUndo("پرامپت حذف شد", () => {
+  toastWithUndo("به سطل آشغال منتقل شد", () => {
     commit((d) => {
-      d.prompts.splice(snapshot.index, 0, snapshot.p);
+      d.prompts.splice(Math.min(idx, d.prompts.length), 0, p);
+      d.trash = d.trash.filter((x) => x.id !== id);
     });
     toast("بازگردانی شد");
   });
@@ -1176,19 +1227,28 @@ async function bulkDelete() {
     if (idSet.has(p.id)) snapshot.push({ p, index: i });
   });
 
+  const now = Date.now();
   exitSelectMode();
   commit((d) => {
     d.prompts = d.prompts.filter((p) => !idSet.has(p.id));
+    snapshot.forEach((s) => {
+      d.trash.unshift({
+        ...s.p,
+        deletedAt: now,
+        originalIndex: s.index,
+      });
+    });
   });
 
   SFX.play("del");
-  toastWithUndo(`${toFaNum(ids.length)} پرامپت حذف شد`, () => {
+  toastWithUndo(`${toFaNum(ids.length)} پرامپت به سطل آشغال منتقل شد`, () => {
     commit((d) => {
       snapshot
         .slice()
         .sort((a, b) => a.index - b.index)
         .forEach((s) => {
           d.prompts.splice(s.index, 0, s.p);
+          d.trash = d.trash.filter((x) => x.id !== s.p.id);
         });
     });
     toast("بازگردانی شد");
@@ -2031,6 +2091,9 @@ async function deleteCategory(id) {
     d.prompts.forEach((p) => {
       if (p.category === id) p.category = d.categories[0].id;
     });
+    d.trash.forEach((p) => {
+      if (p.category === id) p.category = d.categories[0].id;
+    });
     if (activeCat === id) activeCat = "all";
   });
 
@@ -2350,13 +2413,14 @@ document.addEventListener("click", (e) => {
 const ST_VIEWS = {
   home: "تنظیمات",
   appearance: "ظاهر",
-  color: "رنگ",
   sound: "صدا",
   library: "کتابخانه",
   categories: "دسته‌ها",
   data: "داده و پشتیبان",
+  trash: "سطل آشغال",
   about: "درباره",
 };
+
 const ST_THEME_LABEL = { dark: "تاریک", light: "روشن", system: "سیستم" };
 const ST_ACCENT_LABEL = {
   default: "پیش‌فرض",
@@ -2371,7 +2435,10 @@ function isDesktopSettings() {
   return window.matchMedia("(min-width: 900px)").matches;
 }
 
-function navigateSettings(view) {
+let _viewHistory = [];
+
+/* نمایش view بدون دست زدن به تاریخچه — استفادهٔ داخلی */
+function _applyView(view) {
   const drawer = $("#drawer");
   if (!drawer) return;
   const desktop = isDesktopSettings();
@@ -2379,6 +2446,8 @@ function navigateSettings(view) {
   if (desktop && view === "home") view = "appearance";
 
   drawer.dataset.view = view;
+  drawer.dataset.canBack = _viewHistory.length ? "1" : "0";
+
   const title = $("#drawerTitle");
   if (title) title.textContent = ST_VIEWS[view] || "تنظیمات";
 
@@ -2395,29 +2464,56 @@ function navigateSettings(view) {
   });
 
   if (view === "library") renderLibrary();
+  if (view === "trash") renderTrash();
 
   const body = drawer.querySelector(".drawer-body");
   if (body) body.scrollTop = 0;
 }
 
+/* ناوبری به یه view */
+function navigateSettings(view) {
+  _applyView(view);
+}
+
+/* برگشت به والد منطقی — trash → data، بقیه → home */
+const VIEW_PARENT = {
+  trash: "data",
+};
+
+function navigateBack() {
+  const cur = $("#drawer")?.dataset.view;
+  _applyView(VIEW_PARENT[cur] || "home");
+}
+
 function renderSettingsValues() {
   const themeEl = $("#stValTheme");
   if (themeEl) themeEl.textContent = ST_THEME_LABEL[PREFS.theme] || "—";
-  const accEl = $("#stValAccent");
-  if (accEl) accEl.textContent = ST_ACCENT_LABEL[PREFS.accent] || "—";
   const sndEl = $("#stValSound");
   if (sndEl) sndEl.textContent = PREFS.sound === "on" ? "روشن" : "خاموش";
   const catEl = $("#stValCat");
   if (catEl) catEl.textContent = toFaNum(DATA.categories.length) + " دسته";
+  const trashEl = $("#stValTrash");
+  if (trashEl) {
+    const n = (DATA.trash || []).length;
+    trashEl.textContent = n ? toFaNum(n) + " پرامپت" : "خالی";
+  }
   const verEl = $("#stValVer");
   if (verEl && currentAppVer) verEl.textContent = "v" + currentAppVer;
   const aboutVer = $("#stAboutVer");
   if (aboutVer && currentAppVer) aboutVer.textContent = currentAppVer;
 }
 
-function openDrawer() {
-  navigateSettings(isDesktopSettings() ? "appearance" : "home");
-  $("#drawer").classList.add("open");
+function openDrawer(initialView) {
+  const drawer = $("#drawer");
+  /* اگه دراور از قبل بسته‌ست، state رو ریست کن قبل از نمایش */
+  if (drawer && !drawer.classList.contains("open")) {
+    _viewHistory = [];
+    delete drawer.dataset.view;
+  }
+  const target =
+    initialView || (isDesktopSettings() ? "appearance" : "home");
+  navigateSettings(target);
+  drawer.classList.add("open");
   $("#drawerBack").classList.add("open");
   renderCatList();
   renderSettingsValues();
@@ -2429,7 +2525,7 @@ function closeDrawer() {
   refreshFocusTrap();
 }
 
-$("#stBack")?.addEventListener("click", () => navigateSettings("home"));
+$("#stBack")?.addEventListener("click", navigateBack);
 $("#drawer")?.addEventListener("click", (e) => {
   const nav = e.target.closest("[data-nav]");
   if (!nav) return;
@@ -2906,7 +3002,45 @@ function normalizeImport(raw) {
     });
   });
 
-  return { categories, prompts, rejected };
+  /* ── نرمال‌سازی سطل آشغال (اختیاری) ── */
+  const now2 = Date.now();
+  const trash = [];
+  if (Array.isArray(data.trash)) {
+    data.trash.forEach((p) => {
+      if (!p || typeof p !== "object") return;
+      const title = String(p.title || "").trim();
+      const content = String(p.content || "");
+      if (!title || !content.trim()) return;
+      let category = String(p.category || "");
+      if (!validCatIds.has(category)) category = fallbackCat;
+      let tags;
+      if (Array.isArray(p.tags)) {
+        tags = p.tags.map((t) => String(t || "").trim()).filter(Boolean);
+      } else if (typeof p.tags === "string") {
+        tags = p.tags
+          .split(",")
+          .map((s) => s.trim())
+          .filter(Boolean);
+      } else {
+        tags = [];
+      }
+      trash.push({
+        id: String(p.id || uid()),
+        category,
+        title,
+        description: String(p.description || "").trim(),
+        tags,
+        pinned: !!p.pinned,
+        content,
+        createdAt: Number(p.createdAt) || now2,
+        updatedAt: Number(p.updatedAt) || now2,
+        deletedAt: Number(p.deletedAt) || now2,
+        originalIndex: Number(p.originalIndex) || 0,
+      });
+    });
+  }
+
+  return { categories, prompts, trash, rejected };
 }
 
 /* ── تشخیص تکراری بر اساس id یا (عنوان + متن) ── */
@@ -2959,6 +3093,24 @@ function mergeImport(result) {
       added++;
     }
   });
+  /* سطل آشغال: آرایهٔ جداست، بدون conflict با prompts */
+  if (Array.isArray(result.trash)) {
+    const activeIds = new Set(DATA.prompts.map((p) => p.id));
+    const trashIds = new Set(DATA.trash.map((p) => p.id));
+    result.trash.forEach((p) => {
+      if (activeIds.has(p.id)) return;
+      if (trashIds.has(p.id)) return;
+      if (
+        DATA.prompts.some(
+          (x) => x.title === p.title && x.content === p.content
+        )
+      )
+        return;
+      DATA.trash.push(p);
+      trashIds.add(p.id);
+    });
+  }
+
   return { added, updated, skipped };
 }
 
@@ -3079,6 +3231,7 @@ function importData(file) {
           } catch (_) {}
           DATA.categories = result.categories;
           DATA.prompts = result.prompts;
+          DATA.trash = Array.isArray(result.trash) ? result.trash : [];
           save();
           renderChips();
           renderGrid();
@@ -3115,10 +3268,179 @@ async function resetAll() {
   commit((d) => {
     d.categories = JSON.parse(JSON.stringify(DEFAULT_CATEGORIES));
     d.prompts = [];
+    d.trash = [];
     activeCat = "all";
   });
   closeDrawer();
   toast("بازنشانی شد");
+}
+
+/* ═══════════ سطل آشغال ═══════════ */
+const TRASH_TTL_DAYS = 30;
+const TRASH_TTL_MS = TRASH_TTL_DAYS * 24 * 60 * 60 * 1000;
+
+function purgeOldTrash() {
+  if (!Array.isArray(DATA.trash) || !DATA.trash.length) return 0;
+  const cutoff = Date.now() - TRASH_TTL_MS;
+  const before = DATA.trash.length;
+  DATA.trash = DATA.trash.filter((p) => (p.deletedAt || 0) > cutoff);
+  return before - DATA.trash.length;
+}
+
+function timeAgo(ts) {
+  if (!ts) return "—";
+  const diff = Date.now() - ts;
+  const min = Math.floor(diff / 60000);
+  if (min < 1) return "همین حالا";
+  if (min < 60) return toFaNum(min) + " دقیقه پیش";
+  const hr = Math.floor(min / 60);
+  if (hr < 24) return toFaNum(hr) + " ساعت پیش";
+  const day = Math.floor(hr / 24);
+  if (day < 30) return toFaNum(day) + " روز پیش";
+  return toFaNum(Math.floor(day / 30)) + " ماه پیش";
+}
+
+function daysLeftInTrash(deletedAt) {
+  const elapsed = Math.floor((Date.now() - (deletedAt || 0)) / 86400000);
+  return Math.max(0, TRASH_TTL_DAYS - elapsed);
+}
+
+function stripTrashMeta(item) {
+  const { deletedAt, originalIndex, ...clean } = item;
+  return clean;
+}
+
+function restoreFromTrash(id) {
+  const idx = DATA.trash.findIndex((p) => p.id === id);
+  if (idx < 0) return;
+  const item = DATA.trash[idx];
+  const clean = stripTrashMeta(item);
+  const insertAt = Math.min(
+    Math.max(0, item.originalIndex || 0),
+    DATA.prompts.length
+  );
+  commit((d) => {
+    d.trash = d.trash.filter((p) => p.id !== id);
+    d.prompts.splice(insertAt, 0, clean);
+  });
+  SFX.play("undo");
+  toast("پرامپت بازگردانی شد");
+}
+
+function restoreAllTrash() {
+  if (!DATA.trash.length) return;
+  const items = DATA.trash
+    .slice()
+    .sort((a, b) => (a.originalIndex || 0) - (b.originalIndex || 0));
+  commit((d) => {
+    items.forEach((item) => {
+      const insertAt = Math.min(
+        Math.max(0, item.originalIndex || 0),
+        d.prompts.length
+      );
+      d.prompts.splice(insertAt, 0, stripTrashMeta(item));
+    });
+    d.trash = [];
+  });
+  SFX.play("undo");
+  toast(`${toFaNum(items.length)} پرامپت بازگردانی شد`);
+}
+
+async function purgeFromTrash(id) {
+  const item = DATA.trash.find((p) => p.id === id);
+  if (!item) return;
+  const ok = await uiConfirm({
+    title: "حذف کامل",
+    icon: "warn",
+    warn: true,
+    message: `پرامپت «<b>${esc(item.title)}</b>» برای همیشه حذف شود؟`,
+    okText: "حذف کامل",
+    danger: true,
+  });
+  if (!ok) return;
+  commit((d) => {
+    d.trash = d.trash.filter((p) => p.id !== id);
+  });
+  SFX.play("del");
+  toast("برای همیشه حذف شد");
+}
+
+async function emptyTrash() {
+  if (!DATA.trash.length) return;
+  const n = DATA.trash.length;
+  const ok = await uiConfirm({
+    title: "خالی کردن سطل",
+    icon: "warn",
+    warn: true,
+    message: `${toFaNum(
+      n
+    )} پرامپت برای همیشه حذف شوند؟<br><span style="color:var(--dim);font-size:var(--f-xs)">این کار قابل بازگشت نیست.</span>`,
+    okText: "خالی کن",
+    danger: true,
+  });
+  if (!ok) return;
+  commit((d) => {
+    d.trash = [];
+  });
+  SFX.play("del");
+  toast("سطل خالی شد");
+}
+
+function renderTrash() {
+  const el = $("#trashList");
+  if (!el) return;
+  const items = DATA.trash
+    .slice()
+    .sort((a, b) => (b.deletedAt || 0) - (a.deletedAt || 0));
+
+  const headEl = $("#trashHead");
+  const emptyBtn = $("#trashEmptyBtn");
+  const restoreAllBtn = $("#trashRestoreAllBtn");
+
+  if (!items.length) {
+    if (headEl) headEl.hidden = true;
+    el.innerHTML = `<div class="trash-empty">
+<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg>
+<p>سطل آشغال خالی است</p>
+<span>پرامپت‌های حذف‌شده تا ۳۰ روز اینجا می‌مونن.</span>
+</div>`;
+    return;
+  }
+
+  if (headEl) {
+    headEl.hidden = false;
+    if (emptyBtn)
+      emptyBtn.textContent = `خالی کردن (${toFaNum(items.length)})`;
+    if (restoreAllBtn) restoreAllBtn.textContent = "بازیابی همه";
+  }
+
+  el.innerHTML = items
+    .map((p) => {
+      const cat = catById(p.category);
+      const daysLeft = daysLeftInTrash(p.deletedAt);
+      return `<div class="trash-item" data-id="${p.id}">
+<div class="trash-item-head">
+<b dir="auto">${esc(p.title)}</b>
+<span class="pcat ${cat.color}">${esc(cat.name)}</span>
+</div>
+<div class="trash-item-meta">
+<span>${timeAgo(p.deletedAt)}</span>
+<span class="trash-item-sep">·</span>
+<span class="trash-item-ttl">${toFaNum(daysLeft)} روز مانده</span>
+</div>
+<div class="trash-item-acts">
+<button class="btn sm g" data-trash-act="restore" type="button">
+<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 14 4 9 9 4"/><path d="M20 20v-7a4 4 0 0 0-4-4H4"/></svg>
+<span>بازیابی</span>
+</button>
+<button class="btn sm dgr" data-trash-act="purge" type="button">
+<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg>
+<span>حذف کامل</span>
+</button>
+</div>
+</div>`;
+    })
+    .join("");
 }
 
 async function seedDefaults() {
@@ -3556,6 +3878,18 @@ initPromptCatSelect();
 initSortSelect();
 loadPrefs();
 load();
+/* پاک‌سازی خودکار سطل آشغال (۳۰ روز TTL) */
+(function initTrashPurge() {
+  const n = purgeOldTrash();
+  if (n > 0) {
+    save();
+    setTimeout(
+      () =>
+        toast(`${toFaNum(n)} پرامپت قدیمی از سطل پاک شد`, "warn"),
+      1200
+    );
+  }
+})();
 applyPrefs();
 renderPrefs();
 renderChips();
@@ -3583,6 +3917,20 @@ $("#bulkMoveCancelBtn")?.addEventListener("click", closeBulkMove);
 $("#bulkMoveBack")?.addEventListener("click", (e) => {
   if (e.target.id === "bulkMoveBack") closeBulkMove();
 });
+/* ═══════════ رویدادهای سطل آشغال ═══════════ */
+$("#trashList")?.addEventListener("click", (e) => {
+  const btn = e.target.closest("[data-trash-act]");
+  if (!btn) return;
+  const item = btn.closest(".trash-item");
+  if (!item) return;
+  const id = item.dataset.id;
+  const act = btn.dataset.trashAct;
+  if (act === "restore") restoreFromTrash(id);
+  else if (act === "purge") purgeFromTrash(id);
+});
+$("#trashEmptyBtn")?.addEventListener("click", emptyTrash);
+$("#trashRestoreAllBtn")?.addEventListener("click", restoreAllTrash);
+
 $("#bulkMoveList")?.addEventListener("click", (e) => {
   const item = e.target.closest("[data-cat]");
   if (!item) return;
@@ -3897,7 +4245,23 @@ function openLibPreview(idx) {
     );
   });
   $("#libPreviewMeta").innerHTML = meta.join("");
-  $("#libPreviewContent").textContent = item.content;
+
+  /* آمار متن */
+  const content = item.content || "";
+  const lines = content.split("\n").length;
+  const words = countWords(content);
+  const chars = content.length;
+  const tokens = estimateTokens(content);
+  const statsEl = $("#libPreviewStats");
+  if (statsEl) {
+    statsEl.innerHTML = `
+<span class="lps-item"><b>${toFaNum(lines)}</b><span>خط</span></span>
+<span class="lps-item"><b>${toFaNum(words)}</b><span>کلمه</span></span>
+<span class="lps-item"><b>${toFaNum(chars)}</b><span>کاراکتر</span></span>
+<span class="lps-item"><b>~${toFaNum(tokens)}</b><span>توکن</span></span>`;
+  }
+
+  $("#libPreviewContent").textContent = content;
   const addBtn = $("#libPreviewAdd");
   const added = isLibItemAdded(item);
   addBtn.textContent = added ? "افزوده شده" : "افزودن به لیست من";
@@ -3968,6 +4332,19 @@ $("#libPreviewBack")?.addEventListener("click", (e) => {
 /* ═══ چنج‌لاگ ═══ */
 const CHANGELOG = [
   {
+    version: "1.4",
+    date: "۱۴۰۴/۰۶/۲۸",
+    items: [
+      "قابلیت جدید: [سطل آشغال](trash) — پرامپت‌های حذف‌شده تا ۳۰ روز اینجا می‌مونن و هر وقت خواستی برمی‌گردونیشون.",
+      "پس‌زمینه‌های جدید برای اپ؛ از تنظیمات [ظاهر](appearance) شفق، رنگین، شبکه، نقطه‌ای، راه‌راه یا ساده رو انتخاب کن.",
+      "تم صوتی جدید «زنگی» و بهبود کیفیت صدا برای هدفون و ایرباد — تو صفحهٔ [صدا](sound).",
+      "پیش‌نمایش [کتابخانه](library) حالا آمار متن نشون می‌ده: خط، کلمه، کاراکتر و تخمین توکن.",
+      "دکمهٔ «افزودن همه» تو [کتابخانه](library) ثابت شد؛ فقط کارت‌ها اسکرول می‌شن.",
+      "رنگ‌ها و اندازه‌ها تو صفحهٔ [ظاهر](appearance) یکی شدن — همه‌چیز یه‌جا.",
+      "رفع چند باگ ظاهری و رنگ در حالت hover.",
+    ],
+  },
+  {
     version: "1.3",
     date: "۱۴۰۴/۰۶/۲۷",
     items: [
@@ -4013,11 +4390,40 @@ const CHANGELOG = [
 
 let currentAppVer = null;
 
+/* لینک‌های inline تو چنج‌لاگ: [کلمه](view) */
+const CHLOG_LINK_RE = /\[([^\]]+)\]\(([a-z]+)\)/g;
+
+function renderChlogItemText(raw) {
+  const s = String(raw == null ? "" : raw);
+  CHLOG_LINK_RE.lastIndex = 0;
+  let out = "",
+    last = 0,
+    m;
+  while ((m = CHLOG_LINK_RE.exec(s))) {
+    out += esc(s.slice(last, m.index));
+    const label = m[1];
+    const view = m[2];
+    if (ST_VIEWS[view]) {
+      out += `<button type="button" class="chlog-link" data-chlog-nav="${esc(
+        view,
+      )}">${esc(label)}</button>`;
+    } else {
+      out += esc(label);
+    }
+    last = m.index + m[0].length;
+  }
+  out += esc(s.slice(last));
+  return out;
+}
+
 function renderChangelog() {
   const el = $("#chlogList");
   if (!el) return;
   el.innerHTML = CHANGELOG.map((c, i) => {
     const isCurrent = currentAppVer && c.version === currentAppVer;
+    const itemsHtml = c.items
+      .map((it) => `<li>${renderChlogItemText(it)}</li>`)
+      .join("");
     return `
 <div class="chlog-item">
   <div class="chlog-head">
@@ -4031,7 +4437,7 @@ function renderChangelog() {
     </span>
     <span class="chlog-date">${esc(c.date || "")}</span>
   </div>
-  <ul>${c.items.map((it) => `<li>${esc(it)}</li>`).join("")}</ul>
+  <ul>${itemsHtml}</ul>
 </div>`;
   }).join("");
 }
@@ -4046,6 +4452,13 @@ function closeChangelog() {
 }
 $("#chlogBtn")?.addEventListener("click", openChangelog);
 $("#chlogCloseBtn")?.addEventListener("click", closeChangelog);
+$("#chlogList")?.addEventListener("click", (e) => {
+  const btn = e.target.closest("[data-chlog-nav]");
+  if (!btn) return;
+  const view = btn.dataset.chlogNav;
+  closeChangelog();
+  setTimeout(() => openDrawer(view), 160);
+});
 $("#chlogBack")?.addEventListener("click", (e) => {
   if (e.target.id === "chlogBack") closeChangelog();
 });

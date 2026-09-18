@@ -15,8 +15,10 @@
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-title" content="پرامپتـام" />
 
+  
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/vazirmatn@5.0.16/arabic-300.css" />
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/vazirmatn@5.0.16/arabic-400.css" />
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/vazirmatn@5.0.16/arabic-700.css" />
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/vazirmatn@5.0.16/arabic-800.css" />
@@ -290,7 +292,7 @@
 <div class="ft-inner">
   <span class="ft-brand">Prompt Manager</span>
   <span class="ft-sep">·</span>
-  <span>نسخه <span class="ft-ver" id="ftVer">۱.۲</span></span>
+  <span>نسخه <span class="ft-ver" id="ftVer"></span></span>
   <span class="ft-sep">·</span>
   <span
     >ساخته‌شده توسط
@@ -509,15 +511,6 @@ aria-label="تنظیمات"
         <span class="st-chev"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg></span>
       </button>
 
-      <button class="st-row" type="button" data-nav="color">
-        <span class="st-icon">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="13.5" cy="6.5" r=".5" fill="currentColor"/><circle cx="17.5" cy="10.5" r=".5" fill="currentColor"/><circle cx="8.5" cy="7.5" r=".5" fill="currentColor"/><circle cx="6.5" cy="12.5" r=".5" fill="currentColor"/><path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10c.926 0 1.648-.746 1.648-1.688 0-.437-.18-.835-.437-1.125-.29-.289-.438-.652-.438-1.125a1.64 1.64 0 0 1 1.668-1.668h1.996c3.051 0 5.555-2.503 5.555-5.554C21.965 6.012 17.461 2 12 2z"/></svg>
-        </span>
-        <span class="st-label">رنگ</span>
-        <span class="st-val" id="stValAccent">پیش‌فرض</span>
-        <span class="st-chev"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg></span>
-      </button>
-
       <button class="st-row" type="button" data-nav="sound">
         <span class="st-icon">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 5 6 9H2v6h4l5 4z"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07M19.07 4.93a10 10 0 0 1 0 14.14"/></svg>
@@ -567,47 +560,94 @@ aria-label="تنظیمات"
 
   <!-- ═══ ظاهر ═══ -->
   <div class="st-view" data-view="appearance" hidden>
-    <div class="st-section">
-      <div class="row-pref">
-        <div class="label"><b>پوسته</b><span>حالت نمایش</span></div>
-        <div class="seg" data-pref="theme">
-          <button data-v="dark">تاریک</button>
-          <button data-v="light">روشن</button>
-          <button data-v="system">سیستم</button>
+    <div class="pref-row">
+      <div class="pref-head">
+        <span class="pref-ico">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+        </span>
+        <div class="pref-titles">
+          <b>پوسته</b>
+          <span>حالت نمایش اپ</span>
         </div>
       </div>
-      <div class="row-pref">
-        <div class="label"><b>اندازهٔ متن</b><span>اندازهٔ پایهٔ متن</span></div>
-        <div class="seg" data-pref="fs">
-          <button data-v="small">کوچک</button>
-          <button data-v="medium">متوسط</button>
-          <button data-v="large">بزرگ</button>
-        </div>
-      </div>
-      <div class="row-pref cols-row">
-        <div class="label"><b>ستون‌ها</b><span>تعداد ستون‌های گرید</span></div>
-        <div class="seg" data-pref="cols">
-          <button data-v="2">۲</button>
-          <button data-v="3">۳</button>
-          <button data-v="4">۴</button>
-        </div>
+      <div class="seg" data-pref="theme">
+        <button data-v="dark">تاریک</button>
+        <button data-v="light">روشن</button>
+        <button data-v="system">سیستم</button>
       </div>
     </div>
-  </div>
 
-  <!-- ═══ رنگ ═══ -->
-  <div class="st-view" data-view="color" hidden>
-    <div class="st-section">
-      <div class="row-pref">
-        <div class="label"><b>پالت گرادیان</b><span>رنگ برند و تأکیدها</span></div>
-        <div class="seg swatches" data-pref="accent">
-          <button data-v="default" class="sw-default" data-tip="پیش‌فرض" aria-label="پیش‌فرض"></button>
-          <button data-v="ocean" class="sw-ocean" data-tip="اقیانوس" aria-label="اقیانوس"></button>
-          <button data-v="forest" class="sw-forest" data-tip="جنگل" aria-label="جنگل"></button>
-          <button data-v="sunset" class="sw-sunset" data-tip="غروب" aria-label="غروب"></button>
-          <button data-v="galaxy" class="sw-galaxy" data-tip="کهکشان" aria-label="کهکشان"></button>
-          <button data-v="mono" class="sw-mono" data-tip="بی‌رنگ" aria-label="بی‌رنگ"></button>
+    <div class="pref-row">
+      <div class="pref-head">
+        <span class="pref-ico">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="13.5" cy="6.5" r=".5" fill="currentColor"/><circle cx="17.5" cy="10.5" r=".5" fill="currentColor"/><circle cx="8.5" cy="7.5" r=".5" fill="currentColor"/><circle cx="6.5" cy="12.5" r=".5" fill="currentColor"/><path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10c.926 0 1.648-.746 1.648-1.688 0-.437-.18-.835-.437-1.125-.29-.289-.438-.652-.438-1.125a1.64 1.64 0 0 1 1.668-1.668h1.996c3.051 0 5.555-2.503 5.555-5.554C21.965 6.012 17.461 2 12 2z"/></svg>
+        </span>
+        <div class="pref-titles">
+          <b>پالت رنگ</b>
+          <span>رنگ برند و تأکیدها</span>
         </div>
+      </div>
+      <div class="seg swatches" data-pref="accent">
+        <button data-v="default" class="sw-default" data-tip="پیش‌فرض" aria-label="پیش‌فرض"></button>
+        <button data-v="ocean" class="sw-ocean" data-tip="اقیانوس" aria-label="اقیانوس"></button>
+        <button data-v="forest" class="sw-forest" data-tip="جنگل" aria-label="جنگل"></button>
+        <button data-v="sunset" class="sw-sunset" data-tip="غروب" aria-label="غروب"></button>
+        <button data-v="galaxy" class="sw-galaxy" data-tip="کهکشان" aria-label="کهکشان"></button>
+        <button data-v="mono" class="sw-mono" data-tip="بی‌رنگ" aria-label="بی‌رنگ"></button>
+      </div>
+    </div>
+
+    <div class="pref-row">
+      <div class="pref-head">
+        <span class="pref-ico">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"/></svg>
+        </span>
+        <div class="pref-titles">
+          <b>پس‌زمینه</b>
+          <span>الگوی پشت‌زمینهٔ اپ</span>
+        </div>
+      </div>
+      <div class="seg swatches" data-pref="bg">
+        <button data-v="default" class="bg-default" data-tip="شفق" aria-label="شفق"></button>
+        <button data-v="mesh" class="bg-mesh" data-tip="رنگین" aria-label="رنگین"></button>
+        <button data-v="grid" class="bg-grid" data-tip="شبکه" aria-label="شبکه"></button>
+        <button data-v="dots" class="bg-dots" data-tip="نقطه‌ای" aria-label="نقطه‌ای"></button>
+        <button data-v="stripes" class="bg-stripes" data-tip="راه‌راه" aria-label="راه‌راه"></button>
+        <button data-v="clean" class="bg-clean" data-tip="ساده" aria-label="ساده"></button>
+      </div>
+    </div>
+
+    <div class="pref-row">
+      <div class="pref-head">
+        <span class="pref-ico">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="4 7 4 4 20 4 20 7"/><line x1="9" x2="15" y1="20" y2="20"/><line x1="12" x2="12" y1="4" y2="20"/></svg>
+        </span>
+        <div class="pref-titles">
+          <b>اندازهٔ متن</b>
+          <span>اندازهٔ پایهٔ کل اپ</span>
+        </div>
+      </div>
+      <div class="seg" data-pref="fs">
+        <button data-v="small">کوچک</button>
+        <button data-v="medium">متوسط</button>
+        <button data-v="large">بزرگ</button>
+      </div>
+    </div>
+
+    <div class="pref-row cols-row">
+      <div class="pref-head">
+        <span class="pref-ico">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg>
+        </span>
+        <div class="pref-titles">
+          <b>ستون‌ها</b>
+          <span>تعداد ستون‌های گرید</span>
+        </div>
+      </div>
+      <div class="seg" data-pref="cols">
+        <button data-v="2">۲</button>
+        <button data-v="3">۳</button>
+        <button data-v="4">۴</button>
       </div>
     </div>
   </div>
@@ -635,6 +675,7 @@ aria-label="تنظیمات"
         <button data-v="wood">چوبی</button>
         <button data-v="digital">دیجیتال</button>
         <button data-v="deep">عمیق</button>
+        <button data-v="bell">زنگی</button>
       </div>
     </div>
 
@@ -713,11 +754,15 @@ aria-label="تنظیمات"
     </div>
 
     <div class="st-section">
-      <h4 class="st-section-title">اطلاعات</h4>
-      <div class="row-pref">
-        <div class="label"><b>تغییرات نسخه</b><span>تاریخچهٔ به‌روزرسانی‌ها</span></div>
-        <button class="btn sm" id="chlogBtn" type="button">نمایش</button>
-      </div>
+      <h4 class="st-section-title">سطل آشغال</h4>
+      <button class="st-row" type="button" data-nav="trash">
+        <span class="st-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6M14 11v6"/></svg>
+        </span>
+        <span class="st-label">پرامپت‌های حذف‌شده</span>
+        <span class="st-val" id="stValTrash">خالی</span>
+        <span class="st-chev"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg></span>
+      </button>
     </div>
 
     <div class="st-section">
@@ -730,6 +775,21 @@ aria-label="تنظیمات"
         <button class="btn sm dgr" id="resetBtn" type="button">حذف</button>
       </div>
     </div>
+  </div>
+
+  <!-- ═══ سطل آشغال ═══ -->
+  <div class="st-view" data-view="trash" hidden>
+    <div class="trash-head" id="trashHead" hidden>
+      <button class="btn sm g" id="trashRestoreAllBtn" type="button">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 14 4 9 9 4"/><path d="M20 20v-7a4 4 0 0 0-4-4H4"/></svg>
+        <span>بازیابی همه</span>
+      </button>
+      <button class="btn sm dgr" id="trashEmptyBtn" type="button">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg>
+        <span>خالی کردن</span>
+      </button>
+    </div>
+    <div class="trash-list" id="trashList"></div>
   </div>
 
   <!-- ═══ درباره ═══ -->
@@ -747,6 +807,18 @@ aria-label="تنظیمات"
         <span class="about-chip">PWA</span>
         <span class="about-chip">بدون سرور</span>
       </div>
+
+      <p class="about-desc">
+        یه اپ سبک و آفلاین برای مدیریت پرامپت‌های AI.
+        پرامپت‌هات رو دسته‌بندی کن، تگ بزن، با متغیر بساز،
+        و با یه کلیک تو ChatGPT، Claude، Gemini و ۶ سرویس دیگه باز کن.
+        همهٔ داده‌ها فقط تو مرورگر خودت می‌مونن — نه سرور، نه اکانت.
+      </p>
+
+      <button class="about-chlog-btn" id="chlogBtn" type="button">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="8" y="2" width="8" height="4" rx="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><path d="M9 12h6M9 16h4"/></svg>
+        <span>تغییرات نسخه</span>
+      </button>
 
       <div class="about-meta">
         <span class="about-ver">نسخه <b id="stAboutVer">۱.۳</b></span>
@@ -1093,6 +1165,7 @@ aria-labelledby="dialogTitle"
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18M6 6l12 12"/></svg>
       </button>
     </div>
+    <div class="lib-preview-stats" id="libPreviewStats"></div>
     <pre class="lib-preview-content" id="libPreviewContent"></pre>
     <div class="foot">
       <button class="btn g" id="libPreviewAdd" type="button">افزودن به لیست من</button>
