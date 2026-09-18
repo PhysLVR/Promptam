@@ -213,11 +213,74 @@
       </button>
       <div class="cselect-menu" id="sortSelMenu"></div>
     </div>
-    <button class="btn g" id="addBtn">＋ پرامپت جدید</button>
+    <button
+      class="sort-dir"
+      id="sortDirBtn"
+      type="button"
+      aria-label="جهت مرتب‌سازی"
+      title="جهت مرتب‌سازی"
+    >
+      <svg
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        stroke-width="2.2"
+        stroke-linecap="round"
+        stroke-linejoin="round"
+        aria-hidden="true"
+      >
+        <path d="M12 5v14M6 11l6-6 6 6"/>
+      </svg>
+    </button>
   </div>
 </div>
 <div class="grid" id="grid"></div>
 </main>
+
+<div class="quick-fab" id="quickFab" role="toolbar" aria-label="عملیات سریع">
+  <button class="qf-part" type="button" data-qf="add" aria-label="پرامپت جدید">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M12 5v14M5 12h14"/>
+    </svg>
+    <span>جدید</span>
+  </button>
+  <span class="qf-sep" aria-hidden="true"></span>
+  <button class="qf-part" type="button" data-qf="select" aria-label="انتخاب چندگانه">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <rect x="3" y="3" width="18" height="18" rx="2"/>
+      <path d="m9 12 2 2 4-4"/>
+    </svg>
+    <span>انتخاب</span>
+  </button>
+</div>
+
+<div class="sel-bar" id="selBar" role="toolbar" aria-label="عملیات گروهی">
+  <div class="sel-info">
+    <b id="selCount">۰</b>
+  </div>
+  <div class="sel-actions">
+    <button class="sel-act" id="selAllBtn" type="button" data-sel-act aria-label="انتخاب همه">
+      <span class="sel-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m2 11 4 4 8-8"/><path d="m10 15 4 4 8-8"/></svg></span>
+      <span class="sel-lbl">همه</span>
+    </button>
+    <button class="sel-act" id="selPinBtn" type="button" data-sel-act aria-label="سنجاق">
+      <span class="sel-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 17v5"/><path d="M9 10.76a2 2 0 0 1-1.11 1.79l-1.78.9A2 2 0 0 0 5 15.24V16a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-.76a2 2 0 0 0-1.11-1.79l-1.78-.9A2 2 0 0 1 15 10.76V7a1 1 0 0 1 1-1 2 2 0 0 0 0-4H8a2 2 0 0 0 0 4 1 1 0 0 1 1 1z"/></svg></span>
+      <span class="sel-lbl">سنجاق</span>
+    </button>
+    <button class="sel-act" id="selMoveBtn" type="button" data-sel-act aria-label="انتقال به دسته">
+      <span class="sel-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg></span>
+      <span class="sel-lbl">انتقال</span>
+    </button>
+    <button class="sel-act dgr" id="selDelBtn" type="button" data-sel-act aria-label="حذف">
+      <span class="sel-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg></span>
+      <span class="sel-lbl">حذف</span>
+    </button>
+  </div>
+  <button class="sel-close" id="selCancelBtn" type="button" aria-label="انصراف">
+    <span class="sel-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18M6 6l12 12"/></svg></span>
+    <span class="sel-lbl">انصراف</span>
+  </button>
+</div>
 
 <footer class="app-footer">
 <div class="ft-inner">
@@ -784,6 +847,28 @@ aria-labelledby="dialogTitle"
   </div>
 </div>
 </div>
+
+<div
+  class="modal-back"
+  id="bulkMoveBack"
+  role="dialog"
+  aria-modal="true"
+  aria-labelledby="bulkMoveTitle"
+>
+  <div class="modal" style="max-width: 440px">
+    <h2>
+      <span aria-hidden="true">📁</span>
+      <span id="bulkMoveTitle">انتقال به دسته</span>
+    </h2>
+    <p class="dialog-msg" id="bulkMoveDesc"></p>
+    <div class="cat-list" id="bulkMoveList"></div>
+    <div class="foot">
+      <button class="btn" id="bulkMoveCancelBtn">انصراف</button>
+    </div>
+  </div>
+</div>
+
+<div id="cardCtxMenu" class="ctx-menu" role="menu" hidden></div>
 
 <div
   class="modal-back"

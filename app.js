@@ -183,6 +183,7 @@ const PREF_DEFAULTS = {
   fs: "medium",
   cols: "3",
   sort: "updated",
+  sortDir: "desc",
 };
 let PREFS = Object.assign({}, PREF_DEFAULTS);
 function loadPrefs() {
@@ -245,20 +246,72 @@ function save() {
   }
 }
 function load() {
+  const raw = localStorage.getItem(DATA_KEY);
+  if (!raw) {
+    DATA.categories = JSON.parse(JSON.stringify(DEFAULT_CATEGORIES));
+    DATA.prompts = [];
+    return;
+  }
+
+  let parsed;
   try {
-    const raw = localStorage.getItem(DATA_KEY);
-    if (!raw) {
-      DATA.categories = JSON.parse(JSON.stringify(DEFAULT_CATEGORIES));
-      DATA.prompts = [];
-      return;
+    parsed = JSON.parse(raw);
+  } catch (e) {
+    /* دادهٔ خراب — قبل از reset، خام رو نگه‌دار تا کاربر بتونه نجات بده */
+    try {
+      localStorage.setItem(
+        DATA_KEY + "_corrupted_" + Date.now(),
+        raw
+      );
+    } catch (_) {}
+    console.error("load: JSON.parse failed, raw backup saved", e);
+    DATA.categories = JSON.parse(JSON.stringify(DEFAULT_CATEGORIES));
+    DATA.prompts = [];
+    setTimeout(
+      () =>
+        toast(
+          "داده‌ها خوانده نشد؛ نسخهٔ خام بکاپ گرفته شد",
+          "err"
+        ),
+      500
+    );
+    return;
+  }
+
+  /* قبل از هر migration، نسخهٔ اصلی رو نگه‌دار */
+  try {
+    const v = Number(parsed.version) || 1;
+    if (v < CURRENT_VERSION) {
+      const key = DATA_KEY + "_pre_v" + v;
+      if (!localStorage.getItem(key)) {
+        localStorage.setItem(key, raw);
+      }
     }
-    const p = JSON.parse(raw);
-    const m = migrate(p);
+  } catch (_) {}
+
+  try {
+    const m = migrate(parsed);
     DATA.categories = m.categories;
     DATA.prompts = m.prompts;
   } catch (e) {
+    /* migration شکست خورد — دادهٔ اصلی دست‌نخورده می‌مونه */
+    try {
+      localStorage.setItem(
+        DATA_KEY + "_migrate_failed_" + Date.now(),
+        raw
+      );
+    } catch (_) {}
+    console.error("load: migrate failed, raw backup saved", e);
     DATA.categories = JSON.parse(JSON.stringify(DEFAULT_CATEGORIES));
     DATA.prompts = [];
+    setTimeout(
+      () =>
+        toast(
+          "مهاجرت داده‌ها ناموفق بود؛ نسخهٔ قبلی بکاپ شد",
+          "err"
+        ),
+      500
+    );
   }
 }
 
@@ -618,15 +671,18 @@ function filtered() {
     return terms.every((t) => hay.indexOf(t) >= 0);
   });
   const sort = PREFS.sort || "updated";
+  const dirMul = PREFS.sortDir === "asc" ? 1 : -1;
   return arr.sort((a, b) => {
     const pa = a.pinned ? 1 : 0,
       pb = b.pinned ? 1 : 0;
-    if (pb - pa) return pb - pa;
+    if (pb - pa) return pb - pa; /* سنجاق‌شده‌ها همیشه بالا */
+    let cmp = 0;
     if (sort === "title")
-      return (a.title || "").localeCompare(b.title || "", "fa");
-    if (sort === "created")
-      return (b.createdAt || 0) - (a.createdAt || 0);
-    return (b.updatedAt || 0) - (a.updatedAt || 0);
+      cmp = (a.title || "").localeCompare(b.title || "", "fa");
+    else if (sort === "created")
+      cmp = (a.createdAt || 0) - (b.createdAt || 0);
+    else cmp = (a.updatedAt || 0) - (b.updatedAt || 0);
+    return cmp * dirMul;
   });
 }
 
@@ -703,6 +759,10 @@ ${tags ? `<div class="ptags">${tags}</div>` : ""}
 `;
     })
     .join("");
+  if (selectMode) {
+    updateCardsSelection();
+    updateSelBar();
+  }
 }
 
 async function deletePrompt(id) {
@@ -729,11 +789,282 @@ async function deletePrompt(id) {
   });
 }
 
+/* ═══════════ حالت انتخاب چندگانه ═══════════ */
+let selectMode = false;
+let suppressClickUntil = 0;
+const selectedIds = new Set();
+
+function enterSelectMode(initialId) {
+  selectMode = true;
+  selectedIds.clear();
+  if (initialId) selectedIds.add(initialId);
+  document.body.classList.add("selmode");
+  const btn = $("#selectModeBtn");
+  if (btn) {
+    btn.classList.add("on");
+    btn.setAttribute("aria-pressed", "true");
+    btn.setAttribute("title", "خروج از انتخاب");
+  }
+  updateCardsSelection();
+  updateSelBar();
+}
+function exitSelectMode() {
+  selectMode = false;
+  selectedIds.clear();
+  document.body.classList.remove("selmode");
+  const btn = $("#selectModeBtn");
+  if (btn) {
+    btn.classList.remove("on");
+    btn.setAttribute("aria-pressed", "false");
+    btn.setAttribute("title", "انتخاب چندگانه");
+  }
+  updateCardsSelection();
+  updateSelBar();
+}
+function toggleCardSelection(id) {
+  if (selectedIds.has(id)) selectedIds.delete(id);
+  else selectedIds.add(id);
+  updateCardsSelection();
+  updateSelBar();
+}
+function updateCardsSelection() {
+  $$("#grid .card").forEach((c) => {
+    c.classList.toggle("selected", selectedIds.has(c.dataset.id));
+  });
+}
+function updateSelBar() {
+  const bar = $("#selBar");
+  if (!bar) return;
+  if (!selectMode) {
+    bar.classList.remove("show");
+    return;
+  }
+  bar.classList.add("show");
+  const count = selectedIds.size;
+  const cntEl = $("#selCount");
+  if (cntEl) cntEl.textContent = toFaNum(count);
+  const has = count > 0;
+  $$("#selBar [data-sel-act]").forEach((b) => {
+    b.disabled = !has;
+  });
+
+  const SVG_PIN =
+    '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 17v5"/><path d="M9 10.76a2 2 0 0 1-1.11 1.79l-1.78.9A2 2 0 0 0 5 15.24V16a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-.76a2 2 0 0 0-1.11-1.79l-1.78-.9A2 2 0 0 1 15 10.76V7a1 1 0 0 1 1-1 2 2 0 0 0 0-4H8a2 2 0 0 0 0 4 1 1 0 0 1 1 1z"/></svg>';
+  const SVG_UNPIN =
+    '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 17v5"/><path d="M15 9.34V7a1 1 0 0 1 1-1 2 2 0 0 0 0-4H7.89"/><path d="m2 2 20 20"/><path d="M9 9v1.76a2 2 0 0 1-1.11 1.79l-1.78.9A2 2 0 0 0 5 15.24V16a1 1 0 0 0 1 1h11"/></svg>';
+
+  const SVG_ALL =
+    '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m2 11 4 4 8-8"/><path d="m10 15 4 4 8-8"/></svg>';
+  const SVG_NONE =
+    '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="3"/><path d="m9 9 6 6M15 9l-6 6"/></svg>';
+
+  const pinBtn = $("#selPinBtn");
+  if (pinBtn) {
+    let allPinned = false;
+    if (has) {
+      allPinned = [...selectedIds].every((id) => {
+        const p = DATA.prompts.find((x) => x.id === id);
+        return p && p.pinned;
+      });
+    }
+    const icoEl = pinBtn.querySelector(".sel-ico");
+    if (icoEl) icoEl.innerHTML = allPinned ? SVG_UNPIN : SVG_PIN;
+    const lblEl = pinBtn.querySelector(".sel-lbl");
+    if (lblEl) lblEl.textContent = allPinned ? "برداشتن" : "سنجاق";
+    const label = allPinned ? "برداشتن سنجاق" : "سنجاق";
+    pinBtn.setAttribute("aria-label", label);
+    pinBtn.setAttribute("title", label);
+  }
+
+  const allBtn = $("#selAllBtn");
+  if (allBtn) {
+    const visible = filtered();
+    const allSel =
+      visible.length > 0 &&
+      visible.every((p) => selectedIds.has(p.id));
+    const icoEl = allBtn.querySelector(".sel-ico");
+    if (icoEl) icoEl.innerHTML = allSel ? SVG_NONE : SVG_ALL;
+    const lblEl = allBtn.querySelector(".sel-lbl");
+    if (lblEl) lblEl.textContent = allSel ? "هیچ‌کدام" : "همه";
+    const label = allSel ? "هیچ‌کدام" : "همه";
+    allBtn.setAttribute("aria-label", label);
+    allBtn.setAttribute("title", label);
+  }
+}
+function toggleSelectAll() {
+  const visible = filtered();
+  if (!visible.length) return;
+  const allSel = visible.every((p) => selectedIds.has(p.id));
+  if (allSel) visible.forEach((p) => selectedIds.delete(p.id));
+  else visible.forEach((p) => selectedIds.add(p.id));
+  updateCardsSelection();
+  updateSelBar();
+}
+async function bulkDelete() {
+  const ids = [...selectedIds];
+  if (!ids.length) return;
+  const ok = await uiConfirm({
+    title: "حذف گروهی",
+    icon: "⚠",
+    message: `${toFaNum(ids.length)} پرامپت انتخاب‌شده حذف شوند؟`,
+    okText: "حذف",
+    danger: true,
+  });
+  if (!ok) return;
+
+  const idSet = new Set(ids);
+  const snapshot = [];
+  DATA.prompts.forEach((p, i) => {
+    if (idSet.has(p.id)) snapshot.push({ p, index: i });
+  });
+
+  exitSelectMode();
+  commit((d) => {
+    d.prompts = d.prompts.filter((p) => !idSet.has(p.id));
+  });
+
+  toastWithUndo(`${toFaNum(ids.length)} پرامپت حذف شد`, () => {
+    commit((d) => {
+      snapshot
+        .slice()
+        .sort((a, b) => a.index - b.index)
+        .forEach((s) => {
+          d.prompts.splice(s.index, 0, s.p);
+        });
+    });
+    toast("بازگردانی شد");
+  });
+}
+function bulkPin() {
+  const ids = [...selectedIds];
+  if (!ids.length) return;
+  const idSet = new Set(ids);
+  const allPinned = ids.every((id) => {
+    const p = DATA.prompts.find((x) => x.id === id);
+    return p && p.pinned;
+  });
+  const newState = !allPinned;
+  commit((d) => {
+    d.prompts.forEach((p) => {
+      if (idSet.has(p.id)) {
+        p.pinned = newState;
+        p.updatedAt = Date.now();
+      }
+    });
+  });
+  const count = ids.length;
+  exitSelectMode();
+  toast(
+    newState
+      ? `${toFaNum(count)} پرامپت سنجاق شد`
+      : `سنجاق از ${toFaNum(count)} پرامپت برداشته شد`,
+  );
+}
+function openBulkMove() {
+  if (!selectedIds.size) return;
+  const list = $("#bulkMoveList");
+  const desc = $("#bulkMoveDesc");
+  if (!list || !desc) return;
+  desc.innerHTML = `${toFaNum(
+    selectedIds.size,
+  )} پرامپت به کدام دسته منتقل شوند؟`;
+  list.innerHTML = DATA.categories
+    .map((c) => {
+      const n = DATA.prompts.filter((p) => p.category === c.id).length;
+      return `<button class="cat-item" type="button" data-cat="${esc(
+        c.id,
+      )}">
+<span class="dot ${esc(c.color)}"></span>
+<span class="cat-item-name">${esc(c.name)}</span>
+<span class="cat-item-cnt">${toFaNum(n)}</span>
+</button>`;
+    })
+    .join("");
+  $("#bulkMoveBack").classList.add("open");
+  refreshFocusTrap();
+}
+function closeBulkMove() {
+  $("#bulkMoveBack").classList.remove("open");
+  refreshFocusTrap();
+}
+
+/* ورود با نگه‌داشتن روی کارت (لمس طولانی موبایل) */
+(function setupLongPressSelect() {
+  const grid = $("#grid");
+  if (!grid) return;
+  let timer = null;
+  let pressedCard = null;
+  let sx = 0,
+    sy = 0;
+
+  grid.addEventListener(
+    "touchstart",
+    (e) => {
+      if (selectMode) return;
+      if (e.touches.length !== 1) return;
+      if (e.target.closest("button, a, input, textarea")) return;
+      const card = e.target.closest(".card");
+      if (!card) return;
+      pressedCard = card;
+      const t = e.touches[0];
+      sx = t.clientX;
+      sy = t.clientY;
+      clearTimeout(timer);
+      timer = setTimeout(() => {
+        timer = null;
+        if (!pressedCard) return;
+        suppressClickUntil = Date.now() + 700;
+        if (navigator.vibrate) navigator.vibrate(15);
+        enterSelectMode(pressedCard.dataset.id);
+        pressedCard = null;
+      }, 480);
+    },
+    { passive: true },
+  );
+
+  grid.addEventListener(
+    "touchmove",
+    (e) => {
+      if (!timer) return;
+      const t = e.touches[0];
+      if (
+        Math.abs(t.clientX - sx) > 8 ||
+        Math.abs(t.clientY - sy) > 8
+      ) {
+        clearTimeout(timer);
+        timer = null;
+        pressedCard = null;
+      }
+    },
+    { passive: true },
+  );
+
+  const cancel = () => {
+    clearTimeout(timer);
+    timer = null;
+    pressedCard = null;
+  };
+  grid.addEventListener("touchend", cancel, { passive: true });
+  grid.addEventListener("touchcancel", cancel, { passive: true });
+})();
+
 $("#grid").addEventListener("click", (e) => {
+  if (Date.now() < suppressClickUntil) {
+    suppressClickUntil = 0;
+    e.preventDefault();
+    e.stopPropagation();
+    return;
+  }
+  const card = e.target.closest(".card");
+  if (!card) return;
+  if (selectMode) {
+    e.preventDefault();
+    e.stopPropagation();
+    toggleCardSelection(card.dataset.id);
+    return;
+  }
   const btn = e.target.closest("[data-act]");
   if (!btn) return;
-  const card = btn.closest(".card");
-  if (!card) return;
   const id = card.dataset.id;
   const p = DATA.prompts.find((x) => x.id === id);
   if (!p) return;
@@ -1761,6 +2092,26 @@ function renderPrefs() {
 }
 
 let sortSelect = null;
+function syncSortDirBtn() {
+  const btn = $("#sortDirBtn");
+  if (!btn) return;
+  const isDesc = PREFS.sortDir !== "asc";
+  btn.classList.toggle("desc", isDesc);
+  const label = isDesc ? "نزولی" : "صعودی";
+  const tip = isDesc ? "نزولی — کلیک برای صعودی" : "صعودی — کلیک برای نزولی";
+  btn.setAttribute("aria-label", "جهت مرتب‌سازی: " + label);
+  btn.setAttribute("title", tip);
+}
+function toggleSortDir() {
+  PREFS.sortDir = PREFS.sortDir === "asc" ? "desc" : "asc";
+  savePrefs();
+  syncSortDirBtn();
+  renderGrid();
+  const g = $("#grid");
+  g.classList.remove("filtering");
+  void g.offsetWidth;
+  g.classList.add("filtering");
+}
 function initSortSelect() {
   sortSelect = buildCSelect("sortSel", {
     items: [
@@ -1771,11 +2122,16 @@ function initSortSelect() {
     value: PREFS.sort || "updated",
     onChange: (v) => {
       PREFS.sort = v;
+      /* جهت پیش‌فرض منطقی با هر نوع مرتب‌سازی */
+      PREFS.sortDir = v === "title" ? "asc" : "desc";
       savePrefs();
+      syncSortDirBtn();
       renderGrid();
     },
   });
   $("#sortSelIcon").innerHTML = icon("sort");
+  syncSortDirBtn();
+  $("#sortDirBtn")?.addEventListener("click", toggleSortDir);
 }
 
 function exportData() {
@@ -2451,8 +2807,6 @@ function toggleTheme() {
   toast("پوسته: " + (PREFS.theme === "dark" ? "تاریک" : "روشن"));
 }
 
-$("#addBtn").onclick = () => openModal();
-
 $("#pvClose").onclick = closePreview;
 $("#pvBack").onclick = closePreview;
 $("#pvCopy").onclick = () => {
@@ -2598,6 +2952,14 @@ document.addEventListener("keydown", (e) => {
   }
 
   if (k === "Escape") {
+    if ($("#bulkMoveBack")?.classList.contains("open")) {
+      closeBulkMove();
+      return;
+    }
+    if (selectMode) {
+      exitSelectMode();
+      return;
+    }
     if ($("#dialogBack").classList.contains("open")) {
       closeDialog(dialogMode === "prompt" ? null : false);
       return;
@@ -2813,8 +3175,259 @@ renderGrid();
 updateHeaderHeight();
 setTimeout(updateHeaderHeight, 200);
 
+/* ═══ رویدادهای حالت انتخاب چندگانه ═══ */
+
+$("#quickFab")?.addEventListener("click", (e) => {
+  const part = e.target.closest("[data-qf]");
+  if (!part) return;
+  const act = part.dataset.qf;
+  if (act === "add") openModal();
+  else if (act === "select") enterSelectMode();
+});
+$("#selAllBtn")?.addEventListener("click", toggleSelectAll);
+$("#selPinBtn")?.addEventListener("click", bulkPin);
+$("#selMoveBtn")?.addEventListener("click", openBulkMove);
+$("#selDelBtn")?.addEventListener("click", bulkDelete);
+$("#selCancelBtn")?.addEventListener("click", exitSelectMode);
+$("#bulkMoveCancelBtn")?.addEventListener("click", closeBulkMove);
+$("#bulkMoveBack")?.addEventListener("click", (e) => {
+  if (e.target.id === "bulkMoveBack") closeBulkMove();
+});
+$("#bulkMoveList")?.addEventListener("click", (e) => {
+  const item = e.target.closest("[data-cat]");
+  if (!item) return;
+  const catId = item.dataset.cat;
+  const ids = [...selectedIds];
+  if (!ids.length) return;
+  const idSet = new Set(ids);
+  commit((d) => {
+    d.prompts.forEach((p) => {
+      if (idSet.has(p.id)) {
+        p.category = catId;
+        p.updatedAt = Date.now();
+      }
+    });
+  });
+  closeBulkMove();
+  exitSelectMode();
+  toast(`${toFaNum(ids.length)} پرامپت منتقل شد`);
+});
+
+/* ═══════════ غیرفعال‌سازی کانتکست منوی پیش‌فرض ═══════════
+   فقط داخل input/textarea/contenteditable فعال می‌مونه تا کاربر
+   بتونه از منوی بومی «Paste» استفاده کنه. */
+document.addEventListener("contextmenu", (e) => {
+  if (
+    e.target.closest(
+      "input, textarea, [contenteditable='true'], [contenteditable='']"
+    )
+  )
+    return;
+  e.preventDefault();
+});
+
+/* ═══════════ کانتکست منو (دسکتاپ) ═══════════ */
+(function setupCardContextMenu() {
+  const menu = $("#cardCtxMenu");
+  if (!menu) return;
+  let ctxPrompt = null;
+
+  const CTX_ICONS = {
+    edit: icon("edit"),
+    copy:
+      '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15V5a2 2 0 0 1 2-2h10"/></svg>',
+    ai: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 3h6v6"/><path d="M10 14 21 3"/><path d="M21 14v5a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5"/></svg>',
+    pin: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="17" x2="12" y2="22"/><path d="M5 17h14v-1.76a2 2 0 0 0-1.11-1.79l-1.78-.9A2 2 0 0 1 15 10.76V6h1a2 2 0 0 0 0-4H8a2 2 0 0 0 0 4h1v4.76a2 2 0 0 1-1.11 1.79l-1.78.9A2 2 0 0 0 5 15.24Z"/></svg>',
+    move: icon("folder"),
+    dup: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="8" y="8" width="13" height="13" rx="2"/><path d="M16 8V5a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h3"/></svg>',
+    select:
+      '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="m9 12 2 2 4-4"/></svg>',
+    del: icon("trash"),
+    chev: '<svg class="ctx-chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m9 6 6 6-6 6"/></svg>',
+  };
+
+  function buildMenu(p) {
+    const vars = extractVars(p.content);
+    const copyLabel = vars.length
+      ? `کپی متن (${toFaNum(vars.length)} متغیر)`
+      : "کپی متن";
+    const aiItems = AI_TARGETS.map(
+      (t) => `
+<button type="button" role="menuitem" data-ctx-ai="${t.id}">
+<span class="ai-dot" style="--ai-c:${t.color}">${esc(t.abbr)}</span>
+<span>${esc(t.name)}</span>
+${t.noPrefill ? '<span class="ctx-hint">کپی</span>' : ""}
+</button>`,
+    ).join("");
+    const catItems = DATA.categories
+      .map(
+        (c) => `
+<button type="button" role="menuitem" data-ctx-move="${esc(c.id)}">
+<span class="dot ${esc(c.color)}" style="width:.6rem;height:.6rem;border-radius:50%;flex-shrink:0"></span>
+<span>${esc(c.name)}</span>
+${
+  p.category === c.id
+    ? `<span class="ctx-hint">${icon("check").replace("<svg", '<svg style="width:.9rem;height:.9rem"')}</span>`
+    : ""
+}
+</button>`,
+      )
+      .join("");
+
+    menu.innerHTML = `
+<button type="button" role="menuitem" data-ctx="edit">${CTX_ICONS.edit}<span>ویرایش</span></button>
+<button type="button" role="menuitem" data-ctx="copy">${CTX_ICONS.copy}<span>${esc(copyLabel)}</span></button>
+<div class="ctx-sub">
+<button type="button" role="menuitem" aria-haspopup="menu" data-ctx="ai">${CTX_ICONS.ai}<span>باز کردن در AI</span>${CTX_ICONS.chev}</button>
+<div class="ctx-submenu" role="menu">${aiItems}</div>
+</div>
+<div class="ctx-sep"></div>
+<button type="button" role="menuitem" data-ctx="pin">${CTX_ICONS.pin}<span>${p.pinned ? "برداشتن سنجاق" : "سنجاق کردن"}</span></button>
+<div class="ctx-sub">
+<button type="button" role="menuitem" aria-haspopup="menu" data-ctx="move">${CTX_ICONS.move}<span>انتقال به دسته</span>${CTX_ICONS.chev}</button>
+<div class="ctx-submenu" role="menu">${catItems}</div>
+</div>
+<button type="button" role="menuitem" data-ctx="dup">${CTX_ICONS.dup}<span>تکثیر</span></button>
+<div class="ctx-sep"></div>
+<button type="button" role="menuitem" data-ctx="select">${CTX_ICONS.select}<span>انتخاب چندگانه</span></button>
+<div class="ctx-sep"></div>
+<button type="button" role="menuitem" class="ctx-dgr" data-ctx="del">${CTX_ICONS.del}<span>حذف</span></button>
+`;
+  }
+
+  function show(x, y, p) {
+    ctxPrompt = p;
+    buildMenu(p);
+    menu.hidden = false;
+    menu.style.left = "0px";
+    menu.style.top = "0px";
+    const r = menu.getBoundingClientRect();
+    const vw = window.innerWidth;
+    const vh = window.innerHeight;
+    let nx = x;
+    let ny = y;
+    if (nx + r.width > vw - 8) nx = vw - r.width - 8;
+    if (ny + r.height > vh - 8) ny = vh - r.height - 8;
+    if (nx < 8) nx = 8;
+    if (ny < 8) ny = 8;
+    menu.style.left = nx + "px";
+    menu.style.top = ny + "px";
+  }
+  function hide() {
+    menu.hidden = true;
+    ctxPrompt = null;
+  }
+
+  /* راست-کلیک روی کارت */
+  $("#grid").addEventListener("contextmenu", (e) => {
+    if (selectMode) return;
+    const card = e.target.closest(".card");
+    if (!card) return;
+    const p = DATA.prompts.find((x) => x.id === card.dataset.id);
+    if (!p) return;
+    e.preventDefault();
+    show(e.clientX, e.clientY, p);
+  });
+
+  /* راست-کلیک روی فضای خالی گرید → پرامپت جدید */
+  $("#grid").addEventListener("contextmenu", (e) => {
+    if (e.target.closest(".card")) return;
+    e.preventDefault();
+    openModal();
+  });
+
+  document.addEventListener("click", (e) => {
+    if (menu.hidden) return;
+    if (e.target.closest("#cardCtxMenu")) return;
+    hide();
+  });
+  document.addEventListener("keydown", (e) => {
+    if (e.key === "Escape" && !menu.hidden) {
+      hide();
+      e.stopPropagation();
+    }
+  });
+  window.addEventListener("scroll", hide, { passive: true });
+  window.addEventListener("resize", hide);
+  window.addEventListener("blur", hide);
+
+  menu.addEventListener("click", (e) => {
+    /* اول ساب‌منو */
+    const aiBtn = e.target.closest("[data-ctx-ai]");
+    if (aiBtn && ctxPrompt) {
+      const t = AI_TARGETS.find((x) => x.id === aiBtn.dataset.ctxAi);
+      const p = ctxPrompt;
+      hide();
+      if (t) openInAI(p, t);
+      return;
+    }
+    const moveBtn = e.target.closest("[data-ctx-move]");
+    if (moveBtn && ctxPrompt) {
+      const catId = moveBtn.dataset.ctxMove;
+      const p = ctxPrompt;
+      hide();
+      commit((d) => {
+        const t = d.prompts.find((x) => x.id === p.id);
+        if (t) {
+          t.category = catId;
+          t.updatedAt = Date.now();
+        }
+      });
+      toast("منتقل شد");
+      return;
+    }
+
+    const btn = e.target.closest("[data-ctx]");
+    if (!btn || !ctxPrompt) return;
+    const act = btn.dataset.ctx;
+    const p = ctxPrompt;
+    hide();
+
+    if (act === "edit") openModal(p);
+    else if (act === "copy") requestCopy(p);
+    else if (act === "pin") {
+      commit((d) => {
+        const t = d.prompts.find((x) => x.id === p.id);
+        if (t) {
+          t.pinned = !t.pinned;
+          t.updatedAt = Date.now();
+        }
+      });
+    } else if (act === "dup") {
+      const now = Date.now();
+      commit((d) => {
+        const orig = d.prompts.find((x) => x.id === p.id);
+        if (!orig) return;
+        d.prompts.push({
+          ...orig,
+          id: uid(),
+          title: orig.title + " (کپی)",
+          pinned: false,
+          createdAt: now,
+          updatedAt: now,
+        });
+      });
+      toast("تکثیر شد");
+    } else if (act === "select") {
+      enterSelectMode(p.id);
+    } else if (act === "del") {
+      deletePrompt(p.id);
+    }
+  });
+})();
+
 /* ═══ چنج‌لاگ ═══ */
 const CHANGELOG = [
+  {
+    version: "1.3",
+    date: "۱۴۰۴/۰۶/۲۷",
+    items: [
+      "انتخاب چندگانه: دکمهٔ «انتخاب» یا نگه‌داشتن روی کارت (موبایل)",
+      "حذف گروهی با قابلیت بازگردانی",
+      "سنجاق گروهی و انتقال گروهی به دسته",
+      "نوار عملیات شناور بالای فوتر",
+    ],
+  },
   {
     version: "1.2",
     date: "۱۴۰۴/۰۶/۲۶",

@@ -1,5 +1,5 @@
 const CACHE = "pm-v10";
-const APP_VERSION = "1.2";
+const APP_VERSION = "1.3";
 
 const ASSETS = [
   "./",

@@ -293,6 +293,8 @@
   margin: 0;
   padding: 0;
   box-sizing: border-box;
+  /* حذف هالهٔ آبی/سیاه هنگام لمس روی موبایل */
+  -webkit-tap-highlight-color: transparent;
 }
 html {
   scroll-behavior: smooth;
@@ -892,10 +894,6 @@ main {
   align-items: center;
   flex-wrap: wrap;
 }
-.filter-actions .btn.g {
-  margin-inline-start: auto;
-}
-
 @media (min-width: 761px) {
   .filters {
     flex-direction: row;
@@ -907,9 +905,6 @@ main {
   }
   .filter-actions {
     flex-shrink: 0;
-  }
-  .filter-actions .btn.g {
-    margin-inline-start: 0;
   }
 }
 
@@ -3218,7 +3213,22 @@ footer.app-footer .ft-ver {
   main {
     padding: 0.85rem 0.75rem 4rem;
   }
+
+  /* چیپس‌ها: افقی و اسکرول‌شو */
+  .chips {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    overflow-y: hidden;
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior-x: contain;
+    scrollbar-width: none;
+    padding-bottom: 4px;
+  }
+  .chips::-webkit-scrollbar {
+    display: none;
+  }
   .chip {
+    flex-shrink: 0;
     padding: 0.35rem 0.75rem;
     font-size: var(--f-xs);
   }
@@ -3232,8 +3242,11 @@ footer.app-footer .ft-ver {
   .filter-actions .cselect {
     flex: 1;
   }
-  .filter-actions .btn.g {
-    flex: 1;
+
+  /* منوی دراپ‌دان: پهنای ثابت، نه برابر عرض والد */
+  .cselect-menu {
+    min-width: 200px;
+    max-width: min(260px, 82vw);
   }
   .modal-back {
     padding: 1rem 0.65rem;
@@ -3347,4 +3360,579 @@ line-height: 1.4rem !important;
 .var-preview[dir="ltr"] {
   direction: ltr !important;
   text-align: left !important;
+}
+
+/* ══════════════ حالت انتخاب چندگانه ══════════════ */
+#selectModeBtn.on {
+  background: var(--acc);
+  color: var(--acc-ink);
+  border-color: transparent;
+}
+body.selmode #addBtn {
+  display: none;
+}
+body.selmode .card {
+  cursor: pointer;
+  position: relative;
+  user-select: none;
+  -webkit-user-select: none;
+}
+body.selmode .card:hover {
+  transform: none;
+}
+body.selmode .card::after {
+  content: "";
+  position: absolute;
+  top: 0.7rem;
+  inset-inline-end: 0.7rem;
+  width: 1.5rem;
+  height: 1.5rem;
+  border-radius: 50%;
+  border: 2px solid var(--line2);
+  background: var(--card);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25);
+  transition:
+    background 0.22s var(--ease),
+    border-color 0.22s var(--ease),
+    transform 0.22s var(--ease-spring);
+  z-index: 3;
+  pointer-events: none;
+}
+body.selmode .card.selected {
+  border-color: var(--acc);
+  box-shadow:
+    0 0 0 2px color-mix(in srgb, var(--acc) 45%, transparent),
+    var(--shadow);
+}
+body.selmode .card.selected::after {
+  background-color: var(--acc);
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='3.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M20 6 9 17l-5-5'/%3E%3C/svg%3E");
+  background-size: 65%;
+  background-position: center;
+  background-repeat: no-repeat;
+  border-color: var(--acc);
+  transform: scale(1.05);
+}
+body.selmode .card .pfoot,
+body.selmode .card .phead .pin {
+  pointer-events: none;
+  opacity: 0.35;
+}
+
+/* نوار عملیات گروهی */
+.sel-bar {
+  position: fixed;
+  bottom: calc(56px + env(safe-area-inset-bottom, 0px));
+  left: 50%;
+  transform: translateX(-50%) translateY(24px) scale(0.95);
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.35rem 0.4rem 0.35rem 0.55rem;
+  border-radius: 14px;
+  background: var(--card);
+  border: 1px solid var(--line2);
+  box-shadow: var(--shadow);
+  z-index: 80;
+  opacity: 0;
+  pointer-events: none;
+  transition:
+    opacity 0.28s var(--ease-ios),
+    transform 0.4s var(--ease-spring);
+  max-width: calc(100vw - 20px);
+}
+.sel-bar.show {
+  opacity: 1;
+  transform: translateX(-50%) translateY(0) scale(1);
+  pointer-events: auto;
+}
+.sel-info {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 0.3rem;
+  font-size: var(--f-xs);
+  font-weight: 700;
+  color: var(--mut);
+  padding-inline-start: 0.35rem;
+  padding-inline-end: 0.7rem;
+  border-inline-end: 1px solid var(--line);
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+.sel-info b {
+  color: var(--acc);
+  font-family: "Vazirmatn", system-ui, sans-serif;
+  font-size: var(--f-lg);
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+  line-height: 1;
+}
+.sel-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.15rem;
+}
+.sel-act,
+.sel-close {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  height: 2.15rem;
+  padding: 0 0.7rem;
+  border: none;
+  border-radius: 9px;
+  background: transparent;
+  color: var(--mut);
+  font-family: inherit;
+  font-size: var(--f-xs);
+  font-weight: 700;
+  cursor: pointer;
+  position: relative;
+  transition:
+    background 0.16s var(--ease),
+    color 0.16s var(--ease),
+    transform 0.12s var(--ease);
+  -webkit-tap-highlight-color: transparent;
+  white-space: nowrap;
+}
+.sel-act .sel-ico,
+.sel-close .sel-ico {
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+}
+.sel-act svg,
+.sel-close svg {
+  width: 1rem;
+  height: 1rem;
+  display: block;
+}
+.sel-act:hover,
+.sel-close:hover {
+  background: var(--card2);
+  color: var(--txt);
+}
+.sel-act:active,
+.sel-close:active {
+  transform: scale(0.96);
+}
+.sel-act.dgr {
+  color: var(--ros);
+}
+.sel-act.dgr:hover {
+  background: rgba(251, 113, 133, 0.12);
+}
+.sel-act[disabled] {
+  opacity: 0.3;
+  pointer-events: none;
+}
+.sel-close {
+  margin-inline-start: 0;
+  padding-inline-start: 1rem;
+  position: relative;
+  /* لبهٔ سمت خط جداکننده صاف، بقیه گرد */
+  border-start-start-radius: 0;
+  border-end-start-radius: 0;
+}
+.sel-close::before {
+  content: "";
+  position: absolute;
+  inset-inline-start: 0;
+  top: 0;
+  bottom: 0;
+  width: 1px;
+  background: var(--line);
+  pointer-events: none;
+}
+.sel-close:hover {
+  color: var(--ros);
+  background: rgba(251, 113, 133, 0.1);
+}
+
+/* تول‌تیپ نوار انتخاب (فقط دسکتاپ) */
+@media (hover: hover) {
+  .sel-act[data-tip]::after,
+  .sel-close[data-tip]::after {
+    content: attr(data-tip);
+    position: absolute;
+    bottom: calc(100% + 8px);
+    left: 50%;
+    transform: translateX(-50%) translateY(4px);
+    background: var(--card2);
+    border: 1px solid var(--line2);
+    color: var(--txt);
+    font-size: var(--f-2xs);
+    font-weight: 700;
+    white-space: nowrap;
+    padding: 4px 8px;
+    border-radius: 7px;
+    box-shadow: var(--shadow);
+    opacity: 0;
+    pointer-events: none;
+    transition:
+      opacity 0.15s,
+      transform 0.15s;
+    z-index: 5;
+  }
+  .sel-act[data-tip]:hover::after,
+  .sel-close[data-tip]:hover::after {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+  }
+}
+
+@media (max-width: 760px) {
+  .sel-bar {
+    left: 50%;
+    right: auto;
+    width: max-content;
+    max-width: calc(100vw - 20px);
+    bottom: calc(64px + env(safe-area-inset-bottom, 0px));
+    transform: translateX(-50%) translateY(calc(100% + 24px));
+    border-radius: 14px;
+    padding: 0.35rem 0.35rem 0.35rem 0.35rem;
+    gap: 0.35rem;
+  }
+  .sel-bar.show {
+    transform: translateX(-50%) translateY(0);
+  }
+  .sel-info {
+    padding-inline-start: 0.35rem;
+    padding-inline-end: 0.55rem;
+  }
+  .sel-info b {
+    font-size: var(--f-lg);
+  }
+  .sel-actions {
+    gap: 0.1rem;
+  }
+  /* موبایل: فقط آیکون، بدون متن */
+  .sel-act,
+  .sel-close {
+    width: 2.4rem;
+    height: 2.4rem;
+    padding: 0;
+    justify-content: center;
+    gap: 0;
+  }
+  .sel-act .sel-lbl,
+  .sel-close .sel-lbl {
+    display: none;
+  }
+  .sel-act svg,
+  .sel-close svg {
+    width: 1.15rem;
+    height: 1.15rem;
+  }
+  .sel-close {
+    width: 2.4rem;
+    padding-inline-start: 0;
+    margin-inline-start: 0.35rem;
+    border-start-start-radius: 0;
+    border-end-start-radius: 0;
+  }
+}
+
+/* دستهٔ انتقال گروهی (به‌شکل دکمه) */
+button.cat-item {
+  font-family: inherit;
+  color: inherit;
+  font-size: inherit;
+  cursor: pointer;
+  width: 100%;
+  text-align: start;
+}
+button.cat-item:hover {
+  border-color: var(--focus);
+}
+
+/* ══════════════ دکمهٔ انتخاب در هدر ══════════════ */
+#selectModeBtn.on {
+  background: var(--acc);
+  color: var(--acc-ink);
+  border-color: transparent;
+}
+#selectModeBtn.on:hover {
+  background: color-mix(in srgb, var(--acc) 88%, #fff);
+}
+
+/* ══════════════ FAB مشترک (همه‌جا) ══════════════ */
+.quick-fab {
+  position: fixed;
+  left: 24px;
+  bottom: calc(60px + env(safe-area-inset-bottom, 0px));
+  z-index: 70;
+  background: var(--card);
+  border: 1.5px solid var(--line2);
+  border-radius: 14px;
+  overflow: hidden;
+  display: flex;
+  align-items: stretch;
+  transition:
+    transform 0.3s var(--ease-spring),
+    opacity 0.25s var(--ease),
+    border-color 0.2s var(--ease);
+}
+.quick-fab:hover {
+  border-color: var(--focus);
+}
+.quick-fab .qf-part {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  padding: 0.62rem 0.9rem;
+  border: none;
+  background: transparent;
+  color: var(--txt);
+  font-family: inherit;
+  font-weight: 800;
+  font-size: var(--f-sm);
+  cursor: pointer;
+  transition: background 0.16s var(--ease);
+  -webkit-tap-highlight-color: transparent;
+  white-space: nowrap;
+  min-height: 2.55rem;
+}
+.quick-fab .qf-part[data-qf="add"] {
+  color: var(--acc);
+}
+.quick-fab .qf-part[data-qf="select"] {
+  color: var(--vio);
+}
+.quick-fab .qf-part:hover {
+  background: var(--card2);
+}
+.quick-fab .qf-part:active {
+  background: color-mix(in srgb, var(--acc) 14%, transparent);
+}
+.quick-fab .qf-part svg {
+  width: 1.05rem;
+  height: 1.05rem;
+  display: block;
+  flex-shrink: 0;
+}
+.quick-fab .qf-sep {
+  width: 1px;
+  align-self: stretch;
+  background: var(--line2);
+}
+body.selmode .quick-fab {
+  display: none;
+}
+
+@media (max-width: 760px) {
+  .quick-fab {
+    left: 20px;
+    bottom: calc(62px + env(safe-area-inset-bottom, 0px));
+    border-radius: 14px;
+  }
+  .quick-fab .qf-part {
+    padding: 0.75rem 1rem;
+    min-height: 2.9rem;
+    font-size: var(--f-sm);
+    gap: 0.5rem;
+  }
+  .quick-fab .qf-part svg {
+    width: 1.1rem;
+    height: 1.1rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .quick-fab .qf-part span {
+    display: none;
+  }
+  .quick-fab .qf-part {
+    padding: 0.75rem 0.9rem;
+    gap: 0;
+  }
+}
+
+/* ══════════════ کانتکست منو (دسکتاپ) ══════════════ */
+.ctx-menu {
+  position: fixed;
+  z-index: 500;
+  min-width: 220px;
+  max-width: 280px;
+  background: var(--card);
+  border: 1px solid var(--line2);
+  border-radius: 12px;
+  box-shadow:
+    0 18px 44px rgba(2, 5, 18, 0.55),
+    0 2px 6px rgba(0, 0, 0, 0.2);
+  padding: 5px;
+  font-size: var(--f-sm);
+  animation: ctxIn 0.14s var(--ease-ios);
+}
+.ctx-menu[hidden] {
+  display: none;
+}
+@keyframes ctxIn {
+  from {
+    opacity: 0;
+    transform: scale(0.96) translateY(-2px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+.ctx-menu button {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  width: 100%;
+  text-align: start;
+  padding: 0.5rem 0.7rem;
+  border: none;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--txt);
+  font-family: inherit;
+  font-size: var(--f-sm);
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.12s var(--ease);
+  white-space: nowrap;
+}
+.ctx-menu button:hover,
+.ctx-menu button:focus-visible {
+  background: var(--card2);
+  outline: none;
+}
+.ctx-menu button svg {
+  width: 1rem;
+  height: 1rem;
+  flex-shrink: 0;
+  color: var(--mut);
+  display: block;
+}
+.ctx-menu button.ctx-dgr {
+  color: var(--ros);
+}
+.ctx-menu button.ctx-dgr svg {
+  color: var(--ros);
+}
+.ctx-menu button.ctx-dgr:hover {
+  background: rgba(251, 113, 133, 0.12);
+}
+.ctx-menu .ctx-sep {
+  height: 1px;
+  margin: 5px 4px;
+  background: var(--line);
+}
+.ctx-menu .ctx-hint {
+  margin-inline-start: auto;
+  font-size: var(--f-2xs);
+  color: var(--dim);
+  font-weight: 700;
+  font-family: var(--mono);
+}
+
+/* ── ساب‌منو ── */
+.ctx-sub {
+  position: relative;
+}
+.ctx-sub > button .ctx-chev {
+  width: 0.75rem;
+  height: 0.75rem;
+  margin-inline-start: auto;
+  color: var(--dim);
+  transform: rotate(90deg); /* اشاره به چپ در RTL */
+}
+.ctx-submenu {
+  position: absolute;
+  top: -5px;
+  right: calc(100% + 4px);
+  min-width: 190px;
+  max-height: 280px;
+  overflow-y: auto;
+  background: var(--card);
+  border: 1px solid var(--line2);
+  border-radius: 12px;
+  box-shadow:
+    0 18px 44px rgba(2, 5, 18, 0.55),
+    0 2px 6px rgba(0, 0, 0, 0.2);
+  padding: 5px;
+  opacity: 0;
+  visibility: hidden;
+  transform: translateX(4px);
+  transition:
+    opacity 0.14s var(--ease-ios),
+    transform 0.14s var(--ease-ios),
+    visibility 0s linear 0.14s;
+  pointer-events: none;
+}
+.ctx-sub:hover > .ctx-submenu,
+.ctx-sub:focus-within > .ctx-submenu,
+.ctx-sub.open > .ctx-submenu {
+  opacity: 1;
+  visibility: visible;
+  transform: none;
+  pointer-events: auto;
+  transition:
+    opacity 0.14s var(--ease-ios),
+    transform 0.14s var(--ease-ios),
+    visibility 0s;
+}
+.ctx-submenu .ai-dot {
+  width: 1.35rem;
+  height: 1.35rem;
+  border-radius: 6px;
+  flex-shrink: 0;
+  display: grid;
+  place-items: center;
+  background: var(--ai-c);
+  color: #fff;
+  font-family: var(--mono);
+  font-weight: 800;
+  font-size: var(--f-2xs);
+  letter-spacing: -0.4px;
+  line-height: 1;
+}
+
+/* ══════════════ جهت مرتب‌سازی ══════════════ */
+.sort-dir {
+  display: grid;
+  place-items: center;
+  align-self: stretch;
+  padding: 0 0.7rem;
+  min-width: 2.2rem;
+  border-radius: 10px;
+  border: 1px solid var(--line);
+  background: var(--card2);
+  color: var(--mut);
+  cursor: pointer;
+  flex-shrink: 0;
+  font-family: inherit;
+  transition:
+    border-color 0.2s var(--ease),
+    background 0.2s var(--ease),
+    color 0.2s var(--ease);
+}
+.sort-dir:hover {
+  border-color: var(--line2);
+  color: var(--txt);
+}
+.sort-dir:active {
+  background: var(--deep);
+}
+.sort-dir svg {
+  width: 1rem;
+  height: 1rem;
+  display: block;
+  transition: transform 0.32s var(--ease-spring);
+}
+.sort-dir.desc svg {
+  transform: rotate(180deg);
+}
+@media (max-width: 760px) {
+  .sort-dir {
+    min-width: 2rem;
+    padding: 0 0.55rem;
+  }
+  .sort-dir svg {
+    width: 0.9rem;
+    height: 0.9rem;
+  }
 }
