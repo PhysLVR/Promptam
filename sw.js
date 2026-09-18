@@ -57,7 +57,8 @@ self.addEventListener("fetch", (e) => {
     return;
   }
 
-  if (isCdn || sameOrigin) {
+  /* CDN (فونت‌ها): cache-first — هیچ‌وقت عوض نمی‌شن */
+  if (isCdn) {
     e.respondWith(
       caches.match(req).then(
         (hit) =>
@@ -69,6 +70,24 @@ self.addEventListener("fetch", (e) => {
           })
       )
     );
+    return;
+  }
+
+  /* same-origin assets (JS/CSS/تصاویر): network-first با fallback به کش
+     → همیشه تازه، ولی آفلاین هم کار می‌کنه */
+  if (sameOrigin) {
+    e.respondWith(
+      fetch(req)
+        .then((res) => {
+          if (res && res.status === 200) {
+            const copy = res.clone();
+            caches.open(CACHE).then((c) => c.put(req, copy));
+          }
+          return res;
+        })
+        .catch(() => caches.match(req))
+    );
+    return;
   }
 });
 self.addEventListener("message", (e) => {

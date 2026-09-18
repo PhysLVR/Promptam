@@ -299,6 +299,8 @@
 html {
   scroll-behavior: smooth;
   font-size: var(--fs-base);
+  /* غیرفعال‌سازی pull-to-refresh بومی — جایگزین: pull نرم برای sync */
+  overscroll-behavior-y: contain;
   /* همیشه جای اسکرول‌بار رزرو می‌شود → باز/بسته شدن پنل‌ها هیچ جابه‌جایی‌ای ایجاد نمی‌کند */
   scrollbar-gutter: stable;
   overflow-y: scroll;
@@ -311,6 +313,7 @@ body {
   line-height: 1.8;
   overflow-x: clip;
   min-height: 100vh;
+  overscroll-behavior-y: contain;
 }
 html.no-scroll {
   overflow: hidden;
