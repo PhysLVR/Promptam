@@ -5,7 +5,7 @@ const $ = (s, r) => (r || document).querySelector(s);
 const $$ = (s, r) => Array.from((r || document).querySelectorAll(s));
 const DATA_KEY = "promptManager_public_v1";
 const PREF_KEY = "promptManagerPrefs_public_v1";
-const CURRENT_VERSION = 3;
+const CURRENT_VERSION = 4;
 
 function esc(s) {
   return String(s == null ? "" : s)
@@ -48,6 +48,211 @@ function isTypingContext() {
   return tag === "INPUT" || tag === "TEXTAREA" || el.isContentEditable;
 }
 
+/* ═══════════════ موتور صدا ═══════════════ */
+const SFX = (() => {
+  let ctx = null;
+  let enabled = false;
+  let master = null;
+  let volPct = 70;
+  let currentTheme = "soft";
+  const BASE_VOL = 0.22;
+
+  function ensure() {
+    if (!ctx) {
+      const C = window.AudioContext || window.webkitAudioContext;
+      if (!C) return null;
+      ctx = new C({ latencyHint: "interactive" });
+
+      /* زنجیره: source → hp → presence → lp → destination
+         بهینه برای هدفون/TWS: حذف sub-bass، تقویت وضوح 3kHz */
+      const hp = ctx.createBiquadFilter();
+      hp.type = "highpass";
+      hp.frequency.value = 70;
+      hp.Q.value = 0.6;
+
+      const presence = ctx.createBiquadFilter();
+      presence.type = "peaking";
+      presence.frequency.value = 3000;
+      presence.Q.value = 0.9;
+      presence.gain.value = 2.5;
+
+      const lp = ctx.createBiquadFilter();
+      lp.type = "lowpass";
+      lp.frequency.value = 14000;
+      lp.Q.value = 0.3;
+
+      hp.connect(presence);
+      presence.connect(lp);
+      lp.connect(ctx.destination);
+      master = hp;
+    }
+    if (ctx.state === "suspended") ctx.resume();
+    return ctx;
+  }
+
+  function tone({
+    freq,
+    dur,
+    delay = 0,
+    sweep = null,
+    vol = 1,
+    attack = 0.02,
+    release = 0.1,
+    wave = "sine",
+    lpf = null,
+  }) {
+    if (!enabled) return;
+    const c = ensure();
+    if (!c || !master) return;
+    const t0 = c.currentTime + delay;
+    const osc = c.createOscillator();
+    const g = c.createGain();
+    osc.type = wave;
+    osc.frequency.setValueAtTime(freq, t0);
+    if (sweep) {
+      osc.frequency.exponentialRampToValueAtTime(
+        Math.max(sweep, 60),
+        t0 + dur
+      );
+    }
+    const peak = BASE_VOL * (volPct / 100) * vol;
+    g.gain.setValueAtTime(0.0001, t0);
+    g.gain.linearRampToValueAtTime(peak, t0 + attack);
+    g.gain.exponentialRampToValueAtTime(0.0001, t0 + dur + release);
+    osc.connect(g);
+    let out = g;
+    if (lpf) {
+      const f = c.createBiquadFilter();
+      f.type = "lowpass";
+      f.frequency.value = lpf;
+      f.Q.value = 0.7;
+      g.connect(f);
+      out = f;
+    }
+    out.connect(master);
+    osc.start(t0);
+    osc.stop(t0 + dur + release + 0.05);
+  }
+
+  const THEMES = {
+    /* ── نرم: sine، فرکانس میانه، گرم ── */
+    soft: {
+      copy: () => {
+        tone({ freq: 660, dur: 0.045, vol: 0.85 });
+        tone({ freq: 990, dur: 0.06, delay: 0.05, vol: 0.7 });
+      },
+      del: () => tone({ freq: 440, dur: 0.08, sweep: 260, vol: 0.75 }),
+      undo: () => tone({ freq: 340, dur: 0.075, sweep: 620, vol: 0.8 }),
+      err: () => {
+        tone({ freq: 210, dur: 0.06, vol: 0.7 });
+        tone({ freq: 175, dur: 0.08, delay: 0.075, vol: 0.65 });
+      },
+      tick: () => tone({ freq: 600, dur: 0.025, vol: 0.4 }),
+    },
+
+    /* ── بلورین: sine فرکانس بالا، شفاف ── */
+    crystal: {
+      copy: () => {
+        tone({ freq: 1320, dur: 0.05, vol: 0.55 });
+        tone({ freq: 1760, dur: 0.07, delay: 0.045, vol: 0.45 });
+      },
+      del: () => tone({ freq: 880, dur: 0.07, sweep: 520, vol: 0.5 }),
+      undo: () => tone({ freq: 660, dur: 0.06, sweep: 1320, vol: 0.55 }),
+      err: () => {
+        tone({ freq: 440, dur: 0.05, vol: 0.5, wave: "triangle" });
+        tone({ freq: 350, dur: 0.08, delay: 0.07, vol: 0.45, wave: "triangle" });
+      },
+      tick: () => tone({ freq: 1200, dur: 0.02, vol: 0.3 }),
+    },
+
+    /* ── چوبی: triangle با attack کوتاه، شبیه زایلوفون ── */
+    wood: {
+      copy: () => {
+        tone({ freq: 520, dur: 0.055, vol: 0.75, wave: "triangle", attack: 0.004, release: 0.06 });
+        tone({ freq: 780, dur: 0.06, delay: 0.05, vol: 0.6, wave: "triangle", attack: 0.004, release: 0.08 });
+      },
+      del: () => tone({ freq: 390, dur: 0.09, sweep: 240, vol: 0.8, wave: "triangle", attack: 0.004 }),
+      undo: () => tone({ freq: 330, dur: 0.08, sweep: 520, vol: 0.75, wave: "triangle", attack: 0.004 }),
+      err: () => {
+        tone({ freq: 260, dur: 0.055, vol: 0.7, wave: "triangle", attack: 0.004 });
+        tone({ freq: 200, dur: 0.08, delay: 0.07, vol: 0.65, wave: "triangle", attack: 0.004 });
+      },
+      tick: () => tone({ freq: 620, dur: 0.02, vol: 0.55, wave: "triangle", attack: 0.003, release: 0.04 }),
+    },
+
+    /* ── دیجیتال: square ملایم با lowpass، مدرن ── */
+    digital: {
+      copy: () => {
+        tone({ freq: 880, dur: 0.035, vol: 0.4, wave: "square", lpf: 2000 });
+        tone({ freq: 1320, dur: 0.045, delay: 0.04, vol: 0.35, wave: "square", lpf: 2000 });
+      },
+      del: () => tone({ freq: 520, dur: 0.07, sweep: 300, vol: 0.4, wave: "square", lpf: 1800 }),
+      undo: () => tone({ freq: 400, dur: 0.06, sweep: 800, vol: 0.4, wave: "square", lpf: 1800 }),
+      err: () => {
+        tone({ freq: 240, dur: 0.045, vol: 0.4, wave: "square", lpf: 1400 });
+        tone({ freq: 200, dur: 0.07, delay: 0.06, vol: 0.35, wave: "square", lpf: 1400 });
+      },
+      tick: () => tone({ freq: 760, dur: 0.018, vol: 0.28, wave: "square", lpf: 2000 }),
+    },
+
+    /* ── عمیق: sine فرکانس پایین، گرم و محکم ── */
+    deep: {
+      copy: () => {
+        tone({ freq: 440, dur: 0.07, vol: 0.9, release: 0.14 });
+        tone({ freq: 660, dur: 0.08, delay: 0.06, vol: 0.7, release: 0.16 });
+      },
+      del: () => tone({ freq: 300, dur: 0.11, sweep: 180, vol: 0.9, release: 0.16 }),
+      undo: () => tone({ freq: 260, dur: 0.1, sweep: 480, vol: 0.85, release: 0.14 }),
+      err: () => {
+        tone({ freq: 170, dur: 0.08, vol: 0.85, release: 0.12 });
+        tone({ freq: 140, dur: 0.11, delay: 0.1, vol: 0.8, release: 0.16 });
+      },
+      tick: () => tone({ freq: 520, dur: 0.03, vol: 0.5 }),
+    },
+
+    /* ── زنگی: sine با هارمونیک بالا، شبیه ناقوس ── */
+    bell: {
+      copy: () => {
+        tone({ freq: 1046.5, dur: 0.12, vol: 0.55, attack: 0.003, release: 0.55 });
+        tone({ freq: 2093, dur: 0.1, delay: 0.005, vol: 0.22, attack: 0.003, release: 0.4 });
+      },
+      del: () => {
+        tone({ freq: 784, dur: 0.12, vol: 0.5, attack: 0.003, release: 0.5 });
+        tone({ freq: 1568, dur: 0.1, delay: 0.005, vol: 0.2, attack: 0.003, release: 0.4 });
+      },
+      undo: () => {
+        tone({ freq: 659.25, dur: 0.12, vol: 0.5, attack: 0.003, release: 0.5 });
+        tone({ freq: 1318.5, dur: 0.1, delay: 0.005, vol: 0.2, attack: 0.003, release: 0.4 });
+      },
+      err: () => {
+        tone({ freq: 523.25, dur: 0.1, vol: 0.45, attack: 0.003, release: 0.45 });
+        tone({ freq: 392, dur: 0.15, delay: 0.13, vol: 0.4, attack: 0.003, release: 0.6 });
+      },
+      tick: () => tone({ freq: 1318.5, dur: 0.03, vol: 0.32, attack: 0.002, release: 0.15 }),
+    },
+  };
+
+  return {
+    play(name) {
+      const theme = THEMES[currentTheme] || THEMES.soft;
+      const fn = theme[name] || THEMES.soft[name];
+      if (fn) fn();
+    },
+    setEnabled(v) {
+      enabled = !!v;
+      if (enabled) ensure();
+    },
+    setVolume(v) {
+      const n = Number(v);
+      if (isFinite(n)) volPct = n;
+    },
+    setTheme(t) {
+      currentTheme = THEMES[t] ? t : "soft";
+    },
+    isEnabled: () => enabled,
+  };
+})();
+
 const ICONS = {
   search:
     '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>',
@@ -69,6 +274,10 @@ const ICONS = {
   edit: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4z"/></svg>',
   trash:
     '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6M14 11v6"/></svg>',
+  warn: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><path d="M12 9v4"/><path d="M12 17h.01"/></svg>',
+  help: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><path d="M12 17h.01"/></svg>',
+  list: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="8" y="2" width="8" height="4" rx="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><path d="M9 12h6M9 16h4"/></svg>',
+  move: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/><path d="m12 11-2 2 2 2"/><path d="M14 13H9"/></svg>',
 };
 function icon(name) {
   return ICONS[name] || "";
@@ -146,7 +355,56 @@ const AI_TARGETS = [
   },
 ];
 
-let DATA = { version: CURRENT_VERSION, categories: [], prompts: [] };
+/* ═══ کتابخانهٔ پرامپت‌ها ═══
+   از library.json لود می‌شه (جدا از app.js — برای رشد بدون سنگین شدن) */
+const LIBRARY_SHOWN = 8;
+let _libraryCache = null;
+let currentLibItems = [];
+
+async function loadLibrary() {
+  if (_libraryCache) return _libraryCache;
+  try {
+    const res = await fetch("./library.json", { cache: "no-store" });
+    if (!res.ok) throw new Error("HTTP " + res.status);
+    const data = await res.json();
+    const items = Array.isArray(data) ? data : data.items || [];
+    _libraryCache = items;
+    return items;
+  } catch (e) {
+    console.warn("library load failed", e);
+    _libraryCache = [];
+    return [];
+  }
+}
+
+/* PRNG سبک (mulberry32) — خروجی یکسان برای یه seed */
+function _mulberry32(seed) {
+  return function () {
+    seed |= 0;
+    seed = (seed + 0x6d2b79f5) | 0;
+    let t = seed;
+    t = Math.imul(t ^ (t >>> 15), t | 1);
+    t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+/* seed روزانه — تا آخر امروز، همون ۸ تا */
+function _daySeed() {
+  const d = new Date();
+  return d.getFullYear() * 10000 + (d.getMonth() + 1) * 100 + d.getDate();
+}
+function pickDailyItems(all, n) {
+  if (all.length <= n) return [...all];
+  const rnd = _mulberry32(_daySeed());
+  const copy = [...all];
+  for (let i = copy.length - 1; i > 0; i--) {
+    const j = Math.floor(rnd() * (i + 1));
+    [copy[i], copy[j]] = [copy[j], copy[i]];
+  }
+  return copy.slice(0, n);
+}
+
+let DATA = { version: CURRENT_VERSION, categories: [], prompts: [], trash: [] };
 
 function commit(mutator) {
   if (typeof mutator === "function") mutator(DATA);
@@ -154,6 +412,9 @@ function commit(mutator) {
   renderChips();
   renderGrid();
   renderCatList();
+  /* صفحهٔ سطل باز باشه → refresh */
+  if ($("#trashList")) renderTrash();
+  renderSettingsValues();
 }
 
 const DEFAULT_CATEGORIES = [
@@ -174,17 +435,23 @@ function migrate(d) {
   if (!Array.isArray(cur.categories) || !cur.categories.length)
     cur.categories = JSON.parse(JSON.stringify(DEFAULT_CATEGORIES));
   if (!Array.isArray(cur.prompts)) cur.prompts = [];
+  if (!Array.isArray(cur.trash)) cur.trash = [];
   return cur;
 }
 
 const PREF_DEFAULTS = {
   theme: "system",
   accent: "default",
+  bg: "default",
   fs: "medium",
   cols: "3",
   sort: "updated",
   sortDir: "desc",
+  sound: "off",
+  soundVol: 70,
+  soundTheme: "soft",
 };
+
 let PREFS = Object.assign({}, PREF_DEFAULTS);
 function loadPrefs() {
   try {
@@ -192,7 +459,8 @@ function loadPrefs() {
     if (raw) {
       const p = JSON.parse(raw);
       Object.keys(PREF_DEFAULTS).forEach((k) => {
-        if (typeof p[k] === "string") PREFS[k] = p[k];
+        if (p[k] === undefined) return;
+        if (typeof p[k] === typeof PREF_DEFAULTS[k]) PREFS[k] = p[k];
       });
     }
   } catch (e) {}
@@ -222,10 +490,15 @@ function applyPrefs() {
 
   html.dataset.theme = newTheme;
   html.dataset.accent = PREFS.accent;
+  html.dataset.bg = PREFS.bg || "default";
   html.dataset.fs = PREFS.fs;
   html.style.setProperty("--cols", PREFS.cols);
   $("#themeBtn").innerHTML =
     newTheme === "light" ? icon("sun") : icon("moon");
+  SFX.setEnabled(PREFS.sound === "on");
+  SFX.setVolume(PREFS.soundVol);
+  SFX.setTheme(PREFS.soundTheme || "soft");
+  updateSoundSections();
 
   _lastTheme = newTheme;
 
@@ -250,6 +523,7 @@ function load() {
   if (!raw) {
     DATA.categories = JSON.parse(JSON.stringify(DEFAULT_CATEGORIES));
     DATA.prompts = [];
+    DATA.trash = [];
     return;
   }
 
@@ -267,6 +541,7 @@ function load() {
     console.error("load: JSON.parse failed, raw backup saved", e);
     DATA.categories = JSON.parse(JSON.stringify(DEFAULT_CATEGORIES));
     DATA.prompts = [];
+    DATA.trash = [];
     setTimeout(
       () =>
         toast(
@@ -293,6 +568,7 @@ function load() {
     const m = migrate(parsed);
     DATA.categories = m.categories;
     DATA.prompts = m.prompts;
+    DATA.trash = Array.isArray(m.trash) ? m.trash : [];
   } catch (e) {
     /* migration شکست خورد — دادهٔ اصلی دست‌نخورده می‌مونه */
     try {
@@ -304,6 +580,7 @@ function load() {
     console.error("load: migrate failed, raw backup saved", e);
     DATA.categories = JSON.parse(JSON.stringify(DEFAULT_CATEGORIES));
     DATA.prompts = [];
+    DATA.trash = [];
     setTimeout(
       () =>
         toast(
@@ -323,8 +600,12 @@ function toast(msg, kind) {
   const el = $("#toast");
   $("#toastTxt").textContent = msg;
   el.classList.remove("err", "warn");
-  if (kind === "err") el.classList.add("err");
-  else if (kind === "warn") el.classList.add("warn");
+  if (kind === "err") {
+    el.classList.add("err");
+    SFX.play("err");
+  } else if (kind === "warn") {
+    el.classList.add("warn");
+  }
   hideUndoToast();
   el.classList.remove("show");
   void el.offsetWidth;
@@ -361,7 +642,10 @@ function hideUndoToast() {
 function copyText(txt, msg) {
   if (navigator.clipboard && navigator.clipboard.writeText) {
     navigator.clipboard.writeText(txt).then(
-      () => toast(msg || "کپی شد"),
+      () => {
+        SFX.play("copy");
+        toast(msg || "کپی شد");
+      },
       () => legacyCopy(txt, msg),
     );
   } else legacyCopy(txt, msg);
@@ -374,6 +658,7 @@ function legacyCopy(txt, msg) {
   ta.select();
   try {
     document.execCommand("copy");
+    SFX.play("copy");
     toast(msg || "کپی شد");
   } catch (e) {
     toast("کپی ناموفق", "err");
@@ -513,8 +798,19 @@ function openDialog(opts) {
     restoreDialogFoot();
     dialogResolve = resolve;
     dialogMode = opts.mode || "confirm";
-    $("#dialogIcon").textContent =
-      opts.icon || (dialogMode === "prompt" ? "✎" : "؟");
+    const dIcon = $("#dialogIcon");
+    if (opts.icon && /^</.test(opts.icon)) {
+      dIcon.innerHTML = opts.icon;
+      dIcon.className = "modal-h-ic";
+      if (opts.warn) dIcon.classList.add("is-warn");
+    } else if (opts.icon && icon(opts.icon)) {
+      dIcon.innerHTML = icon(opts.icon);
+      dIcon.className = "modal-h-ic";
+    } else {
+      dIcon.innerHTML = icon(dialogMode === "prompt" ? "edit" : "help");
+      dIcon.className = "modal-h-ic is-help";
+    }
+    if (opts.warn) dIcon.classList.add("is-warn");
     $("#dialogTitle").textContent = opts.title || "تأیید";
     $("#dialogMsg").innerHTML = opts.message || "";
     const ok = $("#dialogOk");
@@ -779,19 +1075,23 @@ async function deletePrompt(id) {
   const p = DATA.prompts[idx];
   const ok = await uiConfirm({
     title: "حذف پرامپت",
-    icon: "⚠",
-    message: `پرامپت «<b>${esc(p.title)}</b>» حذف شود؟`,
+    icon: "warn",
+    warn: true,
+    message: `پرامپت «<b>${esc(p.title)}</b>» به سطل آشغال منتقل شود؟`,
     okText: "حذف",
     danger: true,
   });
   if (!ok) return;
-  const snapshot = { p, index: idx };
+  const trashItem = { ...p, deletedAt: Date.now(), originalIndex: idx };
   commit((d) => {
     d.prompts = d.prompts.filter((x) => x.id !== id);
+    d.trash.unshift(trashItem);
   });
-  toastWithUndo("پرامپت حذف شد", () => {
+  SFX.play("del");
+  toastWithUndo("به سطل آشغال منتقل شد", () => {
     commit((d) => {
-      d.prompts.splice(snapshot.index, 0, snapshot.p);
+      d.prompts.splice(Math.min(idx, d.prompts.length), 0, p);
+      d.trash = d.trash.filter((x) => x.id !== id);
     });
     toast("بازگردانی شد");
   });
@@ -913,7 +1213,8 @@ async function bulkDelete() {
   if (!ids.length) return;
   const ok = await uiConfirm({
     title: "حذف گروهی",
-    icon: "⚠",
+    icon: "warn",
+    warn: true,
     message: `${toFaNum(ids.length)} پرامپت انتخاب‌شده حذف شوند؟`,
     okText: "حذف",
     danger: true,
@@ -926,18 +1227,28 @@ async function bulkDelete() {
     if (idSet.has(p.id)) snapshot.push({ p, index: i });
   });
 
+  const now = Date.now();
   exitSelectMode();
   commit((d) => {
     d.prompts = d.prompts.filter((p) => !idSet.has(p.id));
+    snapshot.forEach((s) => {
+      d.trash.unshift({
+        ...s.p,
+        deletedAt: now,
+        originalIndex: s.index,
+      });
+    });
   });
 
-  toastWithUndo(`${toFaNum(ids.length)} پرامپت حذف شد`, () => {
+  SFX.play("del");
+  toastWithUndo(`${toFaNum(ids.length)} پرامپت به سطل آشغال منتقل شد`, () => {
     commit((d) => {
       snapshot
         .slice()
         .sort((a, b) => a.index - b.index)
         .forEach((s) => {
           d.prompts.splice(s.index, 0, s.p);
+          d.trash = d.trash.filter((x) => x.id !== s.p.id);
         });
     });
     toast("بازگردانی شد");
@@ -1117,6 +1428,7 @@ $("#grid").addEventListener("click", (e) => {
         t.updatedAt = Date.now();
       }
     });
+    SFX.play("tick");
   }
 });
 
@@ -1413,9 +1725,8 @@ function openVarModal(p, vars, opts) {
     )
     .join("");
 
-  /* پیش‌نمایش رو ببند هر بار باز کردن */
-  const pvBox = $("#varPreviewBox");
-  if (pvBox) pvBox.open = false;
+  /* همیشه بسته باز شه — کاربر با دکمه/تب بازش می‌کنه */
+  setVarPreviewOpen(false);
 
   const inputs = Array.from(form.querySelectorAll("input[data-var]"));
   inputs.forEach((inp, i) => {
@@ -1454,6 +1765,21 @@ function updateVarPreview() {
   const filled = fillVars(varState.prompt.content, varState.values);
   varPreviewEl.textContent = filled;
   applyTextDir(varPreviewEl, filled);
+}
+function isMobileVarPreview() {
+  return window.matchMedia("(max-width: 759px)").matches;
+}
+function setVarPreviewOpen(open) {
+  const deck =
+    document.getElementById("varDeck") ||
+    document.querySelector(".var-deck");
+  if (!deck) return;
+  deck.classList.toggle("preview-open", !!open);
+  const toggle = document.getElementById("varPreviewToggle");
+  if (toggle) {
+    toggle.classList.toggle("on", !!open);
+    toggle.setAttribute("aria-pressed", open ? "true" : "false");
+  }
 }
 function closeVarModal() {
   $("#varModalBack").classList.remove("open");
@@ -1507,6 +1833,14 @@ function toFaNum(n) {
   return String(n)
     .replace(/\B(?=(\d{3})+(?!\d))/g, "٬")
     .replace(/\d/g, (d) => FA_DIGITS[+d]);
+}
+/* فقط ارقام رو فارسی می‌کنه، بدون جداکنندهٔ هزارگان.
+   مناسب برای تاریخ، کد، شمارهٔ نسخه. */
+function toFaDigits(s) {
+  return String(s == null ? "" : s).replace(
+    /\d/g,
+    (d) => FA_DIGITS[+d]
+  );
 }
 function countWords(text) {
   const s = String(text || "").trim();
@@ -1691,12 +2025,15 @@ function savePrompt() {
     });
   }
   closeModal();
+  SFX.play("copy");
   toast(id ? "ویرایش شد" : "افزوده شد");
 }
 
 function openCatModal(cat) {
   const isEdit = !!cat;
-  $("#catModalIcon").textContent = isEdit ? "✎" : "＋";
+  const iconEl = $("#catModalIcon");
+  iconEl.innerHTML = icon(isEdit ? "edit" : "plus");
+  iconEl.className = "modal-h-ic";
   $("#catModalTitle").textContent = isEdit ? "ویرایش دسته" : "دستهٔ جدید";
   $("#catId").value = isEdit ? cat.id : "";
   $("#catName").value = isEdit ? cat.name : "";
@@ -1753,7 +2090,8 @@ async function deleteCategory(id) {
     : `دستهٔ «<b>${esc(cat.name)}</b>» حذف شود؟`;
   const ok = await uiConfirm({
     title: "حذف دسته",
-    icon: "⚠",
+    icon: "warn",
+    warn: true,
     message: msg,
     okText: "حذف",
     danger: true,
@@ -1775,9 +2113,13 @@ async function deleteCategory(id) {
     d.prompts.forEach((p) => {
       if (p.category === id) p.category = d.categories[0].id;
     });
+    d.trash.forEach((p) => {
+      if (p.category === id) p.category = d.categories[0].id;
+    });
     if (activeCat === id) activeCat = "all";
   });
 
+  SFX.play("del");
   toastWithUndo("دسته حذف شد", () => {
     commit((d) => {
       d.categories.splice(snapshot.index, 0, snapshot.cat);
@@ -2090,10 +2432,113 @@ document.addEventListener("click", (e) => {
   if (!e.target.closest(".searchwrap")) closeDesktopSearchPanel();
 });
 
-function openDrawer() {
-  $("#drawer").classList.add("open");
+const ST_VIEWS = {
+  home: "تنظیمات",
+  appearance: "ظاهر",
+  sound: "صدا",
+  library: "کتابخانه",
+  categories: "دسته‌ها",
+  data: "داده و پشتیبان",
+  trash: "سطل آشغال",
+  about: "درباره",
+};
+
+const ST_THEME_LABEL = { dark: "تاریک", light: "روشن", system: "سیستم" };
+const ST_ACCENT_LABEL = {
+  default: "پیش‌فرض",
+  ocean: "اقیانوس",
+  forest: "جنگل",
+  sunset: "غروب",
+  galaxy: "کهکشان",
+  mono: "بی‌رنگ",
+};
+
+function isDesktopSettings() {
+  return window.matchMedia("(min-width: 900px)").matches;
+}
+
+let _viewHistory = [];
+
+/* نمایش view بدون دست زدن به تاریخچه — استفادهٔ داخلی */
+function _applyView(view) {
+  const drawer = $("#drawer");
+  if (!drawer) return;
+  const desktop = isDesktopSettings();
+  /* روی دسکتاپ، home یک صفحهٔ مستقل نیست — همیشه سایدباره */
+  if (desktop && view === "home") view = "appearance";
+
+  drawer.dataset.view = view;
+  drawer.dataset.canBack = _viewHistory.length ? "1" : "0";
+
+  const title = $("#drawerTitle");
+  if (title) title.textContent = ST_VIEWS[view] || "تنظیمات";
+
+  $$(".st-view", drawer).forEach((v) => {
+    if (desktop && v.dataset.view === "home") {
+      v.hidden = false;
+      return;
+    }
+    v.hidden = v.dataset.view !== view;
+  });
+
+  $$(".st-row", drawer).forEach((r) => {
+    r.classList.toggle("active", r.dataset.nav === view);
+  });
+
+  if (view === "library") renderLibrary();
+  if (view === "trash") renderTrash();
+
+  const body = drawer.querySelector(".drawer-body");
+  if (body) body.scrollTop = 0;
+}
+
+/* ناوبری به یه view */
+function navigateSettings(view) {
+  _applyView(view);
+}
+
+/* برگشت به والد منطقی — trash → data، بقیه → home */
+const VIEW_PARENT = {
+  trash: "data",
+};
+
+function navigateBack() {
+  const cur = $("#drawer")?.dataset.view;
+  _applyView(VIEW_PARENT[cur] || "home");
+}
+
+function renderSettingsValues() {
+  const themeEl = $("#stValTheme");
+  if (themeEl) themeEl.textContent = ST_THEME_LABEL[PREFS.theme] || "—";
+  const sndEl = $("#stValSound");
+  if (sndEl) sndEl.textContent = PREFS.sound === "on" ? "روشن" : "خاموش";
+  const catEl = $("#stValCat");
+  if (catEl) catEl.textContent = toFaNum(DATA.categories.length) + " دسته";
+  const trashEl = $("#stValTrash");
+  if (trashEl) {
+    const n = (DATA.trash || []).length;
+    trashEl.textContent = n ? toFaNum(n) + " پرامپت" : "خالی";
+  }
+  const verEl = $("#stValVer");
+  if (verEl && currentAppVer) verEl.textContent = "v" + currentAppVer;
+  const aboutVer = $("#stAboutVer");
+  if (aboutVer && currentAppVer) aboutVer.textContent = currentAppVer;
+}
+
+function openDrawer(initialView) {
+  const drawer = $("#drawer");
+  /* اگه دراور از قبل بسته‌ست، state رو ریست کن قبل از نمایش */
+  if (drawer && !drawer.classList.contains("open")) {
+    _viewHistory = [];
+    delete drawer.dataset.view;
+  }
+  const target =
+    initialView || (isDesktopSettings() ? "appearance" : "home");
+  navigateSettings(target);
+  drawer.classList.add("open");
   $("#drawerBack").classList.add("open");
   renderCatList();
+  renderSettingsValues();
   refreshFocusTrap();
 }
 function closeDrawer() {
@@ -2101,6 +2546,44 @@ function closeDrawer() {
   $("#drawerBack").classList.remove("open");
   refreshFocusTrap();
 }
+
+$("#stBack")?.addEventListener("click", navigateBack);
+$("#drawer")?.addEventListener("click", (e) => {
+  const nav = e.target.closest("[data-nav]");
+  if (!nav) return;
+  navigateSettings(nav.dataset.nav);
+});
+
+/* ═══ صفحهٔ صدا: اسلایدر شدت + پیش‌نمایش ═══ */
+function updateSoundSections() {
+  const isOn = PREFS.sound === "on";
+  $$('[data-when="sound-on"]').forEach((el) => {
+    el.hidden = !isOn;
+  });
+}
+(function initSoundControls() {
+  const slider = $("#soundVol");
+  const valEl = $("#soundVolVal");
+  if (slider) {
+    slider.value = Number(PREFS.soundVol) || 70;
+    if (valEl) valEl.textContent = toFaNum(Number(slider.value)) + "٪";
+
+    const testPlay = debounce(() => SFX.play("tick"), 90);
+    slider.addEventListener("input", () => {
+      const v = Number(slider.value) || 0;
+      PREFS.soundVol = v;
+      SFX.setVolume(v);
+      if (valEl) valEl.textContent = toFaNum(v) + "٪";
+      savePrefs();
+      testPlay();
+    });
+  }
+  $("#soundTestBtn")?.addEventListener("click", () => {
+    SFX.play("copy");
+    setTimeout(() => SFX.play("del"), 220);
+    setTimeout(() => SFX.play("undo"), 440);
+  });
+})();
 function renderPrefs() {
   $$(".seg[data-pref]").forEach((seg) => {
     const key = seg.dataset.pref;
@@ -2120,6 +2603,16 @@ function renderPrefs() {
           requestAnimationFrame(() => requestAnimationFrame(doToggle));
         } else {
           doToggle();
+        }
+        renderSettingsValues();
+        if (key === "sound") {
+          SFX.setEnabled(PREFS.sound === "on");
+          updateSoundSections();
+          if (PREFS.sound === "on") SFX.play("tick");
+        }
+        if (key === "soundTheme") {
+          SFX.setTheme(PREFS.soundTheme);
+          setTimeout(() => SFX.play("copy"), 30);
         }
       };
     });
@@ -2531,7 +3024,45 @@ function normalizeImport(raw) {
     });
   });
 
-  return { categories, prompts, rejected };
+  /* ── نرمال‌سازی سطل آشغال (اختیاری) ── */
+  const now2 = Date.now();
+  const trash = [];
+  if (Array.isArray(data.trash)) {
+    data.trash.forEach((p) => {
+      if (!p || typeof p !== "object") return;
+      const title = String(p.title || "").trim();
+      const content = String(p.content || "");
+      if (!title || !content.trim()) return;
+      let category = String(p.category || "");
+      if (!validCatIds.has(category)) category = fallbackCat;
+      let tags;
+      if (Array.isArray(p.tags)) {
+        tags = p.tags.map((t) => String(t || "").trim()).filter(Boolean);
+      } else if (typeof p.tags === "string") {
+        tags = p.tags
+          .split(",")
+          .map((s) => s.trim())
+          .filter(Boolean);
+      } else {
+        tags = [];
+      }
+      trash.push({
+        id: String(p.id || uid()),
+        category,
+        title,
+        description: String(p.description || "").trim(),
+        tags,
+        pinned: !!p.pinned,
+        content,
+        createdAt: Number(p.createdAt) || now2,
+        updatedAt: Number(p.updatedAt) || now2,
+        deletedAt: Number(p.deletedAt) || now2,
+        originalIndex: Number(p.originalIndex) || 0,
+      });
+    });
+  }
+
+  return { categories, prompts, trash, rejected };
 }
 
 /* ── تشخیص تکراری بر اساس id یا (عنوان + متن) ── */
@@ -2584,6 +3115,24 @@ function mergeImport(result) {
       added++;
     }
   });
+  /* سطل آشغال: آرایهٔ جداست، بدون conflict با prompts */
+  if (Array.isArray(result.trash)) {
+    const activeIds = new Set(DATA.prompts.map((p) => p.id));
+    const trashIds = new Set(DATA.trash.map((p) => p.id));
+    result.trash.forEach((p) => {
+      if (activeIds.has(p.id)) return;
+      if (trashIds.has(p.id)) return;
+      if (
+        DATA.prompts.some(
+          (x) => x.title === p.title && x.content === p.content
+        )
+      )
+        return;
+      DATA.trash.push(p);
+      trashIds.add(p.id);
+    });
+  }
+
   return { added, updated, skipped };
 }
 
@@ -2611,7 +3160,9 @@ function askImportMode(count, rejectedN, onDone) {
       : `این فایل ${count} پرامپت دارد.<br>
 در اپ فعلی ${existing} پرامپت داری.`;
 
-    $("#dialogIcon").textContent = "⬇";
+    const dIcon = $("#dialogIcon");
+    dIcon.innerHTML = icon("down");
+    dIcon.className = "modal-h-ic is-down";
     $("#dialogTitle").textContent = "ورودی فایل";
     $("#dialogMsg").innerHTML = msg;
     $("#dialogFieldWrap").style.display = "none";
@@ -2702,6 +3253,7 @@ function importData(file) {
           } catch (_) {}
           DATA.categories = result.categories;
           DATA.prompts = result.prompts;
+          DATA.trash = Array.isArray(result.trash) ? result.trash : [];
           save();
           renderChips();
           renderGrid();
@@ -2727,7 +3279,8 @@ function importData(file) {
 async function resetAll() {
   const ok = await uiConfirm({
     title: "بازنشانی همه",
-    icon: "⚠",
+    icon: "warn",
+    warn: true,
     message:
       'همهٔ پرامپت‌ها و دسته‌ها حذف شوند؟<br><span style="color:var(--dim);font-size:var(--f-xs)">این کار قابل بازگشت نیست.</span>',
     okText: "حذف همه",
@@ -2737,100 +3290,232 @@ async function resetAll() {
   commit((d) => {
     d.categories = JSON.parse(JSON.stringify(DEFAULT_CATEGORIES));
     d.prompts = [];
+    d.trash = [];
     activeCat = "all";
   });
   closeDrawer();
   toast("بازنشانی شد");
 }
 
+/* ═══════════ سطل آشغال ═══════════ */
+const TRASH_TTL_DAYS = 30;
+const TRASH_TTL_MS = TRASH_TTL_DAYS * 24 * 60 * 60 * 1000;
+
+function purgeOldTrash() {
+  if (!Array.isArray(DATA.trash) || !DATA.trash.length) return 0;
+  const cutoff = Date.now() - TRASH_TTL_MS;
+  const before = DATA.trash.length;
+  DATA.trash = DATA.trash.filter((p) => (p.deletedAt || 0) > cutoff);
+  return before - DATA.trash.length;
+}
+
+function timeAgo(ts) {
+  if (!ts) return "—";
+  const diff = Date.now() - ts;
+  const min = Math.floor(diff / 60000);
+  if (min < 1) return "همین حالا";
+  if (min < 60) return toFaNum(min) + " دقیقه پیش";
+  const hr = Math.floor(min / 60);
+  if (hr < 24) return toFaNum(hr) + " ساعت پیش";
+  const day = Math.floor(hr / 24);
+  if (day < 30) return toFaNum(day) + " روز پیش";
+  return toFaNum(Math.floor(day / 30)) + " ماه پیش";
+}
+
+function daysLeftInTrash(deletedAt) {
+  const elapsed = Math.floor((Date.now() - (deletedAt || 0)) / 86400000);
+  return Math.max(0, TRASH_TTL_DAYS - elapsed);
+}
+
+function stripTrashMeta(item) {
+  const { deletedAt, originalIndex, ...clean } = item;
+  return clean;
+}
+
+function restoreFromTrash(id) {
+  const idx = DATA.trash.findIndex((p) => p.id === id);
+  if (idx < 0) return;
+  const item = DATA.trash[idx];
+  const clean = stripTrashMeta(item);
+  const insertAt = Math.min(
+    Math.max(0, item.originalIndex || 0),
+    DATA.prompts.length
+  );
+  commit((d) => {
+    d.trash = d.trash.filter((p) => p.id !== id);
+    d.prompts.splice(insertAt, 0, clean);
+  });
+  SFX.play("undo");
+  toast("پرامپت بازگردانی شد");
+}
+
+function restoreAllTrash() {
+  if (!DATA.trash.length) return;
+  const items = DATA.trash
+    .slice()
+    .sort((a, b) => (a.originalIndex || 0) - (b.originalIndex || 0));
+  commit((d) => {
+    items.forEach((item) => {
+      const insertAt = Math.min(
+        Math.max(0, item.originalIndex || 0),
+        d.prompts.length
+      );
+      d.prompts.splice(insertAt, 0, stripTrashMeta(item));
+    });
+    d.trash = [];
+  });
+  SFX.play("undo");
+  toast(`${toFaNum(items.length)} پرامپت بازگردانی شد`);
+}
+
+async function purgeFromTrash(id) {
+  const item = DATA.trash.find((p) => p.id === id);
+  if (!item) return;
+  const ok = await uiConfirm({
+    title: "حذف کامل",
+    icon: "warn",
+    warn: true,
+    message: `پرامپت «<b>${esc(item.title)}</b>» برای همیشه حذف شود؟`,
+    okText: "حذف کامل",
+    danger: true,
+  });
+  if (!ok) return;
+  commit((d) => {
+    d.trash = d.trash.filter((p) => p.id !== id);
+  });
+  SFX.play("del");
+  toast("برای همیشه حذف شد");
+}
+
+async function emptyTrash() {
+  if (!DATA.trash.length) return;
+  const n = DATA.trash.length;
+  const ok = await uiConfirm({
+    title: "خالی کردن سطل",
+    icon: "warn",
+    warn: true,
+    message: `${toFaNum(
+      n
+    )} پرامپت برای همیشه حذف شوند؟<br><span style="color:var(--dim);font-size:var(--f-xs)">این کار قابل بازگشت نیست.</span>`,
+    okText: "خالی کن",
+    danger: true,
+  });
+  if (!ok) return;
+  commit((d) => {
+    d.trash = [];
+  });
+  SFX.play("del");
+  toast("سطل خالی شد");
+}
+
+function renderTrash() {
+  const el = $("#trashList");
+  if (!el) return;
+  const items = DATA.trash
+    .slice()
+    .sort((a, b) => (b.deletedAt || 0) - (a.deletedAt || 0));
+
+  const headEl = $("#trashHead");
+  const emptyBtn = $("#trashEmptyBtn");
+  const restoreAllBtn = $("#trashRestoreAllBtn");
+
+  if (!items.length) {
+    if (headEl) headEl.hidden = true;
+    el.innerHTML = `<div class="trash-empty">
+<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg>
+<p>سطل آشغال خالی است</p>
+<span>پرامپت‌های حذف‌شده تا ۳۰ روز اینجا می‌مونن.</span>
+</div>`;
+    return;
+  }
+
+  if (headEl) {
+    headEl.hidden = false;
+    if (emptyBtn)
+      emptyBtn.textContent = `خالی کردن (${toFaNum(items.length)})`;
+    if (restoreAllBtn) restoreAllBtn.textContent = "بازیابی همه";
+  }
+
+  el.innerHTML = items
+    .map((p) => {
+      const cat = catById(p.category);
+      const daysLeft = daysLeftInTrash(p.deletedAt);
+      return `<div class="trash-item" data-id="${p.id}">
+<div class="trash-item-head">
+<b dir="auto">${esc(p.title)}</b>
+<span class="pcat ${cat.color}">${esc(cat.name)}</span>
+</div>
+<div class="trash-item-meta">
+<span>${timeAgo(p.deletedAt)}</span>
+<span class="trash-item-sep">·</span>
+<span class="trash-item-ttl">${toFaNum(daysLeft)} روز مانده</span>
+</div>
+<div class="trash-item-acts">
+<button class="btn sm g" data-trash-act="restore" type="button">
+<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 14 4 9 9 4"/><path d="M20 20v-7a4 4 0 0 0-4-4H4"/></svg>
+<span>بازیابی</span>
+</button>
+<button class="btn sm dgr" data-trash-act="purge" type="button">
+<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg>
+<span>حذف کامل</span>
+</button>
+</div>
+</div>`;
+    })
+    .join("");
+}
+
 async function seedDefaults() {
+  const all = await loadLibrary();
+  if (!all.length) {
+    toast("کتابخانه در دسترس نیست", "err");
+    return;
+  }
   if (DATA.prompts.length > 0) {
     const ok = await uiConfirm({
       title: "افزودن پرامپت‌های پیش‌فرض",
-      message:
-        "پرامپت‌های موجود باقی می‌مانند. شش پرامپت پیش‌فرض اضافه شوند؟",
+      message: `پرامپت‌های موجود باقی می‌مانند. ${toFaNum(
+        all.length
+      )} پرامپت کتابخانه اضافه شوند؟`,
       okText: "افزودن",
     });
     if (!ok) return;
   }
+  const n = addLibraryItems(all);
+  if (n > 0) toast(`${toFaNum(n)} پرامپت افزوده شد`);
+  setTimeout(() => closeDrawer(), 400);
+}
+
+function addLibraryItems(items) {
   const now = Date.now();
-  const seeds = [
-    {
-      id: uid(),
-      category: "write",
-      title: "نویسندهٔ مقاله",
-      description: "نوشتن مقالهٔ فارسی روان با ساختار مقدمه/بدنه/نتیجه.",
-      tags: ["نوشتن", "مقاله", "محتوا"],
-      pinned: true,
-      content:
-        "# نقش تو\nنویسندهٔ حرفه‌ای فارسی هستی. متن‌های روان، دقیق و بدون حاشیه می‌نویسی.\n\n# موضوع\n{{موضوع}}\n\n# لحن\n{{لحن}}   (رسمی / دوستانه / آموزشی / طنز)\n\n# طول\nحدود {{طول}} کلمه.\n\n# قواعد\n1. پاراگراف‌های کوتاه.\n2. از تکرار کلمات پرهیز کن.\n3. هر ادعا با مثال یا پشتوانه.\n4. کلمات انگلیسی را با معادل رایج فارسی بنویس.\n5. بدون مقدمه‌چینی و تعارف.\n\n# ساختار\n- مقدمه: قلاب + طرح مسئله\n- بدنه: ۳ تا ۵ بخش با زیرعنوان\n- نتیجه: جمع‌بندی + یک جملهٔ ماندگار\n",
-    },
-    {
-      id: uid(),
-      category: "general",
-      title: "مترجم حرفه‌ای",
-      description: "ترجمهٔ معنایی با حفظ لحن و یادداشت انتخاب‌ها.",
-      tags: ["ترجمه", "زبان", "متن"],
-      pinned: false,
-      content:
-        "# نقش تو\nمترجم حرفه‌ای از {{مبدأ}} به {{مقصد}} هستی.\n\n# متن\n{{متن}}\n\n# قواعد\n1. ترجمهٔ معنایی، نه تحت‌اللفظی.\n2. اصطلاحات را با معادل طبیعی همان زبان برگردان.\n3. لحن اصلی را حفظ کن.\n4. اسم‌های خاص را ترجمه نکن.\n5. اگر جمله مبهم بود، ترجمهٔ محتمل بده و علامت بزن.\n\n# خروجی\n- ترجمه\n- ۳ یادداشت کوتاه دربارهٔ انتخاب‌های مهم\n",
-    },
-    {
-      id: uid(),
-      category: "code",
-      title: "بازبینی کد",
-      description: "مرور دقیق کد با تفکیک بحرانی/معماری/خوانایی/کارایی.",
-      tags: ["کد", "بازبینی", "review"],
-      pinned: true,
-      content:
-        "# نقش تو\nمهندس نرم‌افزار ارشد هستی. کد را دقیق، بی‌تعارف و با پیشنهاد مشخص بازبینی می‌کنی.\n\n# زبان\n{{زبان}}\n\n# کد\n{{کد}}\n\n# خروجی مورد انتظار\n1. مشکلات بحرانی — باگ، امنیت، نشت حافظه.\n2. مشکلات معماری — ساختار، جداسازی مسئولیت‌ها.\n3. بهبود خوانایی — نام‌گذاری، کامنت، پیچیدگی.\n4. بهبود کارایی — تنها اگر مسئله واقعی است.\n5. پیشنهاد بازنویسی — فقط بخش‌های مشکل‌دار.\n\n# قواعد\n- برای هر مورد بگو «چرا».\n- تعریف بی‌دلیل نکن.\n- اگر بخشی خوب است، بگو.\n",
-    },
-    {
-      id: uid(),
-      category: "image",
-      title: "تصویر — واقع‌گرا",
-      description:
-        "پرامپت عکس فتوریالیستیک با کنترل نور، زاویه و حال‌وهوا.",
-      tags: ["تصویر", "واقع‌گرا", "photo"],
-      pinned: true,
-      content:
-        "# پرامپت تصویر — فتوریالیستیک\n\n## سوژه\n{{سوژه}}\n\n## جزئیات\n- زاویهٔ دوربین: {{زاویه}}   (close-up / medium / wide)\n- نور: {{نور}}   (طلوع / غروب / ابری / نئون شبانه)\n- پس‌زمینه: {{پس‌زمینه}}\n- حال‌وهوا: {{حال}}\n\n## پرامپت\nphotorealistic, {{سوژه}}, {{زاویه}} shot,\n{{نور}} lighting, {{پس‌زمینه}} in background,\nmood: {{حال}},\n35mm lens, f/1.8, shallow depth of field,\nnatural skin texture, subsurface scattering,\nfilm grain, shot on Kodak Portra 400,\n4K, ultra detailed, sharp focus\n\n## منفی (Negative)\ncartoon, painting, illustration, 3d render,\nlow res, blurry, deformed hands, extra fingers,\nwatermark, text, signature\n",
-    },
-    {
-      id: uid(),
-      category: "image",
-      title: "تصویر — هنری",
-      description: "پرامپت تصویرسازی با انتخاب سبک، پالت و نسبت.",
-      tags: ["تصویر", "هنری", "illustration"],
-      pinned: false,
-      content:
-        "# پرامپت تصویر — تصویرسازی هنری\n\n## ایده\n{{ایده}}\n\n## سبک\n{{سبک}}   (آبرنگ / دیجیتال آرت / مینیمال تخت / رترو / سورئال)\n\n## پالت\n{{پالت}}   (گرم / سرد / تک‌رنگ / پاستلی / نئون)\n\n## نسبت\n{{نسبت}}   (1:1 / 16:9 / 9:16 / 4:5)\n\n## پرامپت\n{{ایده}},\n{{سبک}} style, {{پالت}} palette,\nelegant composition, rule of thirds,\nsoft shadow, artstation trending,\nmasterwork, highly detailed, 8k\n\n## منفی\nphoto, realistic, 3d render, low quality,\ncluttered, watermark, text, signature\n",
-    },
-    {
-      id: uid(),
-      category: "image",
-      title: "لوگو",
-      description: "پرامپت لوگوی مینیمال با کنترل سبک و رنگ برند.",
-      tags: ["لوگو", "برند", "logo"],
-      pinned: false,
-      content:
-        "# پرامپت لوگو\n\n## برند\nنام: {{نام برند}}\nصنعت: {{صنعت}}\nمخاطب: {{مخاطب}}\nپیام اصلی: {{پیام}}\n\n## مشخصات بصری\n- نوع: {{نوع}}   (wordmark / lettermark / abstract / mascot)\n- سبک: {{سبک}}   (مینیمال / فلت / ژئومتریک / ارگانیک)\n- رنگ: {{رنگ}}\n\n## پرامپت\nminimalist logo for {{نام برند}},\n{{صنعت}} brand, {{نوع}} style,\n{{سبک}} design, {{رنگ}} color scheme,\nclean vector lines, professional branding,\nwhite background, centered composition,\nhigh contrast, scalable\n\n## منفی\n3d, gradient mesh, drop shadow, text,\nwatermark, photo, cluttered, complex details\n",
-    },
-  ];
   if (!DATA.categories.length)
     DATA.categories = JSON.parse(JSON.stringify(DEFAULT_CATEGORIES));
-  const ensureSeedCat = (id) =>
+  const ensureCat = (id) =>
     DATA.categories.some((c) => c.id === id) ? id : DATA.categories[0].id;
-  seeds.forEach((s) => {
-    s.category = ensureSeedCat(s.category);
-    s.createdAt = now;
-    s.updatedAt = now;
-  });
+
+  let added = 0;
   commit((d) => {
-    seeds.forEach((s) => d.prompts.push(s));
+    items.forEach((item) => {
+      if (!item || !item.title || !item.content) return;
+      const exists = d.prompts.some(
+        (p) => p.title === item.title && p.content === item.content
+      );
+      if (exists) return;
+      d.prompts.push({
+        id: uid(),
+        category: ensureCat(item.category || "general"),
+        title: item.title,
+        description: item.description || "",
+        tags: Array.isArray(item.tags) ? [...item.tags] : [],
+        pinned: !!item.pinned,
+        content: item.content,
+        createdAt: now,
+        updatedAt: now,
+      });
+      added++;
+    });
   });
-  closeDrawer();
-  toast("۶ پرامپت پیش‌فرض افزوده شد");
+  return added;
 }
 
 function toggleTheme() {
@@ -2839,6 +3524,7 @@ function toggleTheme() {
   savePrefs();
   applyPrefs();
   renderPrefs();
+  SFX.play("tick");
   toast("پوسته: " + (PREFS.theme === "dark" ? "تاریک" : "روشن"));
 }
 
@@ -2891,7 +3577,7 @@ $("#importFile").addEventListener("change", (e) => {
   e.target.value = "";
   if (f) importData(f);
 });
-$("#seedBtn").onclick = seedDefaults;
+
 $("#resetBtn").onclick = resetAll;
 
 $("#catList").addEventListener("click", (e) => {
@@ -2931,6 +3617,28 @@ $("#varModalBack").addEventListener("click", (e) => {
   if (e.target.id === "varModalBack") closeVarModal();
 });
 
+/* toggle پیش‌نمایش — هم دسکتاپ هم موبایل */
+$("#varPreviewToggle")?.addEventListener("click", () => {
+  const deck = document.getElementById("varDeck");
+  if (!deck) return;
+  setVarPreviewOpen(!deck.classList.contains("preview-open"));
+});
+
+/* دکمهٔ back تو هدر پنل — برمی‌گرده به فرم */
+$("#varPreviewBack")?.addEventListener("click", () => {
+  setVarPreviewOpen(false);
+});
+
+/* دکمه‌های فوتر پنل: انصراف (بستن کل مودال) / کپی */
+$("#varPreviewPanel")?.addEventListener("click", (e) => {
+  const btn = e.target.closest("[data-var-action]");
+  if (!btn) return;
+  const act = btn.dataset.varAction;
+  if (act === "back") setVarPreviewOpen(false);
+  else if (act === "cancel") closeVarModal();
+  else if (act === "copy") copyVarFinal();
+});
+
 $("#catSaveBtn").onclick = saveCatModal;
 $("#catCancelBtn").onclick = closeCatModal;
 $("#catModalBack").addEventListener("click", (e) => {
@@ -2958,6 +3666,7 @@ $("#toastUndoBtn").onclick = () => {
   if (typeof undoFn === "function") {
     const fn = undoFn;
     hideUndoToast();
+    SFX.play("undo");
     try {
       fn();
     } catch (e) {}
@@ -2987,8 +3696,12 @@ document.addEventListener("keydown", (e) => {
   }
 
   if (k === "Escape") {
-    if ($("#bulkMoveBack")?.classList.contains("open")) {
-      closeBulkMove();
+    if ($("#libPreviewBack")?.classList.contains("open")) {
+      closeLibPreview();
+      return;
+    }
+    if ($("#mdPreviewBack")?.classList.contains("open")) {
+      closeMdPreview();
       return;
     }
     if (selectMode) {
@@ -3074,6 +3787,13 @@ window.addEventListener("resize", () => {
   }
   if (editorArea && $("#modalBack").classList.contains("open")) {
     updateEditorGutter();
+  }
+  /* سازگاری تنظیمات با تغییر اندازه */
+  const drawer = $("#drawer");
+  if (drawer?.classList.contains("open")) {
+    if (isDesktopSettings() && drawer.dataset.view === "home") {
+      navigateSettings("appearance");
+    }
   }
 });
 
@@ -3202,6 +3922,18 @@ initPromptCatSelect();
 initSortSelect();
 loadPrefs();
 load();
+/* پاک‌سازی خودکار سطل آشغال (۳۰ روز TTL) */
+(function initTrashPurge() {
+  const n = purgeOldTrash();
+  if (n > 0) {
+    save();
+    setTimeout(
+      () =>
+        toast(`${toFaNum(n)} پرامپت قدیمی از سطل پاک شد`, "warn"),
+      1200
+    );
+  }
+})();
 applyPrefs();
 renderPrefs();
 renderChips();
@@ -3229,6 +3961,20 @@ $("#bulkMoveCancelBtn")?.addEventListener("click", closeBulkMove);
 $("#bulkMoveBack")?.addEventListener("click", (e) => {
   if (e.target.id === "bulkMoveBack") closeBulkMove();
 });
+/* ═══════════ رویدادهای سطل آشغال ═══════════ */
+$("#trashList")?.addEventListener("click", (e) => {
+  const btn = e.target.closest("[data-trash-act]");
+  if (!btn) return;
+  const item = btn.closest(".trash-item");
+  if (!item) return;
+  const id = item.dataset.id;
+  const act = btn.dataset.trashAct;
+  if (act === "restore") restoreFromTrash(id);
+  else if (act === "purge") purgeFromTrash(id);
+});
+$("#trashEmptyBtn")?.addEventListener("click", emptyTrash);
+$("#trashRestoreAllBtn")?.addEventListener("click", restoreAllTrash);
+
 $("#bulkMoveList")?.addEventListener("click", (e) => {
   const item = e.target.closest("[data-cat]");
   if (!item) return;
@@ -3457,59 +4203,270 @@ ${
   });
 })();
 
+/* ═══════════ کتابخانه: رندر + پیش‌نمایش ═══════════ */
+let libPreviewIdx = -1;
+
+function isLibItemAdded(item) {
+  return DATA.prompts.some(
+    (p) => p.title === item.title && p.content === item.content
+  );
+}
+
+async function renderLibrary() {
+  const grid = $("#libGrid");
+  if (!grid) return;
+  grid.innerHTML = `<div class="lib-loading">در حال بارگذاری…</div>`;
+
+  const all = await loadLibrary();
+  if (!all.length) {
+    grid.innerHTML = `<div class="lib-empty">کتابخانه در دسترس نیست</div>`;
+    const allBtn = $("#libAddAll");
+    if (allBtn) allBtn.disabled = true;
+    return;
+  }
+
+  currentLibItems = pickDailyItems(all, LIBRARY_SHOWN);
+
+  grid.innerHTML = currentLibItems
+    .map((item, i) => {
+      const cat = catById(item.category);
+      const added = isLibItemAdded(item);
+      const tags = (item.tags || [])
+        .map(
+          (t) =>
+            `<span class="tag"><span class="th">#</span><span class="tw">${esc(
+              t
+            )}</span></span>`
+        )
+        .join("");
+      return `
+<button class="lib-card" type="button" data-lib="${i}">
+  <div class="lib-card-head">
+    <span class="lib-card-cat"><span class="dot ${esc(
+      cat.color
+    )}"></span>${esc(cat.name)}</span>
+    <span class="lib-card-b">${esc(item.title)}</span>
+    ${added ? '<span class="lib-card-added">افزوده شده</span>' : ""}
+  </div>
+  ${
+    item.description
+      ? `<div class="lib-card-desc">${esc(item.description)}</div>`
+      : ""
+  }
+  ${tags ? `<div class="lib-card-tags">${tags}</div>` : ""}
+  <div class="lib-card-foot">
+    <span class="lib-card-hint">برای پیش‌نمایش بزن</span>
+    <span class="btn sm ${added ? "" : "g"}" data-lib-add="${i}">${
+        added ? "افزوده شده" : "افزودن"
+      }</span>
+  </div>
+</button>`;
+    })
+    .join("");
+
+  const allBtn = $("#libAddAll");
+  if (allBtn) {
+    const allAdded = currentLibItems.every(isLibItemAdded);
+    allBtn.disabled = allAdded;
+    const lbl = allBtn.querySelector("span");
+    if (lbl) lbl.textContent = allAdded ? "همه افزوده شدن" : "افزودن همه";
+  }
+}
+
+function openLibPreview(idx) {
+  const item = currentLibItems[idx];
+  if (!item) return;
+  libPreviewIdx = idx;
+  const cat = catById(item.category);
+  $("#libPreviewTitle").textContent = item.title;
+  const meta = [];
+  meta.push(`<span class="pcat ${esc(cat.color)}">${esc(cat.name)}</span>`);
+  (item.tags || []).forEach((t) => {
+    meta.push(
+      `<span class="tag"><span class="th">#</span><span class="tw">${esc(
+        t
+      )}</span></span>`
+    );
+  });
+  $("#libPreviewMeta").innerHTML = meta.join("");
+
+  /* آمار متن */
+  const content = item.content || "";
+  const lines = content.split("\n").length;
+  const words = countWords(content);
+  const chars = content.length;
+  const tokens = estimateTokens(content);
+  const statsEl = $("#libPreviewStats");
+  if (statsEl) {
+    statsEl.innerHTML = `
+<span class="lps-item"><b>${toFaNum(lines)}</b><span>خط</span></span>
+<span class="lps-item"><b>${toFaNum(words)}</b><span>کلمه</span></span>
+<span class="lps-item"><b>${toFaNum(chars)}</b><span>کاراکتر</span></span>
+<span class="lps-item"><b>~${toFaNum(tokens)}</b><span>توکن</span></span>`;
+  }
+
+  $("#libPreviewContent").textContent = content;
+  const addBtn = $("#libPreviewAdd");
+  const added = isLibItemAdded(item);
+  addBtn.textContent = added ? "افزوده شده" : "افزودن به لیست من";
+  addBtn.disabled = added;
+  $("#libPreviewBack").classList.add("open");
+  refreshFocusTrap();
+}
+
+function closeLibPreview() {
+  libPreviewIdx = -1;
+  $("#libPreviewBack").classList.remove("open");
+  refreshFocusTrap();
+}
+
+function addLibByIndex(idx) {
+  const item = currentLibItems[idx];
+  if (!item) return;
+  const n = addLibraryItems([item]);
+  if (n > 0) {
+    SFX.play("copy");
+    toast("به لیست تو اضافه شد");
+  } else {
+    toast("قبلاً اضافه شده بود", "warn");
+  }
+  renderLibrary();
+  if (libPreviewIdx === idx) {
+    const addBtn = $("#libPreviewAdd");
+    if (addBtn) {
+      addBtn.textContent = "افزوده شده";
+      addBtn.disabled = true;
+    }
+  }
+}
+
+$("#libGrid")?.addEventListener("click", (e) => {
+  const addBtn = e.target.closest("[data-lib-add]");
+  if (addBtn) {
+    e.preventDefault();
+    e.stopPropagation();
+    addLibByIndex(Number(addBtn.dataset.libAdd));
+    return;
+  }
+  const card = e.target.closest("[data-lib]");
+  if (!card) return;
+  openLibPreview(Number(card.dataset.lib));
+});
+
+$("#libAddAll")?.addEventListener("click", () => {
+  if (!currentLibItems.length) return;
+  const n = addLibraryItems(currentLibItems);
+  if (n > 0) {
+    SFX.play("copy");
+    toast(`${toFaNum(n)} پرامپت افزوده شد`);
+  }
+  renderLibrary();
+});
+
+$("#libPreviewAdd")?.addEventListener("click", () => {
+  if (libPreviewIdx >= 0) addLibByIndex(libPreviewIdx);
+});
+$("#libPreviewClose")?.addEventListener("click", closeLibPreview);
+$("#libPreviewX")?.addEventListener("click", closeLibPreview);
+$("#libPreviewBack")?.addEventListener("click", (e) => {
+  if (e.target.id === "libPreviewBack") closeLibPreview();
+});
+
+
 /* ═══ چنج‌لاگ ═══ */
 const CHANGELOG = [
   {
-    version: "1.3",
-    date: "۱۴۰۴/۰۶/۲۷",
+    version: "1.4",
+    date: "1404/07/01",
     items: [
-      "انتخاب چندگانه با حذف، سنجاق و انتقال گروهی",
-      "کانتکست منو: راست‌کلیک روی کارت → ویرایش، کپی، AI، انتقال، تکثیر، حذف",
-      "FAB شناور: پرامپت جدید و انتخاب چندگانه",
-      "جهت مرتب‌سازی: صعودی / نزولی با یک کلیک",
-      "چیپس‌های افقی اسکرول‌شو در موبایل",
-      "محافظت داده: بکاپ خودکار قبل از مهاجرت",
+      "قابلیت جدید: [سطل آشغال](trash) — پرامپت‌های حذف‌شده تا ۳۰ روز اینجا می‌مونن و هر وقت خواستی برمی‌گردونیشون.",
+      "شش پس‌زمینه برای اپ؛ از [ظاهر](appearance) شفق، رنگین، شبکه، نقطه‌ای، راه‌راه یا ساده رو انتخاب کن.",
+      "تم صوتی «زنگی» اضافه شد و کیفیت صدا برای هدفون و ایرباد بهتر شد — تو صفحهٔ [صدا](sound).",
+      "پیش‌نمایش [کتابخانه](library) حالا آمار متن نشون می‌ده: خط، کلمه، کاراکتر و تخمین توکن.",
+      "دکمهٔ «افزودن همه» تو [کتابخانه](library) ثابت شد؛ فقط کارت‌ها اسکرول می‌شن.",
+      "رنگ‌ها، اندازه‌ها و پس‌زمینه‌ها تو صفحهٔ [ظاهر](appearance) یکی شدن — همه‌چیز یه‌جا.",
+      "پیش‌نمایش متغیرها بازطراحی شد: تو دسکتاپ کارت از بغل مودال میاد بیرون، تو موبایل تمام‌صفحه از چپ با دکمه‌های برگشت، انصراف و کپی.",
+      "ادیتور پرامپت حالا برای متن لاتین مونواسپیس و برای فارسی Vazirmatn نشون می‌ده — خوانا و منظم، بدون فونت اضافه.",
+      "چنج‌لاگ حالا لینک‌داره؛ روی هر صفحه‌ای که بزنی، مستقیم می‌ری همون‌جا.",
+      "تمیزکاری CSS: کد مرده و بلاک‌های تکراری حذف شدن، بدون افت ظاهر. چند تا باگ رنگ hover و توست بازگردانی هم رفع شدن.",
+    ],
+  },
+  {
+    version: "1.3",
+    date: "1404/06/27",
+    items: [
+      "انتخاب چندگانه با FAB: پرامپت جدید و انتخاب گروهی — سنجاق، انتقال، تکثیر و حذف با یه کلیک.",
+      "کانتکست منو تو دسکتاپ: راست-کلیک روی کارت → ویرایش، کپی، باز کردن در AI، سنجاق، انتقال به دسته، تکثیر، انتخاب و حذف.",
+      "جهت مرتب‌سازی صعودی / نزولی با دکمهٔ کنار فیلتر.",
+      "چیپس‌های دسته تو موبایل افقی و اسکرول‌شو شدن.",
+      "محافظت داده: قبل از مهاجرت، نسخهٔ خام داده بکاپ گرفته می‌شه.",
+      "لینک‌های کاربردی تو همین چنج‌لاگ — مثل [کتابخانه](library) و [داده و پشتیبان](data).",
     ],
   },
   {
     version: "1.2",
-    date: "۱۴۰۴/۰۶/۲۶",
+    date: "1404/06/26",
     items: [
-      "نصب روی گوشی مثل یک اپ واقعی",
-      "به‌روزرسانی آسان از تنظیمات",
-      "تاریخچهٔ تغییرات در دسترس",
-      "ظاهر مرتب‌تر کارت‌ها",
-      "پس‌زمینهٔ جدید",
-      "ادیتور راحت‌تر روی موبایل",
-      "سرعت بارگذاری بهتر",
+      "نصب روی گوشی مثل یه اپ واقعی — PWA با پشتیبانی آفلاین.",
+      "به‌روزرسانی آسان از [تنظیمات](home) با یه دکمه.",
+      "تاریخچهٔ تغییرات همین‌جاست؛ از [درباره](about) هم قابل دسترسیه.",
+      "ظاهر کارت‌ها مرتب‌تر شد و سرعت بارگذاری بهتر.",
+      "پس‌زمینهٔ تازه و ادیتور راحت‌تر روی موبایل.",
     ],
   },
   {
     version: "1.1",
-    date: "۱۴۰۴/۰۶/۲۵",
+    date: "1404/06/25",
     items: [
-      "متغیرها: {{موضوع}} و {{لحن}}",
-      "باز کردن مستقیم پرامپت در ChatGPT و Claude و بقیه",
-      "پشتیبان‌گیری و بازیابی با فایل",
+      "متغیرها: تو متن پرامپت {{موضوع}} یا {{لحن}} بذار؛ هنگام کپی، فرم پر کردن باز می‌شه.",
+      "باز کردن مستقیم پرامپت تو ChatGPT، Claude و ۷ سرویس دیگه — بدون کپی دستی.",
+      "پشتیبان‌گیری و بازیابی با فایل JSON از [داده و پشتیبان](data).",
     ],
   },
   {
     version: "1.0",
-    date: "۱۴۰۴/۰۶/۲۴",
+    date: "1404/06/24",
     items: [
-      "اولین نسخه",
-      "جست‌وجو، دسته‌بندی و سنجاق",
+      "اولین نسخه — با جست‌وجو، دسته‌بندی و سنجاق.",
     ],
   },
 ];
-
 let currentAppVer = null;
+
+/* لینک‌های inline تو چنج‌لاگ: [کلمه](view) */
+const CHLOG_LINK_RE = /\[([^\]]+)\]\(([a-z]+)\)/g;
+
+function renderChlogItemText(raw) {
+  const s = String(raw == null ? "" : raw);
+  CHLOG_LINK_RE.lastIndex = 0;
+  let out = "",
+    last = 0,
+    m;
+  while ((m = CHLOG_LINK_RE.exec(s))) {
+    out += esc(s.slice(last, m.index));
+    const label = m[1];
+    const view = m[2];
+    if (ST_VIEWS[view]) {
+      out += `<button type="button" class="chlog-link" data-chlog-nav="${esc(
+        view,
+      )}">${esc(label)}</button>`;
+    } else {
+      out += esc(label);
+    }
+    last = m.index + m[0].length;
+  }
+  out += esc(s.slice(last));
+  return out;
+}
 
 function renderChangelog() {
   const el = $("#chlogList");
   if (!el) return;
   el.innerHTML = CHANGELOG.map((c, i) => {
     const isCurrent = currentAppVer && c.version === currentAppVer;
+    const itemsHtml = c.items
+      .map((it) => `<li>${renderChlogItemText(it)}</li>`)
+      .join("");
     return `
 <div class="chlog-item">
   <div class="chlog-head">
@@ -3521,9 +4478,9 @@ function renderChangelog() {
           : ""
       }
     </span>
-    <span class="chlog-date">${esc(c.date || "")}</span>
+    <span class="chlog-date">${esc(toFaDigits(c.date || ""))}</span>
   </div>
-  <ul>${c.items.map((it) => `<li>${esc(it)}</li>`).join("")}</ul>
+  <ul>${itemsHtml}</ul>
 </div>`;
   }).join("");
 }
@@ -3538,6 +4495,13 @@ function closeChangelog() {
 }
 $("#chlogBtn")?.addEventListener("click", openChangelog);
 $("#chlogCloseBtn")?.addEventListener("click", closeChangelog);
+$("#chlogList")?.addEventListener("click", (e) => {
+  const btn = e.target.closest("[data-chlog-nav]");
+  if (!btn) return;
+  const view = btn.dataset.chlogNav;
+  closeChangelog();
+  setTimeout(() => openDrawer(view), 160);
+});
 $("#chlogBack")?.addEventListener("click", (e) => {
   if (e.target.id === "chlogBack") closeChangelog();
 });
@@ -3562,6 +4526,7 @@ document.addEventListener("keydown", (e) => {
       const ftVer = $("#ftVer");
       if (ftVer) ftVer.textContent = m[1];
       if ($("#chlogBack")?.classList.contains("open")) renderChangelog();
+      if ($("#drawer")?.classList.contains("open")) renderSettingsValues();
     }
   } catch (_) {}
 })();
@@ -3612,7 +4577,7 @@ let swWaitingWorker = null;
 function showUpdateIndicator(ver) {
   $("#settingsBtn")?.classList.add("has-update");
   const grp = $("#updateGroup");
-  if (grp) grp.style.display = "";
+  if (grp) grp.hidden = false;
   const lbl = $("#updateVerLabel");
   if (lbl && ver) {
     lbl.textContent = `نسخهٔ ${ver} آماده است. برای اعمال، دکمه را بزن.`;
@@ -3673,7 +4638,19 @@ $("#updateBtn")?.addEventListener("click", () => {
   swWaitingWorker.postMessage("SKIP_WAITING");
   $("#settingsBtn")?.classList.remove("has-update");
   const grp = $("#updateGroup");
-  if (grp) grp.style.display = "none";
+  if (grp) grp.hidden = true;
   toast("به‌روزرسانی در حال اعمال…");
 });
 
+/* دکمهٔ پیش‌نمایش موبایل */
+$("#varPreviewBtn")?.addEventListener("click", () => {
+  const deck = document.getElementById("varDeck");
+  if (!deck) return;
+  const open = !deck.classList.contains("preview-open");
+  setVarPreviewOpen(open);
+  const btn = $("#varPreviewBtn");
+  if (btn) {
+    btn.classList.toggle("on", open);
+    btn.setAttribute("aria-expanded", open ? "true" : "false");
+  }
+});

@@ -1,0 +1,54 @@
+{
+  "version": 1,
+  "updated": "1404/06/28",
+  "items": [
+    {
+      "category": "write",
+      "title": "نویسندهٔ مقاله",
+      "description": "نوشتن مقالهٔ فارسی روان با ساختار مقدمه/بدنه/نتیجه.",
+      "tags": ["نوشتن", "مقاله", "محتوا"],
+      "pinned": true,
+      "content": "# نقش تو\nنویسندهٔ حرفه‌ای فارسی هستی. متن‌های روان، دقیق و بدون حاشیه می‌نویسی.\n\n# موضوع\n{{موضوع}}\n\n# لحن\n{{لحن}}   (رسمی / دوستانه / آموزشی / طنز)\n\n# طول\nحدود {{طول}} کلمه.\n\n# قواعد\n1. پاراگراف‌های کوتاه.\n2. از تکرار کلمات پرهیز کن.\n3. هر ادعا با مثال یا پشتوانه.\n4. کلمات انگلیسی را با معادل رایج فارسی بنویس.\n5. بدون مقدمه‌چینی و تعارف.\n\n# ساختار\n- مقدمه: قلاب + طرح مسئله\n- بدنه: ۳ تا ۵ بخش با زیرعنوان\n- نتیجه: جمع‌بندی + یک جملهٔ ماندگار\n"
+    },
+    {
+      "category": "general",
+      "title": "مترجم حرفه‌ای",
+      "description": "ترجمهٔ معنایی با حفظ لحن و یادداشت انتخاب‌ها.",
+      "tags": ["ترجمه", "زبان", "متن"],
+      "pinned": false,
+      "content": "# نقش تو\nمترجم حرفه‌ای از {{مبدأ}} به {{مقصد}} هستی.\n\n# متن\n{{متن}}\n\n# قواعد\n1. ترجمهٔ معنایی، نه تحت‌اللفظی.\n2. اصطلاحات را با معادل طبیعی همان زبان برگردان.\n3. لحن اصلی را حفظ کن.\n4. اسم‌های خاص را ترجمه نکن.\n5. اگر جمله مبهم بود، ترجمهٔ محتمل بده و علامت بزن.\n\n# خروجی\n- ترجمه\n- ۳ یادداشت کوتاه دربارهٔ انتخاب‌های مهم\n"
+    },
+    {
+      "category": "code",
+      "title": "بازبینی کد",
+      "description": "مرور دقیق کد با تفکیک بحرانی/معماری/خوانایی/کارایی.",
+      "tags": ["کد", "بازبینی", "review"],
+      "pinned": true,
+      "content": "# نقش تو\nمهندس نرم‌افزار ارشد هستی. کد را دقیق، بی‌تعارف و با پیشنهاد مشخص بازبینی می‌کنی.\n\n# زبان\n{{زبان}}\n\n# کد\n{{کد}}\n\n# خروجی مورد انتظار\n1. مشکلات بحرانی — باگ، امنیت، نشت حافظه.\n2. مشکلات معماری — ساختار، جداسازی مسئولیت‌ها.\n3. بهبود خوانایی — نام‌گذاری، کامنت، پیچیدگی.\n4. بهبود کارایی — تنها اگر مسئله واقعی است.\n5. پیشنهاد بازنویسی — فقط بخش‌های مشکل‌دار.\n\n# قواعد\n- برای هر مورد بگو «چرا».\n- تعریف بی‌دلیل نکن.\n- اگر بخشی خوب است، بگو.\n"
+    },
+    {
+      "category": "image",
+      "title": "تصویر — واقع‌گرا",
+      "description": "پرامپت عکس فتوریالیستیک با کنترل نور، زاویه و حال‌وهوا.",
+      "tags": ["تصویر", "واقع‌گرا", "photo"],
+      "pinned": true,
+      "content": "# پرامپت تصویر — فتوریالیستیک\n\n## سوژه\n{{سوژه}}\n\n## جزئیات\n- زاویهٔ دوربین: {{زاویه}}   (close-up / medium / wide)\n- نور: {{نور}}   (طلوع / غروب / ابری / نئون شبانه)\n- پس‌زمینه: {{پس‌زمینه}}\n- حال‌وهوا: {{حال}}\n\n## پرامپت\nphotorealistic, {{سوژه}}, {{زاویه}} shot,\n{{نور}} lighting, {{پس‌زمینه}} in background,\nmood: {{حال}},\n35mm lens, f/1.8, shallow depth of field,\nnatural skin texture, subsurface scattering,\nfilm grain, shot on Kodak Portra 400,\n4K, ultra detailed, sharp focus\n\n## منفی (Negative)\ncartoon, painting, illustration, 3d render,\nlow res, blurry, deformed hands, extra fingers,\nwatermark, text, signature\n"
+    },
+    {
+      "category": "image",
+      "title": "تصویر — هنری",
+      "description": "پرامپت تصویرسازی با انتخاب سبک، پالت و نسبت.",
+      "tags": ["تصویر", "هنری", "illustration"],
+      "pinned": false,
+      "content": "# پرامپت تصویر — تصویرسازی هنری\n\n## ایده\n{{ایده}}\n\n## سبک\n{{سبک}}   (آبرنگ / دیجیتال آرت / مینیمال تخت / رترو / سورئال)\n\n## پالت\n{{پالت}}   (گرم / سرد / تک‌رنگ / پاستلی / نئون)\n\n## نسبت\n{{نسبت}}   (1:1 / 16:9 / 9:16 / 4:5)\n\n## پرامپت\n{{ایده}},\n{{سبک}} style, {{پالت}} palette,\nelegant composition, rule of thirds,\nsoft shadow, artstation trending,\nmasterwork, highly detailed, 8k\n\n## منفی\nphoto, realistic, 3d render, low quality,\ncluttered, watermark, text, signature\n"
+    },
+    {
+      "category": "image",
+      "title": "لوگو",
+      "description": "پرامپت لوگوی مینیمال با کنترل سبک و رنگ برند.",
+      "tags": ["لوگو", "برند", "logo"],
+      "pinned": false,
+      "content": "# پرامپت لوگو\n\n## برند\nنام: {{نام برند}}\nصنعت: {{صنعت}}\nمخاطب: {{مخاطب}}\nپیام اصلی: {{پیام}}\n\n## مشخصات بصری\n- نوع: {{نوع}}   (wordmark / lettermark / abstract / mascot)\n- سبک: {{سبک}}   (مینیمال / فلت / ژئومتریک / ارگانیک)\n- رنگ: {{رنگ}}\n\n## پرامپت\nminimalist logo for {{نام برند}},\n{{صنعت}} brand, {{نوع}} style,\n{{سبک}} design, {{رنگ}} color scheme,\nclean vector lines, professional branding,\nwhite background, centered composition,\nhigh contrast, scalable\n\n## منفی\n3d, gradient mesh, drop shadow, text,\nwatermark, photo, cluttered, complex details\n"
+    }
+  ]
+}
