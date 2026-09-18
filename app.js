@@ -1725,9 +1725,8 @@ function openVarModal(p, vars, opts) {
     )
     .join("");
 
-  /* پیش‌نمایش رو ببند هر بار باز کردن */
-  const pvBox = $("#varPreviewBox");
-  if (pvBox) pvBox.open = false;
+  /* همیشه بسته باز شه — کاربر با دکمه/تب بازش می‌کنه */
+  setVarPreviewOpen(false);
 
   const inputs = Array.from(form.querySelectorAll("input[data-var]"));
   inputs.forEach((inp, i) => {
@@ -1766,6 +1765,21 @@ function updateVarPreview() {
   const filled = fillVars(varState.prompt.content, varState.values);
   varPreviewEl.textContent = filled;
   applyTextDir(varPreviewEl, filled);
+}
+function isMobileVarPreview() {
+  return window.matchMedia("(max-width: 759px)").matches;
+}
+function setVarPreviewOpen(open) {
+  const deck =
+    document.getElementById("varDeck") ||
+    document.querySelector(".var-deck");
+  if (!deck) return;
+  deck.classList.toggle("preview-open", !!open);
+  const toggle = document.getElementById("varPreviewToggle");
+  if (toggle) {
+    toggle.classList.toggle("on", !!open);
+    toggle.setAttribute("aria-pressed", open ? "true" : "false");
+  }
 }
 function closeVarModal() {
   $("#varModalBack").classList.remove("open");
@@ -1819,6 +1833,14 @@ function toFaNum(n) {
   return String(n)
     .replace(/\B(?=(\d{3})+(?!\d))/g, "٬")
     .replace(/\d/g, (d) => FA_DIGITS[+d]);
+}
+/* فقط ارقام رو فارسی می‌کنه، بدون جداکنندهٔ هزارگان.
+   مناسب برای تاریخ، کد، شمارهٔ نسخه. */
+function toFaDigits(s) {
+  return String(s == null ? "" : s).replace(
+    /\d/g,
+    (d) => FA_DIGITS[+d]
+  );
 }
 function countWords(text) {
   const s = String(text || "").trim();
@@ -3595,6 +3617,28 @@ $("#varModalBack").addEventListener("click", (e) => {
   if (e.target.id === "varModalBack") closeVarModal();
 });
 
+/* toggle پیش‌نمایش — هم دسکتاپ هم موبایل */
+$("#varPreviewToggle")?.addEventListener("click", () => {
+  const deck = document.getElementById("varDeck");
+  if (!deck) return;
+  setVarPreviewOpen(!deck.classList.contains("preview-open"));
+});
+
+/* دکمهٔ back تو هدر پنل — برمی‌گرده به فرم */
+$("#varPreviewBack")?.addEventListener("click", () => {
+  setVarPreviewOpen(false);
+});
+
+/* دکمه‌های فوتر پنل: انصراف (بستن کل مودال) / کپی */
+$("#varPreviewPanel")?.addEventListener("click", (e) => {
+  const btn = e.target.closest("[data-var-action]");
+  if (!btn) return;
+  const act = btn.dataset.varAction;
+  if (act === "back") setVarPreviewOpen(false);
+  else if (act === "cancel") closeVarModal();
+  else if (act === "copy") copyVarFinal();
+});
+
 $("#catSaveBtn").onclick = saveCatModal;
 $("#catCancelBtn").onclick = closeCatModal;
 $("#catModalBack").addEventListener("click", (e) => {
@@ -4333,61 +4377,60 @@ $("#libPreviewBack")?.addEventListener("click", (e) => {
 const CHANGELOG = [
   {
     version: "1.4",
-    date: "۱۴۰۴/۰۶/۲۸",
+    date: "1404/07/01",
     items: [
       "قابلیت جدید: [سطل آشغال](trash) — پرامپت‌های حذف‌شده تا ۳۰ روز اینجا می‌مونن و هر وقت خواستی برمی‌گردونیشون.",
-      "پس‌زمینه‌های جدید برای اپ؛ از تنظیمات [ظاهر](appearance) شفق، رنگین، شبکه، نقطه‌ای، راه‌راه یا ساده رو انتخاب کن.",
-      "تم صوتی جدید «زنگی» و بهبود کیفیت صدا برای هدفون و ایرباد — تو صفحهٔ [صدا](sound).",
+      "شش پس‌زمینه برای اپ؛ از [ظاهر](appearance) شفق، رنگین، شبکه، نقطه‌ای، راه‌راه یا ساده رو انتخاب کن.",
+      "تم صوتی «زنگی» اضافه شد و کیفیت صدا برای هدفون و ایرباد بهتر شد — تو صفحهٔ [صدا](sound).",
       "پیش‌نمایش [کتابخانه](library) حالا آمار متن نشون می‌ده: خط، کلمه، کاراکتر و تخمین توکن.",
       "دکمهٔ «افزودن همه» تو [کتابخانه](library) ثابت شد؛ فقط کارت‌ها اسکرول می‌شن.",
-      "رنگ‌ها و اندازه‌ها تو صفحهٔ [ظاهر](appearance) یکی شدن — همه‌چیز یه‌جا.",
-      "رفع چند باگ ظاهری و رنگ در حالت hover.",
+      "رنگ‌ها، اندازه‌ها و پس‌زمینه‌ها تو صفحهٔ [ظاهر](appearance) یکی شدن — همه‌چیز یه‌جا.",
+      "پیش‌نمایش متغیرها بازطراحی شد: تو دسکتاپ کارت از بغل مودال میاد بیرون، تو موبایل تمام‌صفحه از چپ با دکمه‌های برگشت، انصراف و کپی.",
+      "ادیتور پرامپت حالا برای متن لاتین مونواسپیس و برای فارسی Vazirmatn نشون می‌ده — خوانا و منظم، بدون فونت اضافه.",
+      "چنج‌لاگ حالا لینک‌داره؛ روی هر صفحه‌ای که بزنی، مستقیم می‌ری همون‌جا.",
+      "تمیزکاری CSS: کد مرده و بلاک‌های تکراری حذف شدن، بدون افت ظاهر. چند تا باگ رنگ hover و توست بازگردانی هم رفع شدن.",
     ],
   },
   {
     version: "1.3",
-    date: "۱۴۰۴/۰۶/۲۷",
+    date: "1404/06/27",
     items: [
-      "انتخاب چندگانه با حذف، سنجاق و انتقال گروهی",
-      "کانتکست منو: راست‌کلیک روی کارت → ویرایش، کپی، AI، انتقال، تکثیر، حذف",
-      "FAB شناور: پرامپت جدید و انتخاب چندگانه",
-      "جهت مرتب‌سازی: صعودی / نزولی با یک کلیک",
-      "چیپس‌های افقی اسکرول‌شو در موبایل",
-      "محافظت داده: بکاپ خودکار قبل از مهاجرت",
+      "انتخاب چندگانه با FAB: پرامپت جدید و انتخاب گروهی — سنجاق، انتقال، تکثیر و حذف با یه کلیک.",
+      "کانتکست منو تو دسکتاپ: راست-کلیک روی کارت → ویرایش، کپی، باز کردن در AI، سنجاق، انتقال به دسته، تکثیر، انتخاب و حذف.",
+      "جهت مرتب‌سازی صعودی / نزولی با دکمهٔ کنار فیلتر.",
+      "چیپس‌های دسته تو موبایل افقی و اسکرول‌شو شدن.",
+      "محافظت داده: قبل از مهاجرت، نسخهٔ خام داده بکاپ گرفته می‌شه.",
+      "لینک‌های کاربردی تو همین چنج‌لاگ — مثل [کتابخانه](library) و [داده و پشتیبان](data).",
     ],
   },
   {
     version: "1.2",
-    date: "۱۴۰۴/۰۶/۲۶",
+    date: "1404/06/26",
     items: [
-      "نصب روی گوشی مثل یک اپ واقعی",
-      "به‌روزرسانی آسان از تنظیمات",
-      "تاریخچهٔ تغییرات در دسترس",
-      "ظاهر مرتب‌تر کارت‌ها",
-      "پس‌زمینهٔ جدید",
-      "ادیتور راحت‌تر روی موبایل",
-      "سرعت بارگذاری بهتر",
+      "نصب روی گوشی مثل یه اپ واقعی — PWA با پشتیبانی آفلاین.",
+      "به‌روزرسانی آسان از [تنظیمات](home) با یه دکمه.",
+      "تاریخچهٔ تغییرات همین‌جاست؛ از [درباره](about) هم قابل دسترسیه.",
+      "ظاهر کارت‌ها مرتب‌تر شد و سرعت بارگذاری بهتر.",
+      "پس‌زمینهٔ تازه و ادیتور راحت‌تر روی موبایل.",
     ],
   },
   {
     version: "1.1",
-    date: "۱۴۰۴/۰۶/۲۵",
+    date: "1404/06/25",
     items: [
-      "متغیرها: {{موضوع}} و {{لحن}}",
-      "باز کردن مستقیم پرامپت در ChatGPT و Claude و بقیه",
-      "پشتیبان‌گیری و بازیابی با فایل",
+      "متغیرها: تو متن پرامپت {{موضوع}} یا {{لحن}} بذار؛ هنگام کپی، فرم پر کردن باز می‌شه.",
+      "باز کردن مستقیم پرامپت تو ChatGPT، Claude و ۷ سرویس دیگه — بدون کپی دستی.",
+      "پشتیبان‌گیری و بازیابی با فایل JSON از [داده و پشتیبان](data).",
     ],
   },
   {
     version: "1.0",
-    date: "۱۴۰۴/۰۶/۲۴",
+    date: "1404/06/24",
     items: [
-      "اولین نسخه",
-      "جست‌وجو، دسته‌بندی و سنجاق",
+      "اولین نسخه — با جست‌وجو، دسته‌بندی و سنجاق.",
     ],
   },
 ];
-
 let currentAppVer = null;
 
 /* لینک‌های inline تو چنج‌لاگ: [کلمه](view) */
@@ -4435,7 +4478,7 @@ function renderChangelog() {
           : ""
       }
     </span>
-    <span class="chlog-date">${esc(c.date || "")}</span>
+    <span class="chlog-date">${esc(toFaDigits(c.date || ""))}</span>
   </div>
   <ul>${itemsHtml}</ul>
 </div>`;
@@ -4599,3 +4642,15 @@ $("#updateBtn")?.addEventListener("click", () => {
   toast("به‌روزرسانی در حال اعمال…");
 });
 
+/* دکمهٔ پیش‌نمایش موبایل */
+$("#varPreviewBtn")?.addEventListener("click", () => {
+  const deck = document.getElementById("varDeck");
+  if (!deck) return;
+  const open = !deck.classList.contains("preview-open");
+  setVarPreviewOpen(open);
+  const btn = $("#varPreviewBtn");
+  if (btn) {
+    btn.classList.toggle("on", open);
+    btn.setAttribute("aria-expanded", open ? "true" : "false");
+  }
+});

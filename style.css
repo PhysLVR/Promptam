@@ -2785,17 +2785,289 @@ main {
   display: block;
 }
 
-/* ═══ مودال متغیرها ═══ */
+/* ═══ مودال متغیرها — Deck ═══ */
+.var-deck {
+  position: relative;
+  width: fit-content;
+  max-width: 100%;
+  justify-self: center;
+  transition: transform 0.4s var(--ease-ios);
+}
+.var-deck.preview-open {
+  /* نصف عرض پنل + نصف gap — تا گروه کامل وسط بشینه */
+  transform: translateX(194px);
+}
 .var-modal {
+  position: relative;
+  z-index: 2;
+  width: 620px;
+  max-width: 100%;
   padding: 1.3rem 1.3rem 1rem;
 }
 
+/* هدر + دکمهٔ toggle */
+.var-head {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+}
+.var-head h2 {
+  flex: 1;
+  margin: 0;
+}
+.var-preview-toggle {
+  width: 2.2rem;
+  height: 2.2rem;
+  border-radius: 10px;
+  border: 1px solid var(--line);
+  background: var(--card2);
+  color: var(--mut);
+  cursor: pointer;
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+  transition:
+    border-color 0.2s var(--ease),
+    background 0.2s var(--ease),
+    color 0.2s var(--ease);
+}
+.var-preview-toggle:hover {
+  border-color: var(--line2);
+  color: var(--txt);
+}
+.var-preview-toggle.on {
+  color: var(--acc);
+  border-color: color-mix(in srgb, var(--acc) 45%, var(--line));
+  background: color-mix(in srgb, var(--acc) 12%, transparent);
+}
+.var-preview-toggle svg {
+  width: 1.1rem;
+  height: 1.1rem;
+  display: block;
+}
+
+/* تب‌ها — پیش‌فرض مخفی */
+.var-tabs {
+  display: none;
+  gap: 3px;
+  padding: 3px;
+  border-radius: 10px;
+  background: var(--deep);
+  border: 1px solid var(--line);
+  margin-bottom: 0.9rem;
+}
+.var-tab {
+  flex: 1;
+  padding: 0.5rem 0.75rem;
+  border-radius: 999px;
+  border: none;
+  background: transparent;
+  color: var(--mut);
+  font-family: inherit;
+  font-size: var(--f-xs);
+  font-weight: 700;
+  cursor: pointer;
+  transition:
+    background 0.18s var(--ease),
+    color 0.18s var(--ease);
+}
+.var-tab:hover {
+  color: var(--txt);
+}
+
+/* کارت پیش‌نمایش — absolute، بیرون از مودال، چسبیده به لبهٔ inline-end */
+.var-preview-panel {
+  position: absolute;
+  inset-inline-start: 100%;
+  top: 0;
+  bottom: 0;
+  width: 380px;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  border-radius: 14px;
+  border: 1px solid var(--line2);
+  background: linear-gradient(160deg, var(--card), var(--deep));
+  box-shadow: var(--shadow);
+  z-index: 1;
+  opacity: 0;
+  pointer-events: none;
+  transform: translateX(380px);
+  transition:
+    opacity 0.35s var(--ease-ios),
+    transform 0.4s var(--ease-ios);
+  margin-inline-start: 8px;
+}
+.var-deck.preview-open .var-preview-panel {
+  opacity: 1;
+  pointer-events: auto;
+  transform: translateX(0);
+}
+
+.var-preview-panel-head {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem 0.9rem;
+  border-bottom: 1px solid color-mix(in srgb, var(--vio) 18%, var(--line));
+  background: color-mix(in srgb, var(--vio) 5%, transparent);
+  font-size: var(--f-xs);
+  font-weight: 700;
+  color: var(--mut);
+  flex-shrink: 0;
+}
+.var-preview-panel-title {
+  flex: 1;
+  min-width: 0;
+}
+.var-preview-back {
+  display: none;
+  width: 2.2rem;
+  height: 2.2rem;
+  border-radius: 10px;
+  border: 1px solid var(--line);
+  background: var(--card2);
+  color: var(--mut);
+  cursor: pointer;
+  place-items: center;
+  flex-shrink: 0;
+  transition:
+    border-color 0.2s var(--ease),
+    color 0.2s var(--ease),
+    background 0.2s var(--ease),
+    transform 0.12s var(--ease);
+  -webkit-tap-highlight-color: transparent;
+}
+.var-preview-back:hover {
+  border-color: var(--line2);
+  color: var(--txt);
+  background: var(--card);
+}
+.var-preview-back:active {
+  transform: scale(0.94);
+}
+.var-preview-back svg {
+  width: 1rem;
+  height: 1rem;
+  display: block;
+}
+.var-preview-panel .var-preview {
+  flex: 1;
+  min-height: 0;
+  max-height: none;
+  border-top: none;
+  border-radius: 0;
+}
+.var-preview-foot {
+  display: none;
+  gap: 0.5rem;
+  padding: 0.75rem 0.9rem;
+  border-top: 1px solid var(--line);
+  flex-shrink: 0;
+}
+.var-preview-foot .btn {
+  flex: 1;
+}
+
+/* تب‌ها حذف شدن — به‌جاشون دکمهٔ گوشه */
+.var-tabs {
+  display: none !important;
+}
+.var-preview-toggle {
+  display: grid;
+}
+/* روی نمایشگرهای باریک، کارت رو باریک‌تر کن که کنار مودال جا شه */
+@media (min-width: 760px) and (max-width: 1140px) {
+  .var-modal {
+    width: 520px;
+  }
+  .var-preview-panel {
+    width: 300px;
+    transform: translateX(300px);
+  }
+  .var-deck.preview-open .var-preview-panel {
+    transform: translateX(0);
+  }
+  .var-deck.preview-open {
+    /* (300 + 8) / 2 */
+    transform: translateX(154px);
+  }
+}
+
+/* ── موبایل: overlay داخلی + تب ── */
+@media (max-width: 759px) {
+  .var-deck {
+    position: relative;
+    width: auto;
+    max-width: none;
+    justify-self: stretch;
+  }
+  .var-deck.preview-open {
+    transform: none;
+  }
+  .var-modal {
+    width: 100%;
+    max-width: none;
+    padding: 1.1rem 1rem 0.9rem;
+  }
+  .var-tabs {
+    display: flex;
+  }
+  .var-preview-toggle {
+    display: none;
+  }
+
+  /* تب فعال */
+  .var-deck:not(.preview-open) .var-tab[data-vtab="form"] {
+    background: var(--acc);
+    color: var(--acc-ink);
+  }
+  .var-deck.preview-open .var-tab[data-vtab="preview"] {
+    background: var(--acc);
+    color: var(--acc-ink);
+  }
+
+  /* کارت پیش‌نمایش — لایه‌ای که از پشت میاد داخل */
+  .var-preview-panel {
+    position: absolute;
+    inset: 0;
+    margin: 0;
+    width: auto;
+    max-width: none;
+    border-radius: 16px;
+    z-index: 5;
+    display: flex;
+    opacity: 0;
+    pointer-events: none;
+    transform: translateX(-102%) scale(0.97);
+    transform-origin: center center;
+    transition:
+      opacity 0.28s var(--ease-ios),
+      transform 0.5s var(--ease-spring);
+    will-change: transform, opacity;
+  }
+  .var-deck.preview-open .var-preview-panel {
+    opacity: 1;
+    pointer-events: auto;
+    transform: translateX(0) scale(1);
+  }
+  /* هدر و فوتر همیشه نمایش (چون لایه‌ست نه تب) */
+  .var-preview-back {
+    display: grid;
+  }
+  .var-preview-foot {
+    display: flex;
+  }
+}
+
 /* روی موبایل، فقط مودال متغیرها از بالا شروع شه تا با کیبورد اسکرول بشه */
-@media (max-width: 760px) {
+@media (max-width: 759px) {
   #varModalBack {
     place-items: start center;
     padding: 0.75rem;
     align-content: start;
+    overflow-x: hidden;
   }
   #varModalBack .modal {
     margin: 0 0 1rem;
@@ -2853,69 +3125,7 @@ main {
   box-shadow: 0 0 0 4px rgba(124, 92, 219, 0.14);
 }
 
-.var-preview-box {
-  margin-top: 1rem;
-  border: 1px solid color-mix(in srgb, var(--vio) 25%, var(--line));
-  border-radius: 12px;
-  background: linear-gradient(
-    135deg,
-    color-mix(in srgb, var(--vio) 8%, transparent),
-    color-mix(in srgb, var(--cyn) 4%, transparent)
-  );
-  overflow: hidden;
-  transition: border-color 0.2s var(--ease);
-}
-.var-preview-box[open] {
-  border-color: color-mix(in srgb, var(--vio) 45%, var(--line));
-  background: color-mix(in srgb, var(--vio) 5%, var(--deep));
-}
-.var-preview-box summary {
-  padding: 0.7rem 0.9rem;
-  cursor: pointer;
-  font-size: var(--f-xs);
-  font-weight: 700;
-  color: var(--txt);
-  display: flex;
-  align-items: center;
-  gap: 0.55rem;
-  user-select: none;
-  list-style: none;
-  transition: background 0.18s var(--ease);
-}
-.var-preview-box summary::-webkit-details-marker {
-  display: none;
-}
-/* آیکون چشم سمت راست */
-.var-preview-box summary::before {
-  content: "";
-  width: 1rem;
-  height: 1rem;
-  flex-shrink: 0;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23a78bfa' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z'/%3E%3Ccircle cx='12' cy='12' r='3'/%3E%3C/svg%3E");
-  background-size: contain;
-  background-repeat: no-repeat;
-}
-/* فلش سمت چپ با انیمیشن */
-.var-preview-box summary::after {
-  content: "";
-  width: 0.5rem;
-  height: 0.5rem;
-  border-right: 2px solid var(--vio);
-  border-bottom: 2px solid var(--vio);
-  transform: rotate(45deg) translateY(-2px);
-  margin-inline-start: auto;
-  transition: transform 0.25s var(--ease);
-  opacity: 0.7;
-}
-.var-preview-box[open] summary::after {
-  transform: rotate(-135deg) translateY(-2px);
-}
-.var-preview-box summary:hover {
-  background: color-mix(in srgb, var(--vio) 12%, transparent);
-}
-.var-preview-box[open] summary {
-  border-bottom: 1px solid color-mix(in srgb, var(--vio) 20%, var(--line));
-}
+ 
 
 .var-preview {
   margin: 0;
@@ -4074,11 +4284,11 @@ body.selmode .quick-fab {
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 1rem 1rem;
-  min-height: 4.5rem;
+  padding: 0.5rem 1rem;
+  min-height: 3.5rem;
 }
 .drawer-head h2 {
-  font-size: var(--f-2xl);
+  font-size: var(--f-xl);
   font-weight: 800;
   text-align: center;
   overflow: hidden;
@@ -4091,12 +4301,12 @@ body.selmode .quick-fab {
   position: absolute;
   top: 50%;
   transform: translateY(-50%);
-  width: 2.75rem;
-  height: 2.75rem;
+  width: 2.5rem;
+  height: 2.5rem;
 }
 .drawer-head .icon-btn svg {
-  width: 1.25rem;
-  height: 1.25rem;
+  width: 1.1rem;
+  height: 1.1rem;
 }
 /* X روی لبهٔ چپ (end در RTL) */
 #closeDrawer {
@@ -5606,4 +5816,86 @@ body.selmode .quick-fab {
   height: 1rem;
   flex-shrink: 0;
   display: block;
+}
+
+@media (max-width: 759px) {
+  .var-deck {
+    position: relative;
+    width: auto;
+    max-width: none;
+    justify-self: stretch;
+  }
+}
+
+@media (max-width: 759px) {
+  /* آیکون چشمِ هدر در موبایل — گوشهٔ چپ، سایز بزرگ‌تر */
+  .var-head .var-preview-toggle {
+    display: grid;
+    width: 2.6rem;
+    height: 2.6rem;
+    border-radius: 12px;
+  }
+
+  /* پنل = overlay تمام‌صفحه از پایین (به‌جای side-card که اسکرول افقی می‌داد) */
+  .var-deck .var-preview-panel {
+    position: fixed;
+    inset: 0;
+    margin: 0;
+    width: 100%;
+    max-width: none;
+    border-radius: 0;
+    z-index: 200;
+    display: flex;
+    flex-direction: column;
+    opacity: 0;
+    pointer-events: none;
+    visibility: hidden;
+    transform: translateX(-100%);
+    transition:
+      opacity 0.25s var(--ease-ios),
+      transform 0.4s var(--ease-ios),
+      visibility 0s linear 0.4s;
+  }
+  .var-deck.preview-open .var-preview-panel {
+    opacity: 1;
+    pointer-events: auto;
+    visibility: visible;
+    transform: translateX(0);
+    transition:
+      opacity 0.25s var(--ease-ios),
+      transform 0.4s var(--ease-ios),
+      visibility 0s linear 0s;
+  }
+ .var-deck .var-preview-panel-head {
+    display: flex;
+    align-items: center;
+    gap: 0.65rem;
+    padding: 0.85rem 1rem;
+    flex-shrink: 0;
+    background: var(--deep);
+    border-bottom: 1px solid var(--line);
+  }
+  .var-deck .var-preview-panel-title {
+    flex: 1;
+    font-size: var(--f-md);
+    color: var(--txt);
+    font-weight: 800;
+  }
+  .var-deck .var-preview-back {
+    display: grid;
+    order: -1;
+  }
+  .var-deck .var-preview {
+    flex: 1;
+    min-height: 0;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+  .var-deck .var-preview-foot {
+    display: flex;
+    gap: 0.5rem;
+    padding: 0.75rem 0.9rem calc(0.75rem + env(safe-area-inset-bottom, 0px));
+    flex-shrink: 0;
+  }
+  .var-deck .var-preview-foot .btn { flex: 1; }
 }

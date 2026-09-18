@@ -941,58 +941,95 @@ role="dialog"
 aria-modal="true"
 aria-labelledby="varModalTitle"
 >
-<div class="modal var-modal" style="max-width: 620px">
-  <h2>
-    <span class="var-modal-icon" aria-hidden="true">
-      <svg
-        viewBox="0 0 24 24"
-        fill="none"
-        stroke="currentColor"
-        stroke-width="2"
-        stroke-linecap="round"
-        stroke-linejoin="round"
+<div class="var-deck" id="varDeck">
+  <div class="modal var-modal" id="varModal">
+    <div class="var-head">
+      <h2>
+        <span class="var-modal-icon" aria-hidden="true">
+          <svg
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          >
+            <path
+              d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"
+            />
+          </svg>
+        </span>
+        <span id="varModalTitle">پر کردن متغیرها</span>
+      </h2>
+      <button
+        class="var-preview-toggle"
+        id="varPreviewToggle"
+        type="button"
+        aria-label="نمایش یا مخفی کردن پیش‌نمایش"
+        aria-pressed="false"
       >
-        <path
-          d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"
-        />
-      </svg>
-    </span>
-    <span id="varModalTitle">پر کردن متغیرها</span>
-  </h2>
-  <p class="var-intro">
-    هر مقدار را وارد کن؛ هر فیلدی که خالی بمونه، به‌صورت
-    <code>{{var}}</code> تو متن نهایی می‌مونه.
-  </p>
-  <div class="var-form" id="varForm"></div>
-  <details class="var-preview-box" id="varPreviewBox">
-    <summary>
-      <span>پیش‌نمایش خروجی</span>
-    </summary>
-    <div class="var-preview" id="varPreview"></div>
-  </details>
-  <div class="var-foot">
-    <button class="btn var-btn-ghost" id="varCancelBtn" type="button">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-        <path d="M18 6 6 18M6 6l12 12"/>
-      </svg>
-      <span>انصراف</span>
-    </button>
-    <button class="btn var-btn-sec" id="varCopyRawBtn" type="button">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-        <rect x="9" y="9" width="11" height="11" rx="2"/>
-        <path d="M5 15V5a2 2 0 0 1 2-2h10"/>
-      </svg>
-      <span>خام</span>
-    </button>
-    <button class="btn g var-btn-primary" id="varCopyBtn" type="button">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-        <rect x="9" y="9" width="11" height="11" rx="2"/>
-        <path d="M5 15V5a2 2 0 0 1 2-2h10"/>
-        <path d="m12 14.5 1.8 1.8L17.5 12"/>
-      </svg>
-      <span>کپی نهایی</span>
-    </button>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+          <circle cx="12" cy="12" r="3"/>
+        </svg>
+      </button>
+    </div>
+    <p class="var-intro">
+      هر مقدار را وارد کن؛ هر فیلدی که خالی بمونه، به‌صورت
+      <code>{{var}}</code> تو متن نهایی می‌مونه.
+    </p>
+    <div class="var-form" id="varForm"></div>
+    <div class="var-foot">
+      <button class="btn var-btn-ghost" id="varCancelBtn" type="button">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M18 6 6 18M6 6l12 12"/>
+        </svg>
+        <span>انصراف</span>
+      </button>
+      <button class="btn var-btn-sec" id="varCopyRawBtn" type="button">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <rect x="9" y="9" width="11" height="11" rx="2"/>
+          <path d="M5 15V5a2 2 0 0 1 2-2h10"/>
+        </svg>
+        <span>خام</span>
+      </button>
+      <button class="btn g var-btn-primary" id="varCopyBtn" type="button">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <rect x="9" y="9" width="11" height="11" rx="2"/>
+          <path d="M5 15V5a2 2 0 0 1 2-2h10"/>
+          <path d="m12 14.5 1.8 1.8L17.5 12"/>
+        </svg>
+        <span>کپی نهایی</span>
+      </button>
+    </div>
   </div>
+  <aside class="var-preview-panel" id="varPreviewPanel">
+    <div class="var-preview-panel-head">
+      <button class="var-preview-back" id="varPreviewBack" type="button" aria-label="بازگشت به فرم">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
+          <path d="m9 18 6-6-6-6"/>
+        </svg>
+      </button>
+      <span class="var-preview-panel-title">پیش‌نمایش خروجی</span>
+    </div>
+    <div class="var-preview" id="varPreview"></div>
+    <div class="var-preview-foot">
+      <button class="btn" data-var-action="cancel" type="button">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M18 6 6 18M6 6l12 12"/>
+        </svg>
+        <span>انصراف</span>
+      </button>
+      <button class="btn g" data-var-action="copy" type="button">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <rect x="9" y="9" width="11" height="11" rx="2"/>
+          <path d="M5 15V5a2 2 0 0 1 2-2h10"/>
+          <path d="m12 14.5 1.8 1.8L17.5 12"/>
+        </svg>
+        <span>کپی نهایی</span>
+      </button>
+    </div>
+  </aside>
 </div>
 </div>
 
