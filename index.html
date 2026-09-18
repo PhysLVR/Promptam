@@ -443,177 +443,327 @@ aria-labelledby="modalTitle"
 
   <div class="editor-actions">
     <button class="btn" id="cancelBtn">انصراف</button>
-    <button class="btn g" id="saveBtn">✔ ذخیره</button>
+    <button class="btn g" id="saveBtn" type="button">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <path d="M20 6 9 17l-5-5"/>
+      </svg>
+      <span>ذخیره</span>
+    </button>
   </div>
 </div>
 </div>
 
 <div class="drawer-back" id="drawerBack"></div>
+
 <aside
 class="drawer"
 id="drawer"
+data-view="home"
 role="dialog"
 aria-modal="true"
 aria-label="تنظیمات"
 >
 <div class="drawer-head">
-  <h2>تنظیمات</h2>
+  <button
+    class="icon-btn st-back"
+    id="stBack"
+    type="button"
+    title="بازگشت"
+    aria-label="بازگشت"
+  >
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+      <path d="m9 18 6-6-6-6"/>
+    </svg>
+  </button>
+  <h2 id="drawerTitle">تنظیمات</h2>
   <button
     class="icon-btn"
     id="closeDrawer"
     title="بستن"
     aria-label="بستن"
   >
-    <svg
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      stroke-width="2"
-      stroke-linecap="round"
-      stroke-linejoin="round"
-    >
-      <path d="M18 6 6 18M6 6l12 12" />
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M18 6 6 18M6 6l12 12"/>
     </svg>
   </button>
 </div>
 <div class="drawer-body">
-  <div class="group">
-    <h4>ظاهر</h4>
-    <div class="row-pref">
-      <div class="label"><b>پوسته</b><span>حالت نمایش</span></div>
-      <div class="seg" data-pref="theme">
-        <button data-v="dark">تاریک</button>
-        <button data-v="light">روشن</button>
-        <button data-v="system">سیستم</button>
+
+  <!-- ═══ خانه ═══ -->
+  <div class="st-view" data-view="home">
+    <div class="st-update-banner" id="updateGroup" hidden>
+      <div class="st-update-info">
+        <b>نسخهٔ جدید آماده است</b>
+        <span id="updateVerLabel">برای اعمال، دکمه را بزن.</span>
       </div>
+      <button class="btn sm g" id="updateBtn" type="button">به‌روزرسانی</button>
     </div>
-    <div class="row-pref">
-      <div class="label">
-        <b>اندازهٔ متن</b><span>اندازهٔ پایهٔ متن</span>
-      </div>
-      <div class="seg" data-pref="fs">
-        <button data-v="small">کوچک</button>
-        <button data-v="medium">متوسط</button>
-        <button data-v="large">بزرگ</button>
-      </div>
+
+    <div class="st-list">
+      <button class="st-row" type="button" data-nav="appearance">
+        <span class="st-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/></svg>
+        </span>
+        <span class="st-label">ظاهر</span>
+        <span class="st-val" id="stValTheme">تاریک</span>
+        <span class="st-chev"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg></span>
+      </button>
+
+      <button class="st-row" type="button" data-nav="color">
+        <span class="st-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="13.5" cy="6.5" r=".5" fill="currentColor"/><circle cx="17.5" cy="10.5" r=".5" fill="currentColor"/><circle cx="8.5" cy="7.5" r=".5" fill="currentColor"/><circle cx="6.5" cy="12.5" r=".5" fill="currentColor"/><path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10c.926 0 1.648-.746 1.648-1.688 0-.437-.18-.835-.437-1.125-.29-.289-.438-.652-.438-1.125a1.64 1.64 0 0 1 1.668-1.668h1.996c3.051 0 5.555-2.503 5.555-5.554C21.965 6.012 17.461 2 12 2z"/></svg>
+        </span>
+        <span class="st-label">رنگ</span>
+        <span class="st-val" id="stValAccent">پیش‌فرض</span>
+        <span class="st-chev"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg></span>
+      </button>
+
+      <button class="st-row" type="button" data-nav="sound">
+        <span class="st-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 5 6 9H2v6h4l5 4z"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07M19.07 4.93a10 10 0 0 1 0 14.14"/></svg>
+        </span>
+        <span class="st-label">صدا</span>
+        <span class="st-val" id="stValSound">خاموش</span>
+        <span class="st-chev"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg></span>
+      </button>
+
+      <button class="st-row" type="button" data-nav="library">
+        <span class="st-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m16 6 4 14"/><path d="M12 6v14"/><path d="M8 8v12"/><path d="M4 4v16"/></svg>
+        </span>
+        <span class="st-label">کتابخانه</span>
+        <span class="st-val"></span>
+        <span class="st-chev"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg></span>
+      </button>
+
+      <button class="st-row" type="button" data-nav="categories">
+        <span class="st-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>
+        </span>
+        <span class="st-label">دسته‌ها</span>
+        <span class="st-val" id="stValCat">۰</span>
+        <span class="st-chev"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg></span>
+      </button>
+
+      <button class="st-row" type="button" data-nav="data">
+        <span class="st-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M3 5v14a9 3 0 0 0 18 0V5"/><path d="M3 12a9 3 0 0 0 18 0"/></svg>
+        </span>
+        <span class="st-label">داده و پشتیبان</span>
+        <span class="st-val"></span>
+        <span class="st-chev"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg></span>
+      </button>
+
+      <button class="st-row" type="button" data-nav="about">
+        <span class="st-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/></svg>
+        </span>
+        <span class="st-label">درباره</span>
+        <span class="st-val" id="stValVer">—</span>
+        <span class="st-chev"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg></span>
+      </button>
     </div>
-    <div class="row-pref cols-row">
-      <div class="label">
-        <b>ستون‌ها</b><span>تعداد ستون‌های گرید</span>
+  </div>
+
+  <!-- ═══ ظاهر ═══ -->
+  <div class="st-view" data-view="appearance" hidden>
+    <div class="st-section">
+      <div class="row-pref">
+        <div class="label"><b>پوسته</b><span>حالت نمایش</span></div>
+        <div class="seg" data-pref="theme">
+          <button data-v="dark">تاریک</button>
+          <button data-v="light">روشن</button>
+          <button data-v="system">سیستم</button>
+        </div>
       </div>
-      <div class="seg" data-pref="cols">
-        <button data-v="2">۲</button>
-        <button data-v="3">۳</button>
-        <button data-v="4">۴</button>
+      <div class="row-pref">
+        <div class="label"><b>اندازهٔ متن</b><span>اندازهٔ پایهٔ متن</span></div>
+        <div class="seg" data-pref="fs">
+          <button data-v="small">کوچک</button>
+          <button data-v="medium">متوسط</button>
+          <button data-v="large">بزرگ</button>
+        </div>
+      </div>
+      <div class="row-pref cols-row">
+        <div class="label"><b>ستون‌ها</b><span>تعداد ستون‌های گرید</span></div>
+        <div class="seg" data-pref="cols">
+          <button data-v="2">۲</button>
+          <button data-v="3">۳</button>
+          <button data-v="4">۴</button>
+        </div>
       </div>
     </div>
   </div>
 
-  <div class="group">
-    <h4>رنگ</h4>
-    <div class="row-pref">
-      <div class="label">
-        <b>پالت گرادیان</b><span>رنگ برند و تأکیدها</span>
-      </div>
-      <div class="seg swatches" data-pref="accent">
-        <button
-          data-v="default"
-          class="sw-default"
-          data-tip="پیش‌فرض"
-          aria-label="پیش‌فرض"
-        ></button>
-        <button
-          data-v="ocean"
-          class="sw-ocean"
-          data-tip="اقیانوس"
-          aria-label="اقیانوس"
-        ></button>
-        <button
-          data-v="forest"
-          class="sw-forest"
-          data-tip="جنگل"
-          aria-label="جنگل"
-        ></button>
-        <button
-          data-v="sunset"
-          class="sw-sunset"
-          data-tip="غروب"
-          aria-label="غروب"
-        ></button>
-        <button
-          data-v="galaxy"
-          class="sw-galaxy"
-          data-tip="کهکشان"
-          aria-label="کهکشان"
-        ></button>
-        <button
-          data-v="mono"
-          class="sw-mono"
-          data-tip="بی‌رنگ"
-          aria-label="بی‌رنگ"
-        ></button>
+  <!-- ═══ رنگ ═══ -->
+  <div class="st-view" data-view="color" hidden>
+    <div class="st-section">
+      <div class="row-pref">
+        <div class="label"><b>پالت گرادیان</b><span>رنگ برند و تأکیدها</span></div>
+        <div class="seg swatches" data-pref="accent">
+          <button data-v="default" class="sw-default" data-tip="پیش‌فرض" aria-label="پیش‌فرض"></button>
+          <button data-v="ocean" class="sw-ocean" data-tip="اقیانوس" aria-label="اقیانوس"></button>
+          <button data-v="forest" class="sw-forest" data-tip="جنگل" aria-label="جنگل"></button>
+          <button data-v="sunset" class="sw-sunset" data-tip="غروب" aria-label="غروب"></button>
+          <button data-v="galaxy" class="sw-galaxy" data-tip="کهکشان" aria-label="کهکشان"></button>
+          <button data-v="mono" class="sw-mono" data-tip="بی‌رنگ" aria-label="بی‌رنگ"></button>
+        </div>
       </div>
     </div>
   </div>
 
-  <div class="group">
-    <h4>دسته‌ها</h4>
-    <div class="cat-list" id="catList"></div>
-    <button
-      class="btn sm"
-      id="addCatBtn"
-      style="margin-top: 10px; width: 100%"
-    >
-      ＋ افزودن دسته
+  <!-- ═══ صدا ═══ -->
+  <div class="st-view" data-view="sound" hidden>
+    <div class="st-section">
+      <div class="row-pref">
+        <div class="label">
+          <b>افکت صوتی</b>
+          <span>صدای کوتاه برای کپی، حذف، بازگردانی</span>
+        </div>
+        <div class="seg" data-pref="sound">
+          <button data-v="off">خاموش</button>
+          <button data-v="on">روشن</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="st-section" data-when="sound-on" hidden>
+      <h4 class="st-section-title">تم صوتی</h4>
+      <div class="seg st-seg-grid" data-pref="soundTheme">
+        <button data-v="soft">نرم</button>
+        <button data-v="crystal">بلورین</button>
+        <button data-v="wood">چوبی</button>
+        <button data-v="digital">دیجیتال</button>
+        <button data-v="deep">عمیق</button>
+      </div>
+    </div>
+
+    <div class="st-section" data-when="sound-on" hidden>
+      <h4 class="st-section-title">شدت صدا</h4>
+      <div class="st-slider-wrap">
+        <input
+          type="range"
+          id="soundVol"
+          class="st-slider"
+          min="0"
+          max="100"
+          step="5"
+          value="100"
+          aria-label="شدت صدا"
+        />
+        <span class="st-slider-val" id="soundVolVal">۱۰۰٪</span>
+      </div>
+      <div class="st-slider-scale">
+        <span>آرام</span>
+        <span>بلند</span>
+      </div>
+    </div>
+
+    <div class="st-section" data-when="sound-on" hidden>
+      <button class="btn" id="soundTestBtn" type="button">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M5 3l14 9-14 9z"/>
+        </svg>
+        <span>پیش‌نمایش</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- ═══ کتابخانه ═══ -->
+  <div class="st-view" data-view="library" hidden>
+    <p class="lib-intro">
+      مجموعهٔ پرامپت‌های آماده. هر چند وقت یک‌بار با نمونه‌های تازه آپدیت می‌شن.
+      هر کدوم رو دوست داشتی، به لیست خودت اضافه کن.
+    </p>
+    <div class="lib-grid" id="libGrid"></div>
+    <button class="btn sm" id="libAddAll" type="button">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>
+      <span>افزودن همه</span>
     </button>
   </div>
 
-  <div class="group" id="updateGroup" style="display: none">
-    <h4>به‌روزرسانی</h4>
-    <div class="row-pref">
-      <div class="label">
-        <b style="color: var(--ros)">نسخهٔ جدید موجود است</b>
-        <span id="updateVerLabel">پس از آپدیت، تغییرات اعمال می‌شود.</span>
-      </div>
-      <button class="btn sm g" id="updateBtn">به‌روزرسانی</button>
+  <!-- ═══ دسته‌ها ═══ -->
+  <div class="st-view" data-view="categories" hidden>
+    <div class="st-section">
+      <div class="cat-list" id="catList"></div>
+      <button
+        class="btn sm"
+        id="addCatBtn"
+        type="button"
+        style="margin-top: 12px; width: 100%"
+      >
+        ＋ افزودن دسته
+      </button>
     </div>
   </div>
 
-  <div class="group">
-    <h4>داده‌ها</h4>
-    <div class="row-pref">
-      <div class="label">
-        <b>خروجی JSON</b><span>پشتیبان‌گیری از همهٔ پرامپت‌ها</span>
+  <!-- ═══ داده و پشتیبان ═══ -->
+  <div class="st-view" data-view="data" hidden>
+    <div class="st-section">
+      <h4 class="st-section-title">پشتیبان‌گیری</h4>
+      <div class="row-pref">
+        <div class="label"><b>خروجی JSON</b><span>پشتیبان از همهٔ پرامپت‌ها</span></div>
+        <button class="btn sm" id="exportBtn" type="button">دانلود</button>
       </div>
-      <button class="btn sm" id="exportBtn">دانلود</button>
+      <div class="row-pref">
+        <div class="label"><b>ورودی JSON</b><span>بازیابی از فایل پشتیبان</span></div>
+        <button class="btn sm" id="importBtn" type="button">انتخاب فایل</button>
+        <input type="file" id="importFile" accept=".json" hidden />
+      </div>
     </div>
-    <div class="row-pref">
-      <div class="label">
-        <b>ورودی JSON</b><span>بازیابی از فایل پشتیبان</span>
+
+    <div class="st-section">
+      <h4 class="st-section-title">اطلاعات</h4>
+      <div class="row-pref">
+        <div class="label"><b>تغییرات نسخه</b><span>تاریخچهٔ به‌روزرسانی‌ها</span></div>
+        <button class="btn sm" id="chlogBtn" type="button">نمایش</button>
       </div>
-      <button class="btn sm" id="importBtn">انتخاب فایل</button>
-      <input type="file" id="importFile" accept=".json" hidden />
     </div>
-    <div class="row-pref">
-      <div class="label">
-        <b>تغییرات نسخه</b><span>تاریخچهٔ به‌روزرسانی‌ها</span>
+
+    <div class="st-section">
+      <h4 class="st-section-title st-danger">خطرناک</h4>
+      <div class="row-pref">
+        <div class="label">
+          <b style="color: var(--ros)">بازنشانی همه</b>
+          <span>حذف تمام پرامپت‌ها و دسته‌ها</span>
+        </div>
+        <button class="btn sm dgr" id="resetBtn" type="button">حذف</button>
       </div>
-      <button class="btn sm" id="chlogBtn">نمایش</button>
-    </div>
-    <div class="row-pref">
-      <div class="label">
-        <b>۶ پرامپت پیش‌فرض</b><span>نمونه‌های عمومی، فنی و تصویری</span>
-      </div>
-      <button class="btn sm" id="seedBtn">افزودن</button>
-    </div>
-    <div class="row-pref">
-      <div class="label">
-        <b style="color: var(--ros)">بازنشانی همه</b
-        ><span>حذف تمام پرامپت‌ها و دسته‌ها</span>
-      </div>
-      <button class="btn sm dgr" id="resetBtn">حذف</button>
     </div>
   </div>
+
+  <!-- ═══ درباره ═══ -->
+  <div class="st-view" data-view="about" hidden>
+    <div class="about-wrap">
+      <div class="about-logo">
+        <svg viewBox="0 0 64 64" fill="currentColor" xmlns="http://www.w3.org/2000/svg"><path d="M40 6 A 5 5 0 0 0 36.587891 14.650391L32.976562 21.191406 A 11 11 0 0 0 31 21 A 11 11 0 0 0 24.919922 22.841797L16.455078 15.875 A 5.5 5.5 0 0 0 11.5 8 A 5.5 5.5 0 0 0 11.5 19 A 5.5 5.5 0 0 0 14.132812 18.328125L21.539062 26.414062 A 11 11 0 0 0 21.09375 36.761719L14.410156 43.070312 A 6 6 0 0 0 11 42 A 6 6 0 0 0 11 54 A 6 6 0 0 0 16.554688 45.751953L24.173828 40.613281 A 11 11 0 0 0 31 43 A 11 11 0 0 0 33.808594 42.621094L38.318359 49.625 A 5 5 0 0 0 42 58 A 5 5 0 0 0 42 48 A 5 5 0 0 0 41.332031 48.050781L38.144531 40.359375 A 11 11 0 0 0 41.105469 36.316406L47.042969 36.685547 A 6 6 0 0 0 53 42 A 6 6 0 0 0 53 30 A 6 6 0 0 0 47.662109 33.261719L41.984375 31.521484 A 11 11 0 0 0 37.46875 23.109375L39.708984 15.988281 A 5 5 0 0 0 40 16 A 5 5 0 0 0 40 6 z"/></svg>
+      </div>
+
+      <h2 class="about-name">Prompt Manager</h2>
+      <p class="about-tag">پرامپت‌هات رو سریع پیدا کن، ویرایش کن، بفرست</p>
+
+      <div class="about-chips">
+        <span class="about-chip">آفلاین</span>
+        <span class="about-chip">PWA</span>
+        <span class="about-chip">بدون سرور</span>
+      </div>
+
+      <div class="about-meta">
+        <span class="about-ver">نسخه <b id="stAboutVer">۱.۳</b></span>
+        <span class="about-dot">·</span>
+        <a
+          class="about-author"
+          href="https://github.com/PhysLVR"
+          target="_blank"
+          rel="noopener"
+        >
+          <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 .5C5.65.5.5 5.65.5 12c0 5.08 3.29 9.39 7.86 10.91.58.11.79-.25.79-.55v-2.1c-3.2.7-3.87-1.36-3.87-1.36-.52-1.34-1.28-1.69-1.28-1.69-1.05-.72.08-.7.08-.7 1.16.08 1.77 1.19 1.77 1.19 1.03 1.77 2.7 1.26 3.36.96.1-.75.4-1.26.73-1.55-2.55-.29-5.24-1.28-5.24-5.68 0-1.26.45-2.29 1.18-3.1-.12-.29-.51-1.46.11-3.05 0 0 .96-.31 3.15 1.18a10.9 10.9 0 0 1 5.74 0c2.19-1.49 3.15-1.18 3.15-1.18.62 1.59.23 2.76.11 3.05.74.81 1.18 1.84 1.18 3.1 0 4.41-2.69 5.38-5.25 5.67.41.35.78 1.05.78 2.12v3.14c0 .31.21.67.8.55C20.21 21.39 23.5 17.08 23.5 12 23.5 5.65 18.35.5 12 .5z"/></svg>
+          <span>@PhysLVR</span>
+        </a>
+      </div>
+    </div>
+  </div>
+
 </div>
 </aside>
 
@@ -783,7 +933,7 @@ aria-labelledby="catModalTitle"
 >
 <div class="modal" style="max-width: 480px">
   <h2>
-    <span id="catModalIcon">＋</span>
+    <span class="modal-h-ic" id="catModalIcon" aria-hidden="true"></span>
     <span id="catModalTitle">دستهٔ جدید</span>
   </h2>
   <input type="hidden" id="catId" />
@@ -841,7 +991,12 @@ aria-labelledby="catModalTitle"
     </div>
   </div>
   <div class="foot">
-    <button class="btn g" id="catSaveBtn">✔ ذخیره</button>
+    <button class="btn g" id="catSaveBtn" type="button">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <path d="M20 6 9 17l-5-5"/>
+      </svg>
+      <span>ذخیره</span>
+    </button>
     <button class="btn" id="catCancelBtn">انصراف</button>
   </div>
 </div>
@@ -856,7 +1011,8 @@ aria-labelledby="dialogTitle"
 >
 <div class="modal">
   <h2>
-    <span id="dialogIcon">؟</span> <span id="dialogTitle">تأیید</span>
+    <span class="modal-h-ic" id="dialogIcon" aria-hidden="true"></span>
+    <span id="dialogTitle">تأیید</span>
   </h2>
   <div class="dialog-msg" id="dialogMsg"></div>
   <div id="dialogFieldWrap" style="display: none">
@@ -879,7 +1035,9 @@ aria-labelledby="dialogTitle"
 >
   <div class="modal" style="max-width: 440px">
     <h2>
-      <span aria-hidden="true">📁</span>
+      <span class="modal-h-ic" aria-hidden="true">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>
+      </span>
       <span id="bulkMoveTitle">انتقال به دسته</span>
     </h2>
     <p class="dialog-msg" id="bulkMoveDesc"></p>
@@ -901,7 +1059,9 @@ aria-labelledby="dialogTitle"
 >
   <div class="modal" style="max-width: 560px">
     <h2>
-      <span aria-hidden="true">📋</span>
+      <span class="modal-h-ic" aria-hidden="true">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="8" y="2" width="8" height="4" rx="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><path d="M9 12h6M9 16h4"/></svg>
+      </span>
       <span id="chlogTitle">تغییرات نسخه</span>
     </h2>
     <div class="chlog-list" id="chlogList"></div>
@@ -914,6 +1074,31 @@ aria-labelledby="dialogTitle"
 <div id="iosHint" role="status">
   برای نصب: <b>Share</b> → <b>Add to Home Screen</b>
   <span class="close-x" id="iosHintClose">بستن</span>
+</div>
+
+<div
+  class="modal-back"
+  id="libPreviewBack"
+  role="dialog"
+  aria-modal="true"
+  aria-labelledby="libPreviewTitle"
+>
+  <div class="modal lib-preview-modal">
+    <div class="lib-preview-head">
+      <div class="lib-preview-titles">
+        <h2 id="libPreviewTitle">—</h2>
+        <div class="lib-preview-meta" id="libPreviewMeta"></div>
+      </div>
+      <button class="icon-btn" id="libPreviewX" type="button" aria-label="بستن">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18M6 6l12 12"/></svg>
+      </button>
+    </div>
+    <pre class="lib-preview-content" id="libPreviewContent"></pre>
+    <div class="foot">
+      <button class="btn g" id="libPreviewAdd" type="button">افزودن به لیست من</button>
+      <button class="btn" id="libPreviewClose" type="button">بستن</button>
+    </div>
+  </div>
 </div>
 
 <div class="toast" id="toast" role="status" aria-live="polite">
