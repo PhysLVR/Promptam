@@ -59,13 +59,26 @@
   margin-bottom: 0.55rem;
 }
 .chlog-ver {
-  font-family: var(--mono);
   font-weight: 800;
   font-size: var(--f-md);
   color: var(--acc);
-  display: flex;
-  align-items: center;
-  gap: 6px;
+  display: inline-flex;
+  align-items: baseline; /* baseline، نه center — همه روی یه خط */
+  gap: 5px;
+  line-height: 1;
+}
+.chlog-ver-label {
+  font-family: "Vazirmatn", system-ui, sans-serif;
+  font-weight: 700;
+  letter-spacing: 0.1px;
+}
+.chlog-ver-num {
+  font-family: var(--mono);
+  font-weight: 800;
+  direction: ltr;
+  unicode-bidi: isolate; /* مستقل از RTL والد — «1.5» هرگز جابه‌جا نمی‌شه */
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.3px;
 }
 .chlog-date {
   font-size: var(--f-2xs);
@@ -170,6 +183,8 @@
   --acc-ink: #0b0f1e;
   --header-bg: rgba(8, 12, 24, 0.68);
   --shadow: 0 14px 40px rgba(2, 5, 18, 0.55);
+  --menu-shadow: 0 18px 44px rgba(2, 5, 18, 0.55),
+    0 2px 6px rgba(0, 0, 0, 0.2);
   --ease: cubic-bezier(0.22, 0.75, 0.3, 1);
   --ease-ios: cubic-bezier(0.32, 0.72, 0, 1);
   --ease-spring: cubic-bezier(0.34, 1.4, 0.5, 1);
@@ -217,6 +232,8 @@
   --acc-ink: #ffffff;
   --header-bg: rgba(255, 255, 255, 0.74);
   --shadow: 0 12px 32px rgba(90, 110, 170, 0.18);
+  --menu-shadow: 0 16px 40px rgba(90, 110, 170, 0.2),
+    0 2px 6px rgba(90, 110, 170, 0.1);
   --focus: #4f6bd8;
 }
 
@@ -303,19 +320,23 @@ body {
   min-height: 100vh;
   overscroll-behavior-y: contain;
 }
-html.no-scroll {
-  overflow: hidden;
-}
+/* قفل اسکرول — فقط overflow: hidden. position: fixed لازم نیست و
+   به‌خاطر فریم میانی بین تغییر html و body باعث پرش می‌شد.
+   scrollbar-gutter: stable روی html، جای نوار رو همیشه رزرو می‌کنه. */
+html.no-scroll,
 body.no-scroll {
   overflow: hidden;
+}
+/* قفل بدنه موقع باز بودن ادیتور روی موبایل —
+   چرا فقط ادیتور: iOS وقتی caret رو می‌خواد وسط صفحه بذاره،
+   کل layout viewport رو می‌کشه. با position: fixed روی body،
+   دیگه چیزی برای کشیدن نیست. تنظیمات و پیش‌نمایش این مشکل رو ندارن. */
+body.kb-lock {
   position: fixed;
   left: 0;
   right: 0;
   width: 100%;
-  padding-inline-end: var(--sbw, 0px);
-}
-body.no-scroll footer.app-footer {
-  left: var(--sbw, 0px);
+  overflow: hidden;
 }
 body::before {
   content: "";
@@ -1228,18 +1249,34 @@ main {
   display: flex;
   flex-direction: column;
   min-width: 0;
-  min-height: 12rem;
+  min-height: 13rem;
   transition:
     transform 0.45s var(--ease-ios),
     border-color 0.35s var(--ease-ios),
     box-shadow 0.35s var(--ease-ios);
   animation: rise 0.5s var(--ease-ios) both;
+  /* مرورگر کارت‌های خارج از viewport رو رندر نمی‌کنه.
+     12rem: اندازهٔ تخمینی هر کارت برای layout پایدار.
+     content-visibility: auto رفتار پیش‌فرض بافر رو داره (~۵۰٪ viewport).
+     با ۱۰۰-۲۰۰ کارت معمولی، این کافیه. */
+  content-visibility: auto;
+  contain-intrinsic-size: auto 13rem;
 }
 .card:hover {
-  transform: translateY(-3px);
   border-color: var(--line2);
+  /* transform رو عوض کردیم به box-shadow —
+     چون transform روی .card باعث می‌شد containing block برای tooltip
+     بشه و تولتیپ pin به‌جای بالای دکمه، داخل کارت ظاهر بشه. */
+  box-shadow: 0 20px 48px rgba(2, 5, 18, 0.62);
+}
+:root[data-theme="light"] .card:hover {
+  box-shadow: 0 20px 48px rgba(90, 110, 170, 0.28);
 }
 .grid.no-anim .card {
+  animation: none;
+}
+/* لیست‌های بزرگ: انیمیشن فقط برای ۱۲ کارت اول، بقیه بدون */
+.grid.mass-list .card:nth-child(n + 13) {
   animation: none;
 }
 @keyframes rise {
@@ -1468,45 +1505,9 @@ main {
   border-color: var(--ros);
   background: rgba(251, 113, 133, 0.08);
 }
-.ibtn[data-tip]::after,
-.pin[data-tip]::after,
-.etb-toggle[data-tip]::after,
-.etb-close[data-tip]::after,
-.seg.swatches button[data-tip]::after {
-  content: attr(data-tip);
-  position: absolute;
-  bottom: calc(100% + 8px);
-  left: 50%;
-  transform: translateX(-50%) translateY(4px);
-  background: var(--card2);
-  border: 1px solid var(--line2);
-  color: var(--txt);
-  font-size: var(--f-2xs);
-  font-weight: 600;
-  white-space: nowrap;
-  padding: 5px 9px;
-  border-radius: 8px;
-  box-shadow: var(--shadow);
-  opacity: 0;
-  pointer-events: none;
-  transition:
-    opacity 0.15s,
-    transform 0.15s;
-  z-index: 20;
-}
-.ibtn[data-tip]:hover::after,
-.ibtn[data-tip]:focus-visible::after,
-.pin[data-tip]:hover::after,
-.pin[data-tip]:focus-visible::after,
-.etb-toggle[data-tip]:hover::after,
-.etb-toggle[data-tip]:focus-visible::after,
-.etb-close[data-tip]:hover::after,
-.etb-close[data-tip]:focus-visible::after,
-.seg.swatches button[data-tip]:hover::after,
-.seg.swatches button[data-tip]:focus-visible::after {
-  opacity: 1;
-  transform: translateX(-50%) translateY(0);
-}
+/* tooltip‌ها از `::after` به یه لایهٔ گلوبال (#gtip) منتقل شدن —
+   چون content-visibility روی کارت‌ها، descendants بیرون‌زننده رو
+   clip می‌کنه. JS موقعیت‌دهی می‌کنه. */
 
 /* ══════════════ جهت خودکار محتوا ══════════════ */
 .phead b,
@@ -1544,6 +1545,36 @@ main {
   line-height: 1.8;
   margin-bottom: 1rem;
 }
+.empty-cta {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.6rem 1.1rem;
+  margin-top: 0.75rem;
+  border-radius: 11px;
+  border: 1px dashed color-mix(in srgb, var(--acc) 45%, transparent);
+  background: color-mix(in srgb, var(--acc) 6%, transparent);
+  color: color-mix(in srgb, var(--acc) 75%, var(--mut));
+  font-family: inherit;
+  font-size: var(--f-sm);
+  font-weight: 700;
+  cursor: pointer;
+  transition: 0.18s var(--ease);
+}
+.empty-cta:hover {
+  background: color-mix(in srgb, var(--acc) 12%, transparent);
+  border-style: solid;
+  color: var(--acc);
+}
+.empty-cta:active {
+  transform: scale(0.97);
+}
+.empty-cta svg {
+  width: 1rem;
+  height: 1rem;
+  display: block;
+  flex-shrink: 0;
+}
 
 /* ══════════════ Modal ══════════════ */
 .modal-back {
@@ -1560,6 +1591,11 @@ main {
 }
 .modal-back.open {
   display: grid;
+  /* ژست‌های تاچ روی backdrop بلاک می‌شن، ولی خودِ modal-back
+     همچنان قابل اسکرول عمودیه (چون overflow-y: auto داره) —
+     پس این دو با هم تعارضی ندارن. */
+  touch-action: pan-y;
+  overscroll-behavior: contain;
 }
 .modal {
   background: linear-gradient(160deg, var(--card), var(--deep));
@@ -1753,6 +1789,13 @@ main {
   overflow: visible;
   animation: metaIn 0.22s var(--ease-ios);
 }
+/* موبایل: انیمیشن ورود متادیتا رو غیرفعال کن —
+   با باز شدن کیبورد قاطی می‌شه و حس lag می‌ده. */
+@media (max-width: 760px) {
+  .editor-meta {
+    animation: none;
+  }
+}
 @keyframes metaIn {
   from {
     opacity: 0;
@@ -1815,13 +1858,15 @@ main {
 .editor-gutter {
   flex-shrink: 0;
   width: 3.5rem;
+  /* padding-top باید با .editor-area یکی باشه — وگرنه شماره‌ها
+     از خطوط متن چند پیکسل جابه‌جا می‌شن. */
   padding: 0.85rem 0.6rem 0.85rem 0;
   text-align: right;
-  font-family: "Vazirmatn", system-ui, sans-serif;
-  font-weight: 300;
+  font-family: var(--mono);
+  font-weight: 400;
   font-size: var(--f-xs);
   line-height: 1.5rem;
-  color: #4a5680;
+  color: #5d6b98;
   background: rgba(255, 255, 255, 0.015);
   border-right: 1px solid rgba(140, 160, 255, 0.08);
   user-select: none;
@@ -1975,6 +2020,7 @@ main {
     padding: 0;
     overflow: hidden;
     scrollbar-width: none;
+    align-items: flex-start;
   }
   .editor-back::-webkit-scrollbar {
     display: none;
@@ -1982,8 +2028,8 @@ main {
 
   .editor-modal {
     max-width: none;
-    max-height: 100dvh;
-    height: 100dvh;
+    max-height: var(--vvh, 100dvh);
+    height: var(--vvh, 100dvh);
     border-radius: 0;
     border: none;
   }
@@ -2038,7 +2084,9 @@ main {
     padding: 0.85rem 0.4rem 0.85rem 0;
     text-align: right;
     font-family: var(--mono);
-    font-size: var(--f-2xs);
+    /* font-size باید با .editor-area یکی باشه — وگرنه baseline جابه‌جا
+       می‌شه و شماره‌های گاتر چند پیکسل از خطوط جدا می‌افتن. */
+    font-size: var(--f-xs);
     line-height: 1.4rem;
     color: var(--dim);
     background: transparent;
@@ -2058,14 +2106,13 @@ main {
     padding: 0.85rem 0.75rem;
     font-size: var(--f-xs);
     line-height: 1.4rem;
-    scrollbar-width: none;
-    -ms-overflow-style: none;
     resize: none !important;
     -webkit-appearance: none;
     appearance: none;
-  }
-  .editor-area::-webkit-resizer {
-    display: none;
+    /* نوار اسکرول رو موبایل مخفی — روی layout موبایل ظاهر می‌شه
+       و بین گاتر و متن یه خط عمودی زشت می‌سازه. */
+    scrollbar-width: none;
+    -ms-overflow-style: none;
   }
   .editor-area::-webkit-scrollbar {
     width: 0;
@@ -2098,19 +2145,212 @@ main {
   }
 }
 
-#dialogBack .modal {
-  max-width: 480px;
+/* ══════════════ Dialog — Premium ══════════════ */
+.dialog-modal {
+  max-width: 400px;
+  padding: 0;
+  overflow: hidden;
+  border-radius: 16px;
 }
+.dialog-accent {
+  height: 3px;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    var(--acc) 20%,
+    var(--acc) 80%,
+    transparent
+  );
+  transition: background 0.22s var(--ease);
+}
+.dialog-modal.is-danger .dialog-accent {
+  background: linear-gradient(
+    90deg,
+    transparent,
+    var(--ros) 20%,
+    var(--ros) 80%,
+    transparent
+  );
+}
+.dialog-body {
+  padding: 1.35rem 1.4rem 1.2rem;
+}
+
+.dialog-head {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  margin-bottom: 0.6rem;
+}
+.dialog-ic {
+  width: 1.1rem;
+  height: 1.1rem;
+  color: var(--acc);
+  flex-shrink: 0;
+  display: grid;
+  place-items: center;
+}
+.dialog-ic svg {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+.dialog-modal.is-danger .dialog-ic {
+  color: var(--ros);
+}
+.dialog-modal.is-help .dialog-ic {
+  color: var(--blu);
+}
+.dialog-modal.is-down .dialog-ic {
+  color: var(--grn);
+}
+.dialog-title {
+  font-size: var(--f-xl);
+  font-weight: 800;
+  letter-spacing: 0.1px;
+  line-height: 1.35;
+  color: var(--txt);
+  min-width: 0;
+}
+
 .dialog-msg {
   font-size: var(--f-sm);
-  line-height: 1.9;
   color: var(--mut);
-  margin-bottom: 1rem;
+  line-height: 1.85;
+  margin-bottom: 1.2rem;
   overflow-wrap: anywhere;
+  /* جلوگیری از کلمهٔ تک‌افتاده در خط آخر — مرورگرهای جدید */
+  text-wrap: pretty;
 }
 .dialog-msg b {
   color: var(--txt);
   font-weight: 700;
+}
+.dialog-msg:empty {
+  display: none;
+}
+
+.dialog-modal #dialogFieldWrap {
+  margin-bottom: 1.2rem;
+}
+
+/* فوتر — N دکمه با عرض یکسان، RTL: اولین در راست */
+.modal .foot.dialog-foot {
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: minmax(0, 1fr);
+  gap: 0.6rem;
+  margin-top: 0;
+  flex-wrap: nowrap;
+}
+.modal .foot.dialog-foot .btn {
+  width: 100%;
+  padding: 0.7rem 0.9rem;
+  font-size: var(--f-sm);
+  min-width: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* انصراف — ghost */
+.dialog-foot #dialogCancel,
+.dialog-foot #importCancelBtn,
+.dialog-foot #bulkMoveCancelBtn {
+  background: transparent;
+  border-color: var(--line);
+  color: var(--mut);
+  font-weight: 700;
+}
+.dialog-foot #dialogCancel:hover,
+.dialog-foot #importCancelBtn:hover,
+.dialog-foot #bulkMoveCancelBtn:hover {
+  color: var(--txt);
+  border-color: var(--line2);
+  background: var(--card2);
+  box-shadow: none;
+}
+
+/* تأیید — پرایمری فیل */
+.dialog-foot #dialogOk,
+.dialog-foot #importMergeBtn {
+  background: var(--acc);
+  color: var(--acc-ink);
+  border: none;
+  font-weight: 800;
+}
+.dialog-foot #dialogOk:hover,
+.dialog-foot #importMergeBtn:hover {
+  background: color-mix(in srgb, var(--acc) 88%, #fff);
+  box-shadow: 0 8px 20px color-mix(in srgb, var(--acc) 35%, transparent);
+}
+
+/* در حالت danger، تأیید به outline قرمز تغییر می‌کند —
+   با یه پس‌زمینهٔ خیلی ملایم قرمز تا وزن بصری‌اش با «انصراف» برابر باشه. */
+.dialog-modal.is-danger .dialog-foot #dialogOk {
+  background: color-mix(in srgb, var(--ros) 8%, transparent);
+  border: 1px solid color-mix(in srgb, var(--ros) 55%, transparent);
+  color: var(--ros);
+  font-weight: 800;
+}
+.dialog-modal.is-danger .dialog-foot #dialogOk:hover {
+  background: color-mix(in srgb, var(--ros) 16%, transparent);
+  border-color: var(--ros);
+  box-shadow: none;
+}
+
+/* جایگزین کن — danger outline */
+.dialog-foot #importReplaceBtn {
+  background: transparent;
+  border: 1px solid color-mix(in srgb, var(--ros) 55%, transparent);
+  color: var(--ros);
+  font-weight: 800;
+}
+.dialog-foot #importReplaceBtn:hover {
+  background: color-mix(in srgb, var(--ros) 12%, transparent);
+  border-color: var(--ros);
+  box-shadow: none;
+}
+
+/* ══════════════ Dialog — Premium ══════════════ */
+
+@media (max-width: 480px) {
+  .dialog-modal {
+    max-width: none;
+    width: 100%;
+    border-radius: 14px;
+  }
+  .dialog-body {
+    padding: 0.95rem 1rem 0.85rem;
+  }
+  .dialog-accent {
+    height: 2.5px;
+  }
+  .dialog-head {
+    gap: 0.45rem;
+    margin-bottom: 0.4rem;
+  }
+  .dialog-ic {
+    width: 1rem;
+    height: 1rem;
+  }
+  .dialog-title {
+    font-size: var(--f-md);
+    line-height: 1.3;
+  }
+  .dialog-msg {
+    font-size: var(--f-xs);
+    line-height: 1.75;
+    margin-bottom: 0.9rem;
+  }
+  .modal .foot.dialog-foot {
+    gap: 0.45rem;
+  }
+  .modal .foot.dialog-foot .btn {
+    padding: 0.6rem 0.6rem;
+    font-size: var(--f-xs);
+    border-radius: 10px;
+  }
 }
 
 /* ══════════════ Drawer تنظیمات ══════════════ */
@@ -2132,6 +2372,8 @@ main {
   opacity: 1;
   visibility: visible;
   pointer-events: auto;
+  touch-action: none;
+  overscroll-behavior: contain;
   transition:
     opacity 0.42s var(--ease-ios),
     visibility 0s;
@@ -2155,12 +2397,24 @@ main {
   transform: none;
 }
 .drawer-head {
-  padding: 0.9rem 1rem;
-  border-bottom: 1px solid var(--line);
+  position: relative;
   display: flex;
   align-items: center;
+  justify-content: center;
   gap: 0.65rem;
+  padding: 0.5rem 1rem;
+  min-height: 3.5rem;
+  background: var(--deep);
+  border-bottom: 1px solid var(--line);
   flex-shrink: 0;
+}
+.drawer-head .icon-btn {
+  background: transparent;
+  border-color: transparent;
+}
+.drawer-head .icon-btn:hover {
+  background: var(--card2);
+  border-color: var(--line2);
 }
 .drawer-head h2 {
   flex: 1;
@@ -2170,6 +2424,7 @@ main {
 .drawer-body {
   padding: 1rem;
   overflow-y: auto;
+  overflow-x: hidden;
   flex: 1;
   -webkit-overflow-scrolling: touch;
 }
@@ -2383,22 +2638,268 @@ main {
   --sw: linear-gradient(180deg, #152142, #0b1226);
 }
 
+/* ══════════════ نوار مرتب‌سازی — هم‌جای نوار عادی ══════════════ */
+/* دکمه‌های حالت عادی با ابزارهای مرتب‌سازی swap می‌شن،
+   بدون تغییر موقعیت در صفحه. */
+
+.cat-reorder-tools {
+  display: grid;
+  grid-template-columns: auto auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 0.5rem;
+  width: 100%;
+  min-width: 0;
+}
+.cat-reorder-tools[hidden] {
+  display: none;
+}
+
+/* دکمه‌های ↑/↓ — مربع، مینیمال، با border روشن */
+.cat-tool-btn {
+  width: 2.3rem;
+  height: 2.3rem;
+  border-radius: 10px;
+  border: 1px solid var(--line);
+  background: var(--deep);
+  color: var(--txt);
+  cursor: pointer;
+  display: grid;
+  place-items: center;
+  padding: 0;
+  font-family: inherit;
+  flex-shrink: 0;
+  transition:
+    background 0.15s var(--ease),
+    border-color 0.15s var(--ease),
+    color 0.15s var(--ease),
+    transform 0.12s var(--ease);
+  -webkit-tap-highlight-color: transparent;
+}
+.cat-tool-btn svg {
+  width: 1.05rem;
+  height: 1.05rem;
+  display: block;
+}
+.cat-tool-btn:hover:not(:disabled) {
+  border-color: var(--line2);
+  background: var(--card2);
+  color: var(--acc);
+}
+.cat-tool-btn:active:not(:disabled) {
+  transform: scale(0.94);
+  background: color-mix(in srgb, var(--acc) 14%, var(--deep));
+}
+.cat-tool-btn:disabled {
+  opacity: 0.3;
+  cursor: default;
+}
+
+/* شمارندهٔ انتخاب — وسط، کمرنگ */
+.cat-reorder-count {
+  text-align: center;
+  font-family: "Vazirmatn", system-ui, sans-serif;
+  font-size: var(--f-xs);
+  font-weight: 700;
+  color: var(--mut);
+  font-variant-numeric: tabular-nums;
+  line-height: 1.2;
+  white-space: nowrap;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.cat-reorder-count::before {
+  content: "";
+}
+/* اگه خواستی فقط یه عدد باشه بدون پیشوند */
+.cat-reorder-count:not(:empty)::after {
+  content: "";
+}
+
+/* دکمهٔ پایان — پرایمری، کنار ↓ */
+.cat-tool-done {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.35rem;
+  padding: 0.55rem 0.95rem;
+  height: 2.3rem;
+  border: none;
+  border-radius: 10px;
+  background: var(--acc);
+  color: var(--acc-ink);
+  font-family: inherit;
+  font-size: var(--f-sm);
+  font-weight: 800;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition:
+    transform 0.12s var(--ease),
+    box-shadow 0.2s var(--ease),
+    background 0.15s var(--ease);
+  -webkit-tap-highlight-color: transparent;
+}
+.cat-tool-done:hover {
+  background: color-mix(in srgb, var(--acc) 88%, #fff);
+  box-shadow: 0 6px 16px color-mix(in srgb, var(--acc) 36%, transparent);
+}
+.cat-tool-done:active {
+  transform: scale(0.96);
+}
+.cat-tool-done svg {
+  width: 0.95rem;
+  height: 0.95rem;
+  display: block;
+}
+
+@media (max-width: 760px) {
+  .cat-tool-btn {
+    width: 2.1rem;
+    height: 2.1rem;
+  }
+  .cat-tool-btn svg {
+    width: 0.95rem;
+    height: 0.95rem;
+  }
+  .cat-tool-done {
+    padding: 0.5rem 0.7rem;
+    height: 2.1rem;
+    font-size: var(--f-xs);
+  }
+  .cat-tool-done svg {
+    width: 0.85rem;
+    height: 0.85rem;
+  }
+  /* تو موبایل باریک، شمارنده فقط عدد نشون بده */
+  .cat-reorder-count {
+    font-size: var(--f-2xs);
+    color: var(--dim);
+  }
+}
+
+/* روی خیلی باریک، متن «انتخاب» رو حذف کن و فقط عدد بمونه */
+@media (max-width: 420px) {
+  .cat-reorder-count {
+    font-size: 0;
+  }
+  .cat-reorder-count::before {
+    content: attr(data-count);
+    font-size: var(--f-sm);
+    font-weight: 800;
+    color: var(--acc);
+  }
+}
+
 /* ══════════════ لیست دسته‌ها ══════════════ */
+.cat-head {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0.85rem;
+  min-height: 2.3rem;
+}
+.cat-head[hidden] {
+  display: none;
+}
+.cat-head #addCatBtn {
+  flex: 1;
+}
+.cat-head #reorderCatsBtn {
+  flex-shrink: 0;
+}
+/* هر دکمه/ابزاری که تو head هست، اگه [hidden] شد واقعاً غیب شه —
+   چون displayهای صریح بالا بر [hidden] غالب می‌شن. */
+.cat-head > [hidden],
+.cat-head #addCatBtn[hidden],
+.cat-head #reorderCatsBtn[hidden],
+.cat-head .cat-reorder-tools[hidden] {
+  display: none !important;
+}
+.cat-head #addCatBtn {
+  border-style: dashed;
+  padding: 0.7rem 0.9rem;
+  font-size: var(--f-sm);
+  border-radius: 11px;
+}
+.cat-head #reorderCatsBtn {
+  padding: 0.7rem 0.9rem;
+  font-size: var(--f-sm);
+  border-radius: 11px;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+.cat-head #reorderCatsBtn svg {
+  width: 1rem;
+  height: 1rem;
+  display: block;
+}
+
 .cat-list {
   display: flex;
   flex-direction: column;
-  gap: 0.4rem;
-  margin-top: 0.4rem;
+  gap: 0.45rem;
+}
+
+.cat-empty {
+  font-size: var(--f-xs);
+  color: var(--dim);
+  padding: 6px 2px;
 }
 .cat-item {
   display: flex;
   align-items: center;
-  gap: 0.65rem;
-  padding: 0.55rem 0.75rem;
+  gap: 0.55rem;
+  padding: 0.6rem 0.8rem;
   border-radius: 10px;
   background: var(--deep);
   border: 1px solid var(--line);
-  transition: 0.18s var(--ease);
+  transition:
+    background 0.18s var(--ease),
+    border-color 0.18s var(--ease),
+    box-shadow 0.18s var(--ease),
+    transform 0.18s var(--ease);
+}
+
+/* ── ردیف قابل انتخاب (حالت مرتب‌سازی) ── */
+button.cat-item.selectable {
+  width: 100%;
+  text-align: start;
+  cursor: pointer;
+  font-family: inherit;
+  font-size: inherit;
+  color: inherit;
+  appearance: none;
+  -webkit-appearance: none;
+  -webkit-tap-highlight-color: transparent;
+}
+button.cat-item.selectable:hover {
+  border-color: var(--line2);
+  background: color-mix(in srgb, var(--card2) 40%, var(--deep));
+}
+button.cat-item.selectable:active {
+  transform: scale(0.99);
+}
+button.cat-item.selectable:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 2px;
+}
+button.cat-item.selected {
+  border-color: color-mix(in srgb, var(--acc) 55%, transparent);
+  background: color-mix(in srgb, var(--acc) 12%, var(--deep));
+  box-shadow:
+    inset 3px 0 0 var(--acc),
+    0 4px 14px color-mix(in srgb, var(--acc) 18%, transparent);
+}
+button.cat-item.selected .cat-check {
+  background: var(--acc);
+  border-color: var(--acc);
+  color: var(--acc-ink);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--acc) 18%, transparent);
+}
+button.cat-item.selected .cat-check svg {
+  opacity: 1;
+  transform: scale(1);
 }
 .cat-item:hover {
   border-color: var(--line2);
@@ -2408,6 +2909,33 @@ main {
   height: 0.55rem;
   border-radius: 50%;
   flex-shrink: 0;
+}
+
+/* ═══ چک‌باکس ردیف در حالت مرتب‌سازی ═══ */
+.cat-check {
+  width: 1.2rem;
+  height: 1.2rem;
+  border-radius: 6px;
+  border: 1.5px solid var(--line2);
+  background: var(--card);
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+  color: transparent;
+  transition:
+    background 0.2s var(--ease),
+    border-color 0.2s var(--ease),
+    box-shadow 0.25s var(--ease);
+}
+.cat-check svg {
+  width: 0.75rem;
+  height: 0.75rem;
+  display: block;
+  opacity: 0;
+  transform: scale(0.5);
+  transition:
+    opacity 0.15s var(--ease),
+    transform 0.24s var(--ease-spring);
 }
 .cat-item-name {
   flex: 1;
@@ -2426,9 +2954,9 @@ main {
   border: 1px solid var(--line);
 }
 .cat-item-btn {
-  width: 1.7rem;
-  height: 1.7rem;
-  border-radius: 7px;
+  width: 1.5rem;
+  height: 1.5rem;
+  border-radius: 6px;
   border: 1px solid var(--line);
   background: var(--card2);
   cursor: pointer;
@@ -2436,20 +2964,26 @@ main {
   display: grid;
   place-items: center;
   flex-shrink: 0;
-  transition: 0.18s var(--ease);
+  padding: 0;
+  font-family: inherit;
+  transition: 0.15s var(--ease);
 }
 .cat-item-btn svg {
-  width: 0.8rem;
-  height: 0.8rem;
+  width: 0.75rem;
+  height: 0.75rem;
   display: block;
 }
-.cat-item-btn:hover {
+.cat-item-btn:hover:not(:disabled) {
   color: var(--txt);
   border-color: var(--focus);
 }
-.cat-item-btn.dgr:hover {
+.cat-item-btn.dgr:hover:not(:disabled) {
   color: var(--ros);
   border-color: var(--ros);
+}
+.cat-item-btn:disabled {
+  opacity: 0.25;
+  cursor: default;
 }
 
 .cat-colors {
@@ -2495,6 +3029,10 @@ main {
   opacity: 1;
   visibility: visible;
   pointer-events: auto;
+  /* رو موبایل به‌جای قفل اسکرول، ژست‌های تاچ روی backdrop رو بلاک می‌کنیم
+     تا صفحهٔ پشتش نلرزه و هدر sticky جابه‌جا نشه. */
+  touch-action: none;
+  overscroll-behavior: contain;
   transition:
     opacity 0.42s var(--ease-ios),
     visibility 0s;
@@ -2566,9 +3104,9 @@ main {
 .pv-body {
   flex: 1;
   min-height: 0;
-  overflow: hidden;
   padding: 0.85rem 1rem;
   display: flex;
+  min-width: 0;
 }
 .pv-wrap {
   flex: 1;
@@ -2577,11 +3115,16 @@ main {
   background: #080d1c;
   border: 1px solid var(--line);
   border-radius: 12px;
-  overflow: hidden;
+  /* scroll روی خود wrap می‌شینه — گاتر و متن با هم، native */
+  overflow: auto;
+  overscroll-behavior: contain;
   min-width: 0;
   min-height: 0;
+  scrollbar-width: thin;
+  scrollbar-color: #26335c transparent;
 }
 :root[data-theme="light"] .pv-wrap {
+  scrollbar-color: #c2cbe3 transparent;
   background: #f8fafd;
 }
 .pv-gutter {
@@ -2589,8 +3132,8 @@ main {
   width: 3.25rem;
   padding: 1rem 0.6rem 1rem 0;
   text-align: right;
-  font-family: "Vazirmatn", system-ui, sans-serif;
-  font-weight: 300;
+  font-family: var(--mono);
+  font-weight: 400;
   font-size: var(--f-xs);
   line-height: 1.5rem;
   color: #4a5680;
@@ -2600,12 +3143,16 @@ main {
   overflow: hidden;
   white-space: pre;
   pointer-events: none;
+  position: sticky;
+  left: 0;
+  align-self: flex-start;
 }
 :root[data-theme="light"] .pv-gutter {
   color: #8b95b8;
   background: rgba(23, 44, 110, 0.03);
   border-right-color: rgba(23, 44, 110, 0.08);
 }
+
 .pv-body pre {
   flex: 1;
   min-width: 0;
@@ -2621,13 +3168,10 @@ main {
   overflow-wrap: anywhere;
   word-break: normal;
   hyphens: none;
-  overflow: auto;
+  overflow: visible;
   margin: 0;
   unicode-bidi: normal;
   text-align: start;
-  -webkit-overflow-scrolling: touch;
-  scrollbar-width: thin;
-  scrollbar-color: #26335c transparent;
 }
 :root[data-theme="light"] .pv-body pre {
   scrollbar-color: #c2cbe3 transparent;
@@ -2847,35 +3391,6 @@ main {
   display: block;
 }
 
-/* تب‌ها — پیش‌فرض مخفی */
-.var-tabs {
-  display: none;
-  gap: 3px;
-  padding: 3px;
-  border-radius: 10px;
-  background: var(--deep);
-  border: 1px solid var(--line);
-  margin-bottom: 0.9rem;
-}
-.var-tab {
-  flex: 1;
-  padding: 0.5rem 0.75rem;
-  border-radius: 999px;
-  border: none;
-  background: transparent;
-  color: var(--mut);
-  font-family: inherit;
-  font-size: var(--f-xs);
-  font-weight: 700;
-  cursor: pointer;
-  transition:
-    background 0.18s var(--ease),
-    color 0.18s var(--ease);
-}
-.var-tab:hover {
-  color: var(--txt);
-}
-
 /* کارت پیش‌نمایش — absolute، بیرون از مودال، چسبیده به لبهٔ inline-end */
 .var-preview-panel {
   position: absolute;
@@ -2970,10 +3485,6 @@ main {
   flex: 1;
 }
 
-/* تب‌ها حذف شدن — به‌جاشون دکمهٔ گوشه */
-.var-tabs {
-  display: none !important;
-}
 .var-preview-toggle {
   display: grid;
 }
@@ -3011,24 +3522,9 @@ main {
     max-width: none;
     padding: 1.1rem 1rem 0.9rem;
   }
-  .var-tabs {
-    display: flex;
-  }
-  .var-preview-toggle {
-    display: none;
-  }
-
-  /* تب فعال */
-  .var-deck:not(.preview-open) .var-tab[data-vtab="form"] {
-    background: var(--acc);
-    color: var(--acc-ink);
-  }
-  .var-deck.preview-open .var-tab[data-vtab="preview"] {
-    background: var(--acc);
-    color: var(--acc-ink);
-  }
 
   /* کارت پیش‌نمایش — لایه‌ای که از پشت میاد داخل */
+
   .var-preview-panel {
     position: absolute;
     inset: 0;
@@ -3125,8 +3621,6 @@ main {
   box-shadow: 0 0 0 4px rgba(124, 92, 219, 0.14);
 }
 
- 
-
 .var-preview {
   margin: 0;
   border: none;
@@ -3134,7 +3628,6 @@ main {
   border-radius: 0;
   padding: 0.7rem 0.9rem;
   background: transparent;
-  font-family: "Samim", "Vazirmatn", system-ui, sans-serif;
   color: var(--txt);
   font-family: var(--mono);
   font-weight: 400;
@@ -3453,20 +3946,142 @@ main {
   }
 }
 /* ══════════════ تول‌تیپ لمسی (فقط دستگاه‌های بدون hover) ══════════════ */
-@media (hover: none) {
-  .ibtn.tip-show::after,
-  .pin.tip-show::after,
-  .etb-toggle.tip-show::after,
-  .etb-close.tip-show::after,
-  .icon-btn.tip-show::after {
+/* media query لمسی حذف شد — گtip گلوبال، رو هر دستگاهی کار می‌کنه. */
+
+/* ══════════════ انیمیشن‌های لیست دسته‌ها ══════════════ */
+
+/* swap نرم نوار بالا — عادی ↔ مرتب‌سازی */
+.cat-head > #addCatBtn,
+.cat-head > #reorderCatsBtn,
+.cat-head > .cat-reorder-tools {
+  animation: catHeadIn 0.28s var(--ease-ios) both;
+}
+@keyframes catHeadIn {
+  from {
+    opacity: 0;
+    transform: translateY(-6px);
+  }
+  to {
     opacity: 1;
-    transform: translateX(-50%) translateY(0);
+    transform: none;
   }
-  /* در موبایل مکان تول‌تیپ نوار بالا هم اصلاح شود */
-  .etb-close.tip-show::after,
-  .etb-toggle.tip-show::after {
-    transform: translateX(-50%) translateY(0);
+}
+
+/* ورود stagger ردیف‌ها — فقط بار اول (با .no-anim خاموش می‌شه) */
+.cat-list:not(.no-anim) .cat-item {
+  animation: catRowIn 0.34s var(--ease-ios) both;
+}
+.cat-list:not(.no-anim) .cat-item:nth-child(1) { animation-delay: 0ms; }
+.cat-list:not(.no-anim) .cat-item:nth-child(2) { animation-delay: 30ms; }
+.cat-list:not(.no-anim) .cat-item:nth-child(3) { animation-delay: 60ms; }
+.cat-list:not(.no-anim) .cat-item:nth-child(4) { animation-delay: 90ms; }
+.cat-list:not(.no-anim) .cat-item:nth-child(5) { animation-delay: 120ms; }
+.cat-list:not(.no-anim) .cat-item:nth-child(n+6) { animation-delay: 150ms; }
+@keyframes catRowIn {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
   }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/* چک‌باکس — پالس spring موقع انتخاب */
+.cat-item.selected .cat-check {
+  animation: catCheckPop 0.36s var(--ease-spring);
+}
+@keyframes catCheckPop {
+  0%   { transform: scale(0.7); }
+  55%  { transform: scale(1.15); }
+  100% { transform: scale(1); }
+}
+.cat-item.selected .cat-check svg {
+  animation: catCheckDraw 0.24s var(--ease-ios) 0.06s both;
+}
+@keyframes catCheckDraw {
+  from {
+    opacity: 0;
+    transform: scale(0.4) rotate(-12deg);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) rotate(0);
+  }
+}
+
+/* پالس ظریف روی ردیف انتخاب‌شده — یه بار، کوتاه */
+.cat-item.selected {
+  animation: catSelectPulse 0.42s var(--ease-ios);
+}
+@keyframes catSelectPulse {
+  0% {
+    box-shadow:
+      inset 3px 0 0 var(--acc),
+      0 4px 14px color-mix(in srgb, var(--acc) 18%, transparent);
+  }
+  55% {
+    box-shadow:
+      inset 3px 0 0 var(--acc),
+      0 4px 24px color-mix(in srgb, var(--acc) 36%, transparent);
+  }
+  100% {
+    box-shadow:
+      inset 3px 0 0 var(--acc),
+      0 4px 14px color-mix(in srgb, var(--acc) 18%, transparent);
+  }
+}
+
+/* ردیف‌های تازه‌جابه‌جا‌شده — highlight گرم کوتاه */
+.cat-item.moved {
+  animation: catMovedFlash 0.6s var(--ease-ios);
+}
+
+/* خفه کردن انیمیشن‌های تیک موقع re-render (بعد از جابه‌جایی) —
+   این کلاس برای دو RAF اضافه می‌شه و بعد برداشته می‌شه. */
+.cat-list.no-check-anim .cat-item.selected,
+.cat-list.no-check-anim .cat-item.selected .cat-check,
+.cat-list.no-check-anim .cat-item.selected .cat-check svg {
+  animation: none;
+}
+@keyframes catMovedFlash {
+  0% {
+    background: color-mix(in srgb, var(--acc) 26%, var(--deep));
+    border-color: color-mix(in srgb, var(--acc) 65%, transparent);
+    transform: translateY(-2px);
+  }
+  55% {
+    background: color-mix(in srgb, var(--acc) 18%, var(--deep));
+    border-color: color-mix(in srgb, var(--acc) 55%, transparent);
+    transform: none;
+  }
+  100% {
+    background: color-mix(in srgb, var(--acc) 12%, var(--deep));
+    border-color: color-mix(in srgb, var(--acc) 55%, transparent);
+    transform: none;
+  }
+}
+
+/* ══════════════ Overscroll Containment ══════════════ */
+/* هیچ اسکرول داخلی پنل‌ها به بدنهٔ صفحهٔ پشتش نشت نمی‌کنه.
+   بدون این، وقتی اسکرول داخلی به انتها می‌رسه، مرورگر موبایل
+   نوار آدرس رو باز/بسته می‌کنه و layout می‌لرزه. */
+.pv-drawer,
+.pv-body,
+.pv-wrap,
+.pv-body pre,
+.drawer,
+.drawer-body,
+.editor-wrap,
+.editor-area,
+.editor-meta,
+.lib-grid,
+.lib-preview-content,
+.chlog-list,
+.msearch-body,
+.var-preview {
+  overscroll-behavior: contain;
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -3626,6 +4241,14 @@ footer.app-footer .ft-ver {
   .modal-back {
     padding: 1rem 0.65rem;
   }
+  /* دیالوگ‌های تکی، باریک‌تر از بقیه مودال‌ها —
+     فول‌ویث بودن باعث می‌شه کارت، کمتر شبیه دیالوگ به‌نظر بیاد. */
+  .modal-back:has(.dialog-modal) {
+    padding: 1.5rem 1.4rem;
+  }
+  .modal-back:has(.dialog-modal) .dialog-modal {
+    width: 100%;
+  }
   .modal-back.editor-back {
     padding: 0;
   }
@@ -3646,6 +4269,14 @@ footer.app-footer .ft-ver {
     display: none;
   }
 
+  /* کتابخانه: کارتها تکستونه و بدون اسکرول افقی */
+  .lib-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .drawer[data-view="library"] .drawer-body {
+    padding-bottom: calc(1rem + env(safe-area-inset-bottom, 0px));
+  }
+
   /* پیش‌نمایش — گاتر باریک و ارتفاع خط متناسب */
   .pv-body {
     padding: 0.75rem;
@@ -3653,7 +4284,8 @@ footer.app-footer .ft-ver {
   .pv-gutter {
     width: 2.25rem;
     padding: 0.85rem 0.4rem 0.85rem 0;
-    font-size: var(--f-2xs);
+    /* هم‌اندازه با .pv-body pre — وگرنه baseline یکی نیست */
+    font-size: var(--f-xs);
     line-height: 1.4rem;
   }
   .pv-body pre {
@@ -3692,6 +4324,7 @@ footer.app-footer .ft-ver {
   font-variant-numeric: tabular-nums;
   line-height: 1.5rem;
 }
+
 @media (max-width: 760px) {
   .editor-gutter,
   .pv-gutter {
@@ -3719,6 +4352,39 @@ footer.app-footer .ft-ver {
 .var-preview[dir="ltr"] {
   direction: ltr !important;
   text-align: left !important;
+}
+
+/* ══════════════ Tooltip گلوبال ══════════════ */
+/* تو کارت‌ها content-visibility: auto داریم که paint containment
+   ایجاد می‌کنه و tooltip‌های بیرون‌زننده (مثل پین) رو clip می‌کنه.
+   راه‌حل: یه عنصر سراسری با position: fixed که بیرون همهٔ
+   contain contexts باشه و با JS موقعیت‌دهی بشه. */
+.gtip {
+  position: fixed;
+  z-index: 600;
+  pointer-events: none;
+  padding: 5px 9px;
+  border-radius: 8px;
+  background: var(--card2);
+  border: 1px solid var(--line2);
+  color: var(--txt);
+  font-family: "Vazirmatn", system-ui, sans-serif;
+  font-size: var(--f-2xs);
+  font-weight: 600;
+  white-space: nowrap;
+  box-shadow: var(--menu-shadow);
+  opacity: 0;
+  transform: translateX(-50%) translateY(4px);
+  transition:
+    opacity 0.15s var(--ease),
+    transform 0.15s var(--ease);
+}
+.gtip.show {
+  opacity: 1;
+  transform: translateX(-50%) translateY(0);
+}
+.gtip[hidden] {
+  display: none;
 }
 
 /* ══════════════ حالت انتخاب چندگانه ══════════════ */
@@ -4098,9 +4764,7 @@ body.selmode .quick-fab {
   background: var(--card);
   border: 1px solid var(--line2);
   border-radius: 12px;
-  box-shadow:
-    0 18px 44px rgba(2, 5, 18, 0.55),
-    0 2px 6px rgba(0, 0, 0, 0.2);
+  box-shadow: var(--menu-shadow);
   padding: 5px;
   font-size: var(--f-sm);
   animation: ctxIn 0.14s var(--ease-ios);
@@ -4191,9 +4855,7 @@ body.selmode .quick-fab {
   background: var(--card);
   border: 1px solid var(--line2);
   border-radius: 12px;
-  box-shadow:
-    0 18px 44px rgba(2, 5, 18, 0.55),
-    0 2px 6px rgba(0, 0, 0, 0.2);
+  box-shadow: var(--menu-shadow);
   padding: 5px;
   opacity: 0;
   visibility: hidden;
@@ -4279,14 +4941,6 @@ body.selmode .quick-fab {
 }
 
 /* ══════════════ تنظیمات: drill-down ══════════════ */
-.drawer-head {
-  position: relative;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 0.5rem 1rem;
-  min-height: 3.5rem;
-}
 .drawer-head h2 {
   font-size: var(--f-xl);
   font-weight: 800;
@@ -4297,6 +4951,7 @@ body.selmode .quick-fab {
   letter-spacing: 0.3px;
   max-width: calc(100% - 8.5rem);
 }
+
 .drawer-head .icon-btn {
   position: absolute;
   top: 50%;
@@ -4317,7 +4972,8 @@ body.selmode .quick-fab {
   display: none;
   inset-inline-start: 0.85rem;
 }
-/* موبایل: در هر زیرصفحه‌ای (نه home) — بدون نیاز به JS */
+/* موبایل: هر viewی که home نیست، back می‌گیره — چون home یه صفحهٔ واقعیه.
+   دسکتاپ: back فقط برای زیرشاخه‌های عمیق (data-can-back) — home سایدباره. */
 @media (max-width: 899px) {
   .drawer[data-view]:not([data-view="home"]) .st-back {
     display: grid;
@@ -4337,6 +4993,55 @@ body.selmode .quick-fab {
 
 .st-view[hidden] {
   display: none;
+}
+
+/* ═══ انیمیشن ورود به شاخه‌های منو ═══
+   forward (RTL): محتوای جدید از چپ وارد می‌شه، به راست سُر می‌خوره.
+   back: از راست وارد می‌شه. */
+.st-view.view-in-fwd {
+  animation: stViewFwd 0.26s var(--ease-ios) both;
+}
+.st-view.view-in-back {
+  animation: stViewBack 0.26s var(--ease-ios) both;
+}
+@keyframes stViewFwd {
+  from {
+    opacity: 0;
+    transform: translateX(-18px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+@keyframes stViewBack {
+  from {
+    opacity: 0;
+    transform: translateX(18px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+/* کاربری که animation رو قطع کرده، فقط محتوا رو بدون حرکت ببینه */
+@media (prefers-reduced-motion: reduce) {
+  .st-view.view-in-fwd,
+  .st-view.view-in-back,
+  .cat-head > #addCatBtn,
+  .cat-head > #reorderCatsBtn,
+  .cat-head > .cat-reorder-tools,
+  .cat-list .cat-item,
+  .cat-item.selected,
+  .cat-item.selected .cat-check,
+  .cat-item.selected .cat-check svg,
+  .cat-item.moved {
+    animation: none;
+  }
+  .cat-list.no-check-anim .cat-item,
+  .cat-list.no-check-anim .cat-item.selected {
+    animation: none;
+  }
 }
 
 /* ── لیست ردیف‌ها (خانه) ── */
@@ -4471,6 +5176,7 @@ body.selmode .quick-fab {
 .st-val:empty {
   visibility: hidden;
 }
+
 .st-chev {
   color: var(--dim);
   display: grid;
@@ -4735,6 +5441,14 @@ body.selmode .quick-fab {
   max-width: 26rem;
   margin: 0.9rem 0 0.6rem;
 }
+.about-links {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  margin: 0.4rem 0 0.6rem;
+}
 .about-chlog-btn {
   display: inline-flex;
   align-items: center;
@@ -4749,7 +5463,7 @@ body.selmode .quick-fab {
   font-weight: 700;
   cursor: pointer;
   transition: 0.18s var(--ease);
-  margin-bottom: 0.4rem;
+  margin: 0;
 }
 .about-chlog-btn svg {
   width: 1rem;
@@ -4810,6 +5524,86 @@ body.selmode .quick-fab {
 }
 .about-author:hover {
   background: color-mix(in srgb, var(--cyn) 12%, transparent);
+}
+
+/* ══════════════ راهنما ══════════════ */
+.help-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 1.4rem;
+  padding: 0.2rem 0 1rem;
+}
+.help-sec h3 {
+  font-size: var(--f-md);
+  font-weight: 800;
+  color: var(--txt);
+  margin-bottom: 0.55rem;
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+}
+.help-sec h3::before {
+  content: "";
+  width: 3px;
+  height: 1em;
+  border-radius: 999px;
+  background: var(--acc);
+  flex-shrink: 0;
+}
+.help-sec p {
+  font-size: var(--f-sm);
+  color: var(--mut);
+  line-height: 1.9;
+  margin: 0;
+}
+.help-sec p code {
+  color: var(--amb);
+  font-weight: 700;
+  background: color-mix(in srgb, var(--amb) 10%, transparent);
+  border: 1px solid color-mix(in srgb, var(--amb) 25%, transparent);
+  border-radius: 5px;
+  padding: 1px 6px;
+  font-size: 0.92em;
+}
+.help-sec p b {
+  color: var(--txt);
+  font-weight: 700;
+}
+.help-keys {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+.help-keys li {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  font-size: var(--f-sm);
+  color: var(--mut);
+  line-height: 1.6;
+}
+.help-keys li span {
+  flex: 1;
+}
+.help-keys kbd {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 1.9rem;
+  height: 1.7rem;
+  padding: 0 0.5rem;
+  font-family: var(--mono);
+  font-size: var(--f-2xs);
+  font-weight: 700;
+  color: var(--txt);
+  background: var(--deep);
+  border: 1px solid var(--line2);
+  border-bottom-width: 2px;
+  border-radius: 6px;
+  line-height: 1;
 }
 
 /* ══════════════ سطل آشغال ══════════════ */
@@ -4933,27 +5727,58 @@ body.selmode .quick-fab {
   display: flex;
   flex-direction: column;
   min-height: 0;
+  min-width: 0;
   overflow: hidden;
+  gap: 0.75rem;
 }
 .lib-intro {
   font-size: var(--f-xs);
   color: var(--mut);
   line-height: 1.85;
-  margin-bottom: 1rem;
-  padding-inline: 0.15rem;
+  margin: 0;
+  padding: 0;
   flex-shrink: 0;
 }
 .lib-grid {
   display: grid;
-  grid-template-columns: 1fr;
+  grid-template-columns: minmax(0, 1fr);
   gap: 0.55rem;
   margin-bottom: 0;
   flex: 1;
   min-height: 0;
+  min-width: 0;
   overflow-y: auto;
-  padding-inline-end: 4px;
+  overflow-x: hidden;
+  padding-block: 2px;
   scrollbar-width: thin;
   scrollbar-color: var(--line2) transparent;
+  overscroll-behavior: contain;
+  /* refocus: کندتر، نرم‌تر — حس «برگشتن به فوکوس» */
+  transition:
+    opacity 0.22s var(--ease-ios),
+    filter 0.22s var(--ease-ios);
+}
+.lib-grid.swapping {
+  opacity: 0.35;
+  /* defocus: blur + کمی desaturate — محتوا هنوز دیده می‌شه ولی حل شده */
+  filter: blur(6px) saturate(0.7);
+  /* خروج تندتره، چون swap بعدش اتفاق می‌افته */
+  transition:
+    opacity 0.14s var(--ease-ios),
+    filter 0.14s var(--ease-ios);
+}
+@media (max-width: 760px) {
+  /* موبایل: blur سبک‌تر — WebView اندروید از blur سنگین لگ می‌گیره */
+  .lib-grid.swapping {
+    filter: blur(4px) saturate(0.75);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .lib-grid,
+  .lib-grid.swapping {
+    transition: opacity 0.1s linear;
+    filter: none;
+  }
 }
 .lib-grid::-webkit-scrollbar {
   width: 6px;
@@ -4967,7 +5792,7 @@ body.selmode .quick-fab {
 }
 @media (min-width: 900px) {
   .lib-grid {
-    grid-template-columns: 1fr 1fr;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
   }
 }
 .lib-card {
@@ -4979,27 +5804,24 @@ body.selmode .quick-fab {
   border: 1px solid var(--line);
   background: var(--deep);
   cursor: pointer;
-  transition:
-    border-color 0.18s var(--ease),
-    background 0.18s var(--ease),
-    transform 0.15s var(--ease);
+  transition: border-color 0.15s var(--ease);
   text-align: start;
   font-family: inherit;
   color: inherit;
-  width: 100%;
+  min-width: 0;
+  contain: layout paint style;
 }
 .lib-card:hover {
   border-color: var(--line2);
-  background: color-mix(in srgb, var(--card2) 60%, var(--deep));
-  transform: translateY(-1px);
 }
 .lib-card:active {
-  transform: scale(0.99);
+  border-color: var(--acc);
 }
 .lib-card-head {
   display: flex;
   align-items: center;
   gap: 0.55rem;
+  min-width: 0;
 }
 .lib-card-cat {
   display: inline-flex;
@@ -5060,10 +5882,15 @@ body.selmode .quick-fab {
   margin-top: auto;
   padding-top: 0.55rem;
   border-top: 1px dashed var(--line);
+  min-width: 0;
 }
 .lib-card-hint {
   font-size: var(--f-2xs);
   color: var(--dim);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  min-width: 0;
 }
 .lib-card-foot .btn {
   padding: 0.35rem 0.75rem;
@@ -5078,8 +5905,16 @@ body.selmode .quick-fab {
   pointer-events: none;
 }
 
+.lib-actions {
+  display: flex;
+  align-items: stretch;
+  gap: 0.5rem;
+  margin: 0;
+  flex-shrink: 0;
+  min-width: 0;
+}
 #libAddAll {
-  width: 100%;
+  flex: 1;
   padding: 0.65rem;
   font-size: var(--f-sm);
   border-radius: 11px;
@@ -5088,8 +5923,229 @@ body.selmode .quick-fab {
   align-items: center;
   justify-content: center;
   gap: 0.5rem;
+  margin-top: 0;
+}
+.lib-icon-btn {
+  width: 2.6rem;
+  min-height: 2.6rem;
+  border-radius: 11px;
+  border: 1px solid var(--line);
+  background: var(--deep);
+  color: var(--mut);
+  cursor: pointer;
+  display: grid;
+  place-items: center;
   flex-shrink: 0;
-  margin-top: 1rem;
+  font-family: inherit;
+  transition:
+    border-color 0.18s var(--ease),
+    background 0.18s var(--ease),
+    color 0.18s var(--ease),
+    transform 0.12s var(--ease);
+}
+.lib-icon-btn:hover {
+  color: var(--txt);
+  border-color: var(--line2);
+  background: var(--card2);
+}
+.lib-icon-btn:active {
+  transform: scale(0.94);
+}
+.lib-icon-btn svg {
+  width: 1.1rem;
+  height: 1.1rem;
+  display: block;
+}
+.lib-icon-btn[hidden] {
+  display: none;
+}
+.lib-icon-btn.spin svg {
+  animation: libRefreshSpin 0.55s var(--ease-ios);
+}
+@keyframes libRefreshSpin {
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(360deg); }
+}
+
+/* ══════════════ PSwitch — سوئیچ بین N گزینه ══════════════
+   یه ردیف از گزینه‌ها، اسلایدر --acc بینشون می‌چرخه.
+   تعداد گزینه‌ها مهم نیست — flex:1 روی هر گزینه، پهنای مساوی می‌ده.
+   موقعیت اسلایدر با JS از روی getBoundingClientRect محاسبه می‌شه. */
+.pswitch {
+  position: relative;
+  display: flex;
+  gap: 0.4rem;
+  padding: 0.4rem;
+  background: var(--deep);
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  isolation: isolate;
+}
+
+.pswitch-slide {
+  position: absolute;
+  top: 0.4rem;
+  left: 0.4rem;
+  height: calc(100% - 0.8rem);
+  width: 0;
+  border-radius: 11px;
+  background: var(--acc);
+  box-shadow:
+    inset 0 1px 0 color-mix(in srgb, #fff 22%, transparent),
+    0 4px 14px color-mix(in srgb, var(--acc) 34%, transparent);
+  transition:
+    transform 0.44s cubic-bezier(0.34, 1.4, 0.5, 1),
+    width 0.44s cubic-bezier(0.34, 1.4, 0.5, 1),
+    opacity 0.2s var(--ease);
+  opacity: 0;
+  pointer-events: none;
+  z-index: 0;
+}
+.pswitch.ready .pswitch-slide {
+  opacity: 1;
+}
+
+.pswitch-opt {
+  flex: 1 1 0;
+  min-width: 0;
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.9rem 0.6rem;
+  border: none;
+  background: transparent;
+  border-radius: 11px;
+  cursor: pointer;
+  font-family: inherit;
+  color: var(--mut);
+  text-align: center;
+  transition: transform 0.15s var(--ease);
+  -webkit-tap-highlight-color: transparent;
+}
+.pswitch-opt:active {
+  transform: scale(0.97);
+}
+.pswitch-opt:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 2px;
+}
+
+.pswitch-opt .pswitch-ico {
+  width: 1.9rem;
+  height: 1.9rem;
+  border-radius: 9px;
+  display: grid;
+  place-items: center;
+  background: color-mix(in srgb, var(--acc) 10%, transparent);
+  color: var(--acc);
+  flex-shrink: 0;
+  transition:
+    background 0.3s var(--ease),
+    color 0.3s var(--ease),
+    transform 0.3s var(--ease-spring);
+}
+.pswitch-opt .pswitch-ico svg {
+  width: 1rem;
+  height: 1rem;
+  display: block;
+}
+
+.pswitch-opt b {
+  font-size: var(--f-sm);
+  font-weight: 800;
+  line-height: 1.3;
+  color: var(--txt);
+  transition: color 0.3s var(--ease);
+}
+.pswitch-opt > span:last-child {
+  font-size: var(--f-2xs);
+  line-height: 1.5;
+  color: var(--dim);
+  transition: color 0.3s var(--ease);
+}
+
+.pswitch-opt.on {
+  color: var(--acc-ink);
+}
+.pswitch-opt.on .pswitch-ico {
+  background: color-mix(in srgb, var(--acc-ink) 18%, transparent);
+  color: var(--acc-ink);
+  transform: scale(1.06);
+}
+.pswitch-opt.on b {
+  color: var(--acc-ink);
+}
+.pswitch-opt.on > span:last-child {
+  color: color-mix(in srgb, var(--acc-ink) 78%, transparent);
+}
+
+/* حالت فشرده — بدون آیکون و توضیح، فقط متن، مناسب برای ۳ یا ۴ گزینه */
+.pswitch.compact .pswitch-opt {
+  flex-direction: row;
+  padding: 0.55rem 0.7rem;
+  gap: 0.4rem;
+}
+.pswitch.compact .pswitch-ico {
+  width: 1.3rem;
+  height: 1.3rem;
+  border-radius: 7px;
+}
+.pswitch.compact .pswitch-ico svg {
+  width: 0.8rem;
+  height: 0.8rem;
+}
+.pswitch.compact .pswitch-opt b {
+  font-size: var(--f-xs);
+}
+.pswitch.compact .pswitch-opt > span:last-child {
+  display: none;
+}
+
+@media (max-width: 480px) {
+  .pswitch-opt {
+    padding: 0.75rem 0.4rem;
+    gap: 0.4rem;
+  }
+  .pswitch-opt .pswitch-ico {
+    width: 1.7rem;
+    height: 1.7rem;
+  }
+  .pswitch-opt b {
+    font-size: var(--f-xs);
+  }
+  .pswitch-opt > span:last-child {
+    font-size: 0.7rem;
+  }
+}
+
+/* ═══ تنظیمات کتابخانه ═══ */
+#libSettingsModal {
+  max-width: 400px;
+}
+
+/* seg داخل دیالوگ — کمی جمع‌تر از صفحهٔ تنظیمات */
+#libSettingsModal .seg {
+  margin-bottom: 0;
+}
+#libSettingsModal .seg:not(.swatches) button {
+  padding: 0.6rem 0.85rem;
+  font-size: var(--f-sm);
+}
+
+/* lib-mode-hint حذف شد — توضیح هر گزینه تو خود duo هست. */
+
+/* دکمهٔ بستن تو dialog-foot تک‌ستونه — فول‌عرض */
+#libSettingsModal .dialog-foot {
+  grid-auto-flow: row;
+  grid-auto-columns: 1fr;
+  margin-top: 0;
+}
+#libSettingsModal .dialog-foot .btn {
+  padding: 0.75rem 0.9rem;
 }
 #libAddAll svg {
   width: 1rem;
@@ -5388,9 +6444,10 @@ body.selmode .quick-fab {
     letter-spacing: 0.2px;
   }
 
-  /* دسکتاپ: back فقط برای سطل آشغال (تنها زیرصفحهٔ عمیق) */
-  .drawer[data-view="trash"] .st-back {
+  /* دسکتاپ: back فقط برای viewهایی که والد منطقی دارن */
+  .drawer[data-can-back="1"] .st-back {
     display: grid;
+    margin-inline-start: -0.4rem; /* نزدیک‌تر به لبه — حس breadcrumb */
   }
 
   /* بدنه → گرید دو ستونه */
@@ -5899,3 +6956,4 @@ body.selmode .quick-fab {
   }
   .var-deck .var-preview-foot .btn { flex: 1; }
 }
+

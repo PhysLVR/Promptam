@@ -1,6 +1,28 @@
 "use strict";
 
 /* ═══════════════ ابزارها ═══════════════ */
+/* مرورگر به‌صورت پیش‌فرض موقع history.back/forward اسکرول رو ری‌ست می‌کنه.
+   ما خودمون مدیریت می‌کنیم (lock/unlock) — پس این رو دست‌دستی خاموش می‌کنیم. */
+if ("scrollRestoration" in history) {
+  history.scrollRestoration = "manual";
+}
+
+/* ── ارتفاع visual viewport ──
+   iOS Safari dvh رو با کیبورد کوچیک نمی‌کنه، پس مستقیم از
+   visualViewport.height می‌گیریم و تو --vvh می‌ذاریم.
+   ادیتور موبایل ارتفاعش رو از این var می‌گیره. */
+if (window.visualViewport) {
+  const vv = window.visualViewport;
+  const setVVH = () => {
+    document.documentElement.style.setProperty(
+      "--vvh",
+      vv.height + "px"
+    );
+  };
+  vv.addEventListener("resize", setVVH);
+  vv.addEventListener("scroll", setVVH);
+  setVVH();
+}
 const $ = (s, r) => (r || document).querySelector(s);
 const $$ = (s, r) => Array.from((r || document).querySelectorAll(s));
 const DATA_KEY = "promptManager_public_v1";
@@ -55,9 +77,30 @@ const SFX = (() => {
   let master = null;
   let volPct = 70;
   let currentTheme = "soft";
+  let _activated = false;
   const BASE_VOL = 0.22;
 
+  /* مرورگرها ساخت AudioContext قبل از اولین تعامل را بلاک می‌کنند.
+     تا اولین pointerdown/keydown، ensure() هیچ‌کاری نمی‌کند.
+     مهم: حتی اگه صدا خاموشه، تو اولین gesture ctx رو بساز —
+     وگرنه بعداً که کاربر صدا رو روشن می‌کنه، ساخت خارج از gesture
+     بلاک می‌شه و خطای «not allowed to start» می‌ده. */
+  function _onFirstGesture(e) {
+    if (!e.isTrusted) return;
+    _activated = true;
+    ensure();
+  }
+  document.addEventListener("pointerdown", _onFirstGesture, {
+    once: true,
+    capture: true,
+  });
+  document.addEventListener("keydown", _onFirstGesture, {
+    once: true,
+    capture: true,
+  });
+
   function ensure() {
+    if (!_activated) return null;
     if (!ctx) {
       const C = window.AudioContext || window.webkitAudioContext;
       if (!C) return null;
@@ -86,9 +129,16 @@ const SFX = (() => {
       lp.connect(ctx.destination);
       master = hp;
     }
-    if (ctx.state === "suspended") ctx.resume();
+    if (ctx.state === "suspended") {
+      ctx.resume().catch(() => {});
+    }
     return ctx;
   }
+
+  /* partials: آرایهٔ ضرایب فرکانس برای شبیه‌سازی سازهای کوبه‌ای واقعی.
+     مثلاً [1, 2.76, 5.4] برای bell — هارمونیک‌های ناهارمونیک.
+     اگه داده نشه، یه oscillator تک مثل قبل ساخته می‌شه. */
+  const PARTIAL_FALLOFF = [1, 0.5, 0.3, 0.2, 0.14, 0.1];
 
   function tone({
     freq,
@@ -100,26 +150,47 @@ const SFX = (() => {
     release = 0.1,
     wave = "sine",
     lpf = null,
+    partials = null,
   }) {
     if (!enabled) return;
     const c = ensure();
     if (!c || !master) return;
     const t0 = c.currentTime + delay;
-    const osc = c.createOscillator();
-    const g = c.createGain();
-    osc.type = wave;
-    osc.frequency.setValueAtTime(freq, t0);
-    if (sweep) {
-      osc.frequency.exponentialRampToValueAtTime(
-        Math.max(sweep, 60),
-        t0 + dur
-      );
-    }
     const peak = BASE_VOL * (volPct / 100) * vol;
+
+    const oscs = [];
+    const list = partials && partials.length ? partials : [1];
+    list.forEach((mult, i) => {
+      const osc = c.createOscillator();
+      osc.type = wave;
+      const f0 = freq * mult;
+      osc.frequency.setValueAtTime(f0, t0);
+      if (sweep) {
+        osc.frequency.exponentialRampToValueAtTime(
+          Math.max(sweep * mult, 60),
+          t0 + dur
+        );
+      }
+      oscs.push(osc);
+    });
+
+    const g = c.createGain();
     g.gain.setValueAtTime(0.0001, t0);
     g.gain.linearRampToValueAtTime(peak, t0 + attack);
-    g.gain.exponentialRampToValueAtTime(0.0001, t0 + dur + release);
-    osc.connect(g);
+    g.gain.exponentialRampToValueAtTime(
+      0.0001,
+      t0 + dur + release
+    );
+
+    /* هر partial با یه گین جدا وصل می‌شه — falloff برای گرمی */
+    oscs.forEach((osc, i) => {
+      const pg = c.createGain();
+      const fv = list.length > 1 ? PARTIAL_FALLOFF[i] || 0.08 : 1;
+      pg.gain.value = fv;
+      osc.connect(pg);
+      pg.connect(g);
+    });
+
     let out = g;
     if (lpf) {
       const f = c.createBiquadFilter();
@@ -130,105 +201,253 @@ const SFX = (() => {
       out = f;
     }
     out.connect(master);
-    osc.start(t0);
-    osc.stop(t0 + dur + release + 0.05);
+
+    oscs.forEach((osc) => {
+      osc.start(t0);
+      osc.stop(t0 + dur + release + 0.05);
+    });
+  }
+
+  /* صدای نویز فیلترشده — برای ضربه‌های ضربی (چوب، تیک ساعت).
+     نویز سفید + فیلتر باندپاس/هایپاس/لوپاس = خشکیِ ضربه. */
+  function noise({
+    dur,
+    delay = 0,
+    vol = 1,
+    attack = 0.001,
+    release = 0.04,
+    lpf = null,
+    hpf = null,
+    bp = null,
+    bpQ = 6,
+  }) {
+    if (!enabled) return;
+    const c = ensure();
+    if (!c || !master) return;
+    const t0 = c.currentTime + delay;
+
+    const len = Math.ceil(
+      c.sampleRate * (dur + release + 0.03)
+    );
+    const buf = c.createBuffer(1, len, c.sampleRate);
+    const data = buf.getChannelData(0);
+    for (let i = 0; i < len; i++) data[i] = Math.random() * 2 - 1;
+
+    const src = c.createBufferSource();
+    src.buffer = buf;
+
+    let node = src;
+    if (bp) {
+      const f = c.createBiquadFilter();
+      f.type = "bandpass";
+      f.frequency.value = bp;
+      f.Q.value = bpQ;
+      node.connect(f);
+      node = f;
+    }
+    if (hpf) {
+      const f = c.createBiquadFilter();
+      f.type = "highpass";
+      f.frequency.value = hpf;
+      f.Q.value = 0.7;
+      node.connect(f);
+      node = f;
+    }
+    if (lpf) {
+      const f = c.createBiquadFilter();
+      f.type = "lowpass";
+      f.frequency.value = lpf;
+      f.Q.value = 0.7;
+      node.connect(f);
+      node = f;
+    }
+
+    const g = c.createGain();
+    const peak = BASE_VOL * (volPct / 100) * vol;
+    g.gain.setValueAtTime(0.0001, t0);
+    g.gain.linearRampToValueAtTime(peak, t0 + attack);
+    g.gain.exponentialRampToValueAtTime(
+      0.0001,
+      t0 + dur + release
+    );
+    node.connect(g);
+    g.connect(master);
+
+    src.start(t0);
+    src.stop(t0 + dur + release + 0.03);
   }
 
   const THEMES = {
-    /* ── نرم: sine، فرکانس میانه، گرم ── */
+    /* ── نرم: ملودیک ──
+       دو نُت سین در فاصلهٔ پنجم درست (C5 + G5).
+       نزدیک به موسیقی، گرم و آشنا. */
     soft: {
       copy: () => {
-        tone({ freq: 660, dur: 0.045, vol: 0.85 });
-        tone({ freq: 990, dur: 0.06, delay: 0.05, vol: 0.7 });
+        tone({ freq: 523.25, dur: 0.05, vol: 0.75 });
+        tone({ freq: 783.99, dur: 0.09, delay: 0.045, vol: 0.55, release: 0.14 });
       },
-      del: () => tone({ freq: 440, dur: 0.08, sweep: 260, vol: 0.75 }),
-      undo: () => tone({ freq: 340, dur: 0.075, sweep: 620, vol: 0.8 }),
+      del: () => tone({ freq: 440, dur: 0.09, sweep: 260, vol: 0.7, release: 0.12 }),
+      undo: () => tone({ freq: 349.23, dur: 0.075, sweep: 523.25, vol: 0.75, release: 0.12 }),
       err: () => {
-        tone({ freq: 210, dur: 0.06, vol: 0.7 });
-        tone({ freq: 175, dur: 0.08, delay: 0.075, vol: 0.65 });
+        tone({ freq: 233, dur: 0.07, vol: 0.65 });
+        tone({ freq: 175, dur: 0.09, delay: 0.08, vol: 0.6 });
       },
-      tick: () => tone({ freq: 600, dur: 0.025, vol: 0.4 }),
+      tick: () => tone({ freq: 587.33, dur: 0.025, vol: 0.35 }),
     },
 
-    /* ── بلورین: sine فرکانس بالا، شفاف ── */
+    /* ── بلورین: بِل شیشه‌ای ──
+       سین با هارمونیک‌های ناهارمونیک (2.76 و 5.4) = جنس شیشه/کریستال.
+       فرکانس بالا، انتشار طولانی، درخشان. */
     crystal: {
-      copy: () => {
-        tone({ freq: 1320, dur: 0.05, vol: 0.55 });
-        tone({ freq: 1760, dur: 0.07, delay: 0.045, vol: 0.45 });
-      },
-      del: () => tone({ freq: 880, dur: 0.07, sweep: 520, vol: 0.5 }),
-      undo: () => tone({ freq: 660, dur: 0.06, sweep: 1320, vol: 0.55 }),
+      copy: () => tone({
+        freq: 1568, dur: 0.08, vol: 0.4,
+        attack: 0.002, release: 0.42,
+        partials: [1, 2.76, 5.4],
+      }),
+      del: () => tone({
+        freq: 1046.5, dur: 0.06, vol: 0.35,
+        attack: 0.002, release: 0.3,
+        partials: [1, 2.76, 5.4],
+      }),
+      undo: () => tone({
+        freq: 1318.5, dur: 0.06, vol: 0.35,
+        attack: 0.002, release: 0.32,
+        partials: [1, 2.76, 5.4],
+      }),
       err: () => {
-        tone({ freq: 440, dur: 0.05, vol: 0.5, wave: "triangle" });
-        tone({ freq: 350, dur: 0.08, delay: 0.07, vol: 0.45, wave: "triangle" });
+        tone({ freq: 622.25, dur: 0.05, vol: 0.35, partials: [1, 2.76, 5.4] });
+        tone({ freq: 415.3, dur: 0.09, delay: 0.08, vol: 0.32, partials: [1, 2.76, 5.4] });
       },
-      tick: () => tone({ freq: 1200, dur: 0.02, vol: 0.3 }),
+      tick: () => tone({
+        freq: 2093, dur: 0.02, vol: 0.25,
+        attack: 0.001, release: 0.08,
+        partials: [1, 3.4],
+      }),
     },
 
-    /* ── چوبی: triangle با attack کوتاه، شبیه زایلوفون ── */
+    /* ── چوبی: ضربه‌ای خشک ──
+       بست نویز باندپاس (شبیه ضربه به چوب) + تامپ سینِ کوتاه پایین.
+       دقیقاً ساختار یه ساز کوبه‌ای واقعی. */
     wood: {
       copy: () => {
-        tone({ freq: 520, dur: 0.055, vol: 0.75, wave: "triangle", attack: 0.004, release: 0.06 });
-        tone({ freq: 780, dur: 0.06, delay: 0.05, vol: 0.6, wave: "triangle", attack: 0.004, release: 0.08 });
-      },
-      del: () => tone({ freq: 390, dur: 0.09, sweep: 240, vol: 0.8, wave: "triangle", attack: 0.004 }),
-      undo: () => tone({ freq: 330, dur: 0.08, sweep: 520, vol: 0.75, wave: "triangle", attack: 0.004 }),
-      err: () => {
-        tone({ freq: 260, dur: 0.055, vol: 0.7, wave: "triangle", attack: 0.004 });
-        tone({ freq: 200, dur: 0.08, delay: 0.07, vol: 0.65, wave: "triangle", attack: 0.004 });
-      },
-      tick: () => tone({ freq: 620, dur: 0.02, vol: 0.55, wave: "triangle", attack: 0.003, release: 0.04 }),
-    },
-
-    /* ── دیجیتال: square ملایم با lowpass، مدرن ── */
-    digital: {
-      copy: () => {
-        tone({ freq: 880, dur: 0.035, vol: 0.4, wave: "square", lpf: 2000 });
-        tone({ freq: 1320, dur: 0.045, delay: 0.04, vol: 0.35, wave: "square", lpf: 2000 });
-      },
-      del: () => tone({ freq: 520, dur: 0.07, sweep: 300, vol: 0.4, wave: "square", lpf: 1800 }),
-      undo: () => tone({ freq: 400, dur: 0.06, sweep: 800, vol: 0.4, wave: "square", lpf: 1800 }),
-      err: () => {
-        tone({ freq: 240, dur: 0.045, vol: 0.4, wave: "square", lpf: 1400 });
-        tone({ freq: 200, dur: 0.07, delay: 0.06, vol: 0.35, wave: "square", lpf: 1400 });
-      },
-      tick: () => tone({ freq: 760, dur: 0.018, vol: 0.28, wave: "square", lpf: 2000 }),
-    },
-
-    /* ── عمیق: sine فرکانس پایین، گرم و محکم ── */
-    deep: {
-      copy: () => {
-        tone({ freq: 440, dur: 0.07, vol: 0.9, release: 0.14 });
-        tone({ freq: 660, dur: 0.08, delay: 0.06, vol: 0.7, release: 0.16 });
-      },
-      del: () => tone({ freq: 300, dur: 0.11, sweep: 180, vol: 0.9, release: 0.16 }),
-      undo: () => tone({ freq: 260, dur: 0.1, sweep: 480, vol: 0.85, release: 0.14 }),
-      err: () => {
-        tone({ freq: 170, dur: 0.08, vol: 0.85, release: 0.12 });
-        tone({ freq: 140, dur: 0.11, delay: 0.1, vol: 0.8, release: 0.16 });
-      },
-      tick: () => tone({ freq: 520, dur: 0.03, vol: 0.5 }),
-    },
-
-    /* ── زنگی: sine با هارمونیک بالا، شبیه ناقوس ── */
-    bell: {
-      copy: () => {
-        tone({ freq: 1046.5, dur: 0.12, vol: 0.55, attack: 0.003, release: 0.55 });
-        tone({ freq: 2093, dur: 0.1, delay: 0.005, vol: 0.22, attack: 0.003, release: 0.4 });
+        noise({ dur: 0.012, vol: 0.5, attack: 0.0008, release: 0.04, bp: 1400, bpQ: 5 });
+        tone({ freq: 320, dur: 0.035, vol: 0.5, wave: "sine", attack: 0.001, release: 0.06 });
+        noise({ dur: 0.01, delay: 0.05, vol: 0.4, attack: 0.0008, release: 0.03, bp: 1800, bpQ: 5 });
+        tone({ freq: 480, dur: 0.03, delay: 0.05, vol: 0.4, wave: "sine", attack: 0.001, release: 0.05 });
       },
       del: () => {
-        tone({ freq: 784, dur: 0.12, vol: 0.5, attack: 0.003, release: 0.5 });
-        tone({ freq: 1568, dur: 0.1, delay: 0.005, vol: 0.2, attack: 0.003, release: 0.4 });
+        noise({ dur: 0.014, vol: 0.55, attack: 0.0008, release: 0.05, bp: 900, bpQ: 4 });
+        tone({ freq: 200, dur: 0.05, vol: 0.45, wave: "sine", attack: 0.001, release: 0.08 });
       },
       undo: () => {
-        tone({ freq: 659.25, dur: 0.12, vol: 0.5, attack: 0.003, release: 0.5 });
-        tone({ freq: 1318.5, dur: 0.1, delay: 0.005, vol: 0.2, attack: 0.003, release: 0.4 });
+        noise({ dur: 0.012, vol: 0.5, attack: 0.0008, release: 0.04, bp: 1100, bpQ: 4 });
+        tone({ freq: 260, dur: 0.05, vol: 0.45, wave: "sine", attack: 0.001, release: 0.08, sweep: 440 });
       },
       err: () => {
-        tone({ freq: 523.25, dur: 0.1, vol: 0.45, attack: 0.003, release: 0.45 });
-        tone({ freq: 392, dur: 0.15, delay: 0.13, vol: 0.4, attack: 0.003, release: 0.6 });
+        noise({ dur: 0.02, vol: 0.5, attack: 0.001, release: 0.06, bp: 700, bpQ: 3 });
+        tone({ freq: 170, dur: 0.06, vol: 0.5, wave: "sine", attack: 0.001, release: 0.1 });
+        noise({ dur: 0.02, delay: 0.08, vol: 0.45, attack: 0.001, release: 0.06, bp: 600, bpQ: 3 });
+        tone({ freq: 140, dur: 0.06, delay: 0.08, vol: 0.45, wave: "sine", attack: 0.001, release: 0.1 });
       },
-      tick: () => tone({ freq: 1318.5, dur: 0.03, vol: 0.32, attack: 0.002, release: 0.15 }),
+      tick: () => {
+        noise({ dur: 0.008, vol: 0.5, attack: 0.0005, release: 0.025, bp: 1800, bpQ: 6 });
+        tone({ freq: 420, dur: 0.015, vol: 0.35, wave: "sine", attack: 0.001, release: 0.03 });
+      },
+    },
+
+    /* ── دیجیتال: رباتیک گلیچی ──
+       سه پالس مربع پشت‌سرهم با فرکانس صعودی + فیلتر لوپاس.
+       حس «داده در حال انتقال» یا ماشین حساب قدیمی. */
+    digital: {
+      copy: () => {
+        tone({ freq: 1200, dur: 0.012, vol: 0.3, wave: "square", attack: 0.0005, release: 0.008, lpf: 3000 });
+        tone({ freq: 1600, dur: 0.012, delay: 0.022, vol: 0.28, wave: "square", attack: 0.0005, release: 0.008, lpf: 3000 });
+        tone({ freq: 2000, dur: 0.015, delay: 0.044, vol: 0.25, wave: "square", attack: 0.0005, release: 0.01, lpf: 3000 });
+      },
+      del: () => {
+        tone({ freq: 900, dur: 0.02, sweep: 400, vol: 0.35, wave: "square", attack: 0.001, release: 0.02, lpf: 2200 });
+        tone({ freq: 500, dur: 0.02, delay: 0.035, sweep: 220, vol: 0.3, wave: "square", attack: 0.001, release: 0.03, lpf: 1800 });
+      },
+      undo: () => {
+        tone({ freq: 500, dur: 0.018, sweep: 1000, vol: 0.32, wave: "square", attack: 0.001, release: 0.02, lpf: 2400 });
+        tone({ freq: 900, dur: 0.018, delay: 0.03, sweep: 1800, vol: 0.3, wave: "square", attack: 0.001, release: 0.025, lpf: 2400 });
+      },
+      err: () => {
+        tone({ freq: 320, dur: 0.03, vol: 0.35, wave: "square", attack: 0.0008, release: 0.02, lpf: 1400 });
+        tone({ freq: 260, dur: 0.04, delay: 0.04, vol: 0.35, wave: "square", attack: 0.0008, release: 0.03, lpf: 1200 });
+      },
+      tick: () => tone({
+        freq: 1800, dur: 0.006, vol: 0.24,
+        wave: "square", attack: 0.0003, release: 0.006, lpf: 3200,
+      }),
+    },
+
+    /* ── ساعت: مکانیکی ظریف ──
+       تیک نویز هایپاس (فرکانس بالا، خشک) + پینگ سین ریز.
+       مثل صدای ساعت مچی مکانیکی یا تایمر. */
+    watch: {
+      copy: () => {
+        noise({ dur: 0.006, vol: 0.55, attack: 0.0003, release: 0.012, hpf: 4000 });
+        tone({ freq: 2400, dur: 0.01, vol: 0.35, wave: "sine", attack: 0.0005, release: 0.03 });
+        noise({ dur: 0.006, delay: 0.055, vol: 0.5, attack: 0.0003, release: 0.012, hpf: 4000 });
+        tone({ freq: 2800, dur: 0.01, delay: 0.055, vol: 0.3, wave: "sine", attack: 0.0005, release: 0.03 });
+      },
+      del: () => {
+        noise({ dur: 0.008, vol: 0.55, attack: 0.0003, release: 0.018, hpf: 3000 });
+        tone({ freq: 1800, dur: 0.012, vol: 0.35, wave: "sine", attack: 0.0005, release: 0.04, sweep: 900 });
+      },
+      undo: () => {
+        noise({ dur: 0.008, vol: 0.5, attack: 0.0003, release: 0.015, hpf: 3200 });
+        tone({ freq: 1200, dur: 0.014, vol: 0.35, wave: "sine", attack: 0.0005, release: 0.04, sweep: 2000 });
+      },
+      err: () => {
+        noise({ dur: 0.012, vol: 0.5, attack: 0.0005, release: 0.025, hpf: 2000 });
+        tone({ freq: 700, dur: 0.03, vol: 0.35, wave: "sine", attack: 0.001, release: 0.06 });
+        noise({ dur: 0.012, delay: 0.06, vol: 0.45, attack: 0.0005, release: 0.025, hpf: 1800 });
+        tone({ freq: 500, dur: 0.03, delay: 0.06, vol: 0.32, wave: "sine", attack: 0.001, release: 0.07 });
+      },
+      tick: () => {
+        noise({ dur: 0.004, vol: 0.5, attack: 0.0002, release: 0.008, hpf: 5000 });
+        tone({ freq: 2600, dur: 0.006, vol: 0.28, wave: "sine", attack: 0.0003, release: 0.02 });
+      },
+    },
+
+    /* ── زنگی: طنین‌دار، کشیده ──
+       سین با ۴ هارمونیک دقیق (2.01, 2.98, 4.16) — شبیه زنگ کلیسا.
+       ریلیز طولانی، حس فضا. */
+    bell: {
+      copy: () => tone({
+        freq: 1046.5, dur: 0.15, vol: 0.5,
+        attack: 0.003, release: 0.8,
+        partials: [1, 2.01, 2.98, 4.16],
+      }),
+      del: () => tone({
+        freq: 784, dur: 0.15, vol: 0.45,
+        attack: 0.003, release: 0.75,
+        partials: [1, 2.01, 2.98, 4.16],
+      }),
+      undo: () => tone({
+        freq: 659.25, dur: 0.15, vol: 0.45,
+        attack: 0.003, release: 0.75,
+        partials: [1, 2.01, 2.98, 4.16],
+      }),
+      err: () => {
+        tone({
+          freq: 523.25, dur: 0.14, vol: 0.4,
+          attack: 0.003, release: 0.6,
+          partials: [1, 2.01, 2.98, 4.16],
+        });
+        tone({
+          freq: 392, dur: 0.18, delay: 0.15, vol: 0.36,
+          attack: 0.003, release: 0.7,
+          partials: [1, 2.01, 2.98, 4.16],
+        });
+      },
+      tick: () => tone({
+        freq: 1318.5, dur: 0.04, vol: 0.3,
+        attack: 0.002, release: 0.2,
+        partials: [1, 2.01],
+      }),
     },
   };
 
@@ -388,8 +607,12 @@ function _mulberry32(seed) {
     return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
   };
 }
-/* seed روزانه — تا آخر امروز، همون ۸ تا */
+/* seed — روزانه بر اساس تاریخ، دستی بر اساس libOffset */
 function _daySeed() {
+  if (PREFS.libMode === "manual") {
+    /* پایهٔ عدد اول تا consecutive offsets دنبالهٔ مشابه ندن */
+    return 900000000 + (PREFS.libOffset || 0) * 7919;
+  }
   const d = new Date();
   return d.getFullYear() * 10000 + (d.getMonth() + 1) * 100 + d.getDate();
 }
@@ -408,6 +631,8 @@ let DATA = { version: CURRENT_VERSION, categories: [], prompts: [], trash: [] };
 
 function commit(mutator) {
   if (typeof mutator === "function") mutator(DATA);
+  /* پاک‌سازی کش‌هایی که ممکنه با mutation بی‌اعتبار شن */
+  if (typeof _pruneHayCache === "function") _pruneHayCache();
   save();
   renderChips();
   renderGrid();
@@ -417,10 +642,20 @@ function commit(mutator) {
   renderSettingsValues();
 }
 
+/* حذف ورودی‌های کش برای پرامپت‌های حذف‌شده */
+function _pruneHayCache() {
+  if (_hayCache.size < 500) return; /* وقتی کوچیکه، بی‌خیال */
+  const alive = new Set(DATA.prompts.map((p) => p.id));
+  for (const id of _hayCache.keys()) {
+    if (!alive.has(id)) _hayCache.delete(id);
+  }
+}
+
 const DEFAULT_CATEGORIES = [
   { id: "write", name: "نوشتن و محتوا", color: "b-blu" },
   { id: "code", name: "کد و فنی", color: "b-grn" },
   { id: "image", name: "تصویرسازی", color: "b-vio" },
+  { id: "analyze", name: "تحلیل و بررسی", color: "b-cyn" },
   { id: "general", name: "عمومی", color: "b-amb" },
 ];
 const MIGRATIONS = {};
@@ -450,6 +685,9 @@ const PREF_DEFAULTS = {
   sound: "off",
   soundVol: 70,
   soundTheme: "soft",
+  libMode: "daily",
+  libOffset: 0,
+  varHintSeen: false,
 };
 
 let PREFS = Object.assign({}, PREF_DEFAULTS);
@@ -462,6 +700,11 @@ function loadPrefs() {
         if (p[k] === undefined) return;
         if (typeof p[k] === typeof PREF_DEFAULTS[k]) PREFS[k] = p[k];
       });
+      /* migrate: تم صوتی deep حذف شد — برگردون به soft */
+      if (PREFS.soundTheme === "deep") {
+        PREFS.soundTheme = "soft";
+        savePrefs();
+      }
     }
   } catch (e) {}
 }
@@ -705,26 +948,26 @@ function refreshFocusTrap() {
     ".modal-back.open, .drawer.open, .pv-drawer.open",
   );
   const msearchEl = document.querySelector(".msearch.open");
-  /* قفل اسکرول فقط برای پنل‌های تمام‌صفحه.
-     سرچ موبایل قفل نمی‌کند تا هدر sticky سر جایش بماند. */
-  setActiveDialog(dialogEl || msearchEl, !!dialogEl);
+  /* روی موبایل همهٔ این پنل‌ها فول‌اسکرین‌اند، پس overflow: hidden روی
+     html لازم نیست و روی برخی مرورگرها باعث recompute هدر sticky و
+     پرش/lag می‌شه. به‌جاش touch-action: none روی backdrop جلوش رو می‌گیره.
+     روی دسکتاپ (drawer وسط‌چین) هنوز قفل لازمه. */
+  const needLock = !isMobile() && !!dialogEl;
+  setActiveDialog(dialogEl || msearchEl, needLock);
 }
-/* ── قفل/آزادسازی اسکرول — هم روی html هم body ── */
+/* ── قفل/آزادسازی اسکرول ──
+   فقط کلاس. هیچ position: fixed و هیچ ذخیرهٔ scrollTop‌ای لازم نیست —
+   overflow: hidden روی html، scrollTop رو دست‌نخورده نگه می‌داره
+   و نوار اسکرول هم چون scrollbar-gutter: stable هست، جاش می‌مونه. */
 function lockScroll() {
+  if (document.documentElement.classList.contains("no-scroll")) return;
   document.documentElement.classList.add("no-scroll");
   document.body.classList.add("no-scroll");
-  /* موقعیت فعلی اسکرول رو ذخیره کن، بعد قفل کن */
-  const y = window.scrollY;
-  document.body.style.top = `-${y}px`;
-  document.body.dataset.savedScroll = String(y);
 }
 function unlockScroll() {
+  if (!document.documentElement.classList.contains("no-scroll")) return;
   document.documentElement.classList.remove("no-scroll");
   document.body.classList.remove("no-scroll");
-  const y = Number(document.body.dataset.savedScroll || 0);
-  document.body.style.top = "";
-  delete document.body.dataset.savedScroll;
-  window.scrollTo(0, y);
 }
 
 function setActiveDialog(el, forceScrollLock) {
@@ -765,10 +1008,16 @@ function setActiveDialog(el, forceScrollLock) {
   el.addEventListener("keydown", handler);
   activeDialogCleanup = () => {
     el.removeEventListener("keydown", handler);
-    if (prev && prev.focus) {
+    /* preventScroll حیاتی‌ست: بدون اون، مرورگر عنصر focus شده رو
+       (معمولاً دکمه‌ای تو هدر) میاره تو دید و صفحه به بالا می‌پره. */
+    if (prev && prev.focus && prev.isConnected) {
       try {
-        prev.focus();
-      } catch (_) {}
+        prev.focus({ preventScroll: true });
+      } catch (_) {
+        try {
+          prev.focus();
+        } catch (_) {}
+      }
     }
   };
 }
@@ -780,11 +1029,12 @@ let dialogMode = "confirm";
 askImportMode دکمه‌های این فوتر را جایگزین می‌کند؛
 بعد از آن، دیالوگ‌های بعدی باید دکمه‌های استاندارد را برگردانند. */
 function restoreDialogFoot() {
-  const foot = document.querySelector("#dialogBack .modal .foot");
+  const foot = document.querySelector("#dialogBack .dialog-foot");
   if (!foot) return;
+  /* ترتیب RTL: انصراف اول (راست)، تأیید دوم (چپ) */
   foot.innerHTML =
-    '<button class="btn g" id="dialogOk">تأیید</button>' +
-    '<button class="btn" id="dialogCancel">انصراف</button>';
+    '<button class="btn ghost" id="dialogCancel">انصراف</button>' +
+    '<button class="btn g" id="dialogOk">تأیید</button>';
   $("#dialogOk").onclick = () => {
     if (dialogMode === "prompt") closeDialog($("#dialogField").value);
     else closeDialog(true);
@@ -798,24 +1048,35 @@ function openDialog(opts) {
     restoreDialogFoot();
     dialogResolve = resolve;
     dialogMode = opts.mode || "confirm";
+
+    const modal = $("#dialogModal");
+    /* ریست کلاس‌های حالت — هر دیالوگ از صفر شروع می‌شه */
+    if (modal) {
+      modal.classList.remove("is-danger", "is-help", "is-down");
+    }
+
     const dIcon = $("#dialogIcon");
+    dIcon.className = "dialog-ic";
     if (opts.icon && /^</.test(opts.icon)) {
       dIcon.innerHTML = opts.icon;
-      dIcon.className = "modal-h-ic";
-      if (opts.warn) dIcon.classList.add("is-warn");
     } else if (opts.icon && icon(opts.icon)) {
       dIcon.innerHTML = icon(opts.icon);
-      dIcon.className = "modal-h-ic";
     } else {
       dIcon.innerHTML = icon(dialogMode === "prompt" ? "edit" : "help");
-      dIcon.className = "modal-h-ic is-help";
+      if (dialogMode === "prompt" && modal) modal.classList.add("is-help");
     }
-    if (opts.warn) dIcon.classList.add("is-warn");
+
+    /* حالت danger — هم آیکون رو قرمز می‌کنه هم نوار بالا رو */
+    if ((opts.warn || opts.danger) && modal) {
+      modal.classList.add("is-danger");
+    }
+
     $("#dialogTitle").textContent = opts.title || "تأیید";
     $("#dialogMsg").innerHTML = opts.message || "";
+
     const ok = $("#dialogOk");
     ok.textContent = opts.okText || "تأیید";
-    ok.classList.toggle("dgr", !!opts.danger);
+
     if (dialogMode === "prompt") {
       $("#dialogFieldWrap").style.display = "";
       $("#dialogFieldLabel").textContent = opts.label || "مقدار";
@@ -825,17 +1086,22 @@ function openDialog(opts) {
     } else {
       $("#dialogFieldWrap").style.display = "none";
     }
+
     $("#dialogBack").classList.add("open");
+    _navPush("overlay", "dialogBack");
     refreshFocusTrap();
     if (dialogMode !== "prompt") setTimeout(() => ok.focus(), 100);
   });
 }
 function closeDialog(value) {
+  if (!$("#dialogBack")?.classList.contains("open")) return;
+  /* UI فوری */
   $("#dialogBack").classList.remove("open");
   refreshFocusTrap();
   const r = dialogResolve;
   dialogResolve = null;
   if (r) r(value);
+  _navSilentBack();
 }
 const uiConfirm = (opts) =>
   openDialog(Object.assign({ mode: "confirm" }, opts));
@@ -903,11 +1169,17 @@ document.addEventListener("click", (e) => {
 function renderChips() {
   const c = $("#chips");
   const total = DATA.prompts.length;
+  /* یک پاس برای شمردن همهٔ دسته‌ها */
+  const counts = Object.create(null);
+  for (let i = 0; i < DATA.prompts.length; i++) {
+    const id = DATA.prompts[i].category;
+    counts[id] = (counts[id] || 0) + 1;
+  }
   let html = `<button class="chip ${activeCat === "all" ? "on" : ""}" data-c="all">
 همه <span class="cnt">${total}</span>
 </button>`;
   DATA.categories.forEach((cat) => {
-    const n = DATA.prompts.filter((p) => p.category === cat.id).length;
+    const n = counts[cat.id] || 0;
     html += `<button class="chip ${activeCat === cat.id ? "on" : ""}" data-c="${cat.id}">
 <span class="dot ${cat.color}"></span>${esc(cat.name)}
 <span class="cnt">${n}</span>
@@ -928,16 +1200,55 @@ function renderChips() {
   });
 }
 
+/* ═══ حالت مرتب‌سازی دسته‌ها ═══
+   - بالای لیست: هیچ دکمه‌ای
+   - هر ردیف: چک‌باکس + نام، با کلیک انتخاب می‌شه
+   - پایین: نوار شناور با ↑/↓ گروهی و دکمهٔ پایان */
+let _catReordering = false;
+const _catSelected = new Set();
+let _catFirstRenderDone = false;
+
 function renderCatList() {
   const el = $("#catList");
   if (!el) return;
+  /* stagger ورود فقط بار اول — بعدش هر render کلاس no-anim می‌گیره */
+  el.classList.toggle("no-anim", _catFirstRenderDone);
+  _catFirstRenderDone = true;
+
+  const rbtn = document.getElementById("reorderCatsBtn");
+  const addBtn = document.getElementById("addCatBtn");
+  const tools = document.getElementById("catReorderTools");
+
+  /* swap بین حالت عادی و حالت مرتب‌سازی — جای دکمه‌ها عوض نمی‌شه */
+  if (rbtn) rbtn.hidden = _catReordering;
+  if (addBtn) addBtn.hidden = _catReordering;
+  if (tools) tools.hidden = !_catReordering;
+  if (rbtn) rbtn.disabled = !DATA.categories.length;
+
   if (!DATA.categories.length) {
-    el.innerHTML = `<div style="font-size:var(--f-xs);color:var(--dim);padding:6px 2px">هنوز دسته‌ای نداری.</div>`;
+    el.classList.remove("reordering");
+    el.innerHTML = `<div class="cat-empty">هنوز دسته‌ای نداری.</div>`;
+    if (tools) tools.hidden = true;
+    updateCatReorderControls();
     return;
   }
+
+  el.classList.toggle("reordering", _catReordering);
+
   el.innerHTML = DATA.categories
     .map((c) => {
       const n = DATA.prompts.filter((p) => p.category === c.id).length;
+      if (_catReordering) {
+        const sel = _catSelected.has(c.id);
+        return `<button type="button" class="cat-item selectable${
+          sel ? " selected" : ""
+        }" data-id="${c.id}" aria-pressed="${sel ? "true" : "false"}">
+<span class="cat-check" aria-hidden="true">${icon("check")}</span>
+<span class="dot ${c.color}"></span>
+<span class="cat-item-name">${esc(c.name)}</span>
+<span class="cat-item-cnt">${n}</span>
+</button>`;
+      }
       return `<div class="cat-item" data-id="${c.id}">
 <span class="dot ${c.color}"></span>
 <span class="cat-item-name">${esc(c.name)}</span>
@@ -947,6 +1258,129 @@ function renderCatList() {
 </div>`;
     })
     .join("");
+
+  updateCatReorderControls();
+}
+
+function updateCatReorderControls() {
+  const info = document.getElementById("catSelInfo");
+  const upBtn = document.getElementById("catMoveUpBtn");
+  const dnBtn = document.getElementById("catMoveDownBtn");
+  const doneBtn = document.getElementById("catReorderDoneBtn");
+
+  const n = _catSelected.size;
+  if (info) {
+    info.textContent = n ? toFaNum(n) + " انتخاب" : "چیزی انتخاب نشده";
+    /* تو موبایل باریک، ::before این رو نشون می‌ده */
+    info.dataset.count = toFaNum(n);
+  }
+  if (doneBtn) {
+    /* dکمهٔ پایان همیشه فعاله، حتی اگه چیزی انتخاب نشده — برای خروج */
+    doneBtn.disabled = false;
+  }
+
+  const indices = [..._catSelected]
+    .map((id) => DATA.categories.findIndex((c) => c.id === id))
+    .filter((i) => i >= 0)
+    .sort((a, b) => a - b);
+
+  const canUp = indices.length > 0 && indices[0] > 0;
+  const canDown =
+    indices.length > 0 &&
+    indices[indices.length - 1] < DATA.categories.length - 1;
+
+  if (upBtn) upBtn.disabled = !canUp;
+  if (dnBtn) dnBtn.disabled = !canDown;
+}
+
+function enterCatReorderMode() {
+  if (_catReordering) return;
+  _catReordering = true;
+  _catSelected.clear();
+  renderCatList();
+  SFX.play("tick");
+}
+function exitCatReorderMode() {
+  if (!_catReordering) return;
+  _catReordering = false;
+  _catSelected.clear();
+  renderCatList();
+  SFX.play("tick");
+}
+function toggleCatSelection(id) {
+  const sel = !_catSelected.has(id);
+  if (sel) _catSelected.add(id);
+  else _catSelected.delete(id);
+
+  /* فقط همون ردیف رو آپدیت کن — نه کل لیست.
+     اگه renderCatList() رو صدا بزنیم، DOM از نو ساخته می‌شه و
+     انیمیشن همهٔ ردیف‌های انتخاب‌شده دوباره اجرا می‌شه. */
+  const row = document.querySelector(
+    `#catList .cat-item[data-id="${CSS.escape(id)}"]`
+  );
+  if (row) {
+    row.classList.toggle("selected", sel);
+    row.setAttribute("aria-pressed", sel ? "true" : "false");
+  }
+  updateCatReorderControls();
+}
+
+/* حرکت گروهی — delta = -1 (بالا) یا +1 (پایین) */
+function moveSelectedCategories(delta) {
+  const indices = [..._catSelected]
+    .map((id) => DATA.categories.findIndex((c) => c.id === id))
+    .filter((i) => i >= 0)
+    .sort((a, b) => a - b);
+
+  if (!indices.length) return;
+  if (delta === -1 && indices[0] === 0) return;
+  if (
+    delta === 1 &&
+    indices[indices.length - 1] === DATA.categories.length - 1
+  )
+    return;
+
+  commit((d) => {
+    const cats = d.categories;
+    if (delta === -1) {
+      for (let k = 0; k < indices.length; k++) {
+        const i = indices[k];
+        const tmp = cats[i - 1];
+        cats[i - 1] = cats[i];
+        cats[i] = tmp;
+      }
+    } else {
+      for (let k = indices.length - 1; k >= 0; k--) {
+        const i = indices[k];
+        const tmp = cats[i + 1];
+        cats[i + 1] = cats[i];
+        cats[i] = tmp;
+      }
+    }
+  });
+
+  SFX.play("tick");
+  renderCatList();
+
+  const el = document.getElementById("catList");
+  if (!el) return;
+
+  /* ۱. انیمیشن تیک/پالس رو موقع re-render خفه کن — وگرنه هر جابه‌جایی
+        دوباره تیک‌ها رو انیمیت می‌کنه و آزاردهنده می‌شه. */
+  el.classList.add("no-check-anim");
+  requestAnimationFrame(() =>
+    requestAnimationFrame(() => el.classList.remove("no-check-anim"))
+  );
+
+  /* ۲. ولی highlight «جابه‌جا شد» رو نشون بده */
+  _catSelected.forEach((id) => {
+    const row = el.querySelector(
+      `.cat-item[data-id="${CSS.escape(id)}"]`
+    );
+    if (!row) return;
+    row.classList.add("moved");
+    setTimeout(() => row.classList.remove("moved"), 620);
+  });
 }
 
 function catById(id) {
@@ -958,20 +1392,32 @@ function catById(id) {
     }
   );
 }
+
+/* کش haystack جست‌وجو — کلید: id، اعتبار: updatedAt
+   فقط وقتی پرامپت ویرایش شه دوباره محاسبه می‌شه */
+const _hayCache = new Map();
+function _haystack(p) {
+  const cached = _hayCache.get(p.id);
+  if (cached && cached.at === p.updatedAt) return cached.h;
+  const h = norm(
+    [
+      p.title,
+      p.description || "",
+      (p.tags || []).join(" "),
+      p.content,
+    ].join(" "),
+  );
+  _hayCache.set(p.id, { at: p.updatedAt, h });
+  return h;
+}
+
 function filtered() {
   const q = norm(query);
   const terms = q.split(" ").filter(Boolean);
   const arr = DATA.prompts.filter((p) => {
     if (activeCat !== "all" && p.category !== activeCat) return false;
     if (!terms.length) return true;
-    const hay = norm(
-      [
-        p.title,
-        p.description || "",
-        (p.tags || []).join(" "),
-        p.content,
-      ].join(" "),
-    );
+    const hay = _haystack(p);
     return terms.every((t) => hay.indexOf(t) >= 0);
   });
   const sort = PREFS.sort || "updated";
@@ -991,11 +1437,15 @@ function filtered() {
 }
 
 let _firstRenderDone = false;
+const ANIM_CAP = 20; /* بالای این تعداد، انیمیشن ورود معنی نداره — فقط شلوغیه */
+
 function renderGrid() {
   const g = $("#grid");
   if (_firstRenderDone) g.classList.add("no-anim");
   else _firstRenderDone = true;
   const list = filtered();
+  /* اگه لیست بزرگه، همهٔ کارت‌ها no-anim می‌شن */
+  g.classList.toggle("mass-list", list.length > ANIM_CAP);
   if (!list.length) {
     const empty = DATA.prompts.length === 0;
     g.innerHTML = `<div class="empty" style="grid-column:1/-1">
@@ -1009,7 +1459,10 @@ stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
 ${
 empty
 ? `<h3>هنوز پرامپتی نداری</h3>
-<p>روی «＋ پرامپت جدید» بزن یا از تنظیمات «۶ پرامپت پیش‌فرض» را اضافه کن.</p>`
+<p>روی «＋ پرامپت جدید» بزن یا از کتابخانه شروع کن.</p>
+<button class="empty-cta" type="button" data-empty-act="library">
+${icon("sparkle")}<span>رفتن به کتابخانه</span>
+</button>`
 : `<h3>موردی پیدا نشد</h3>
 <p>دستهٔ دیگری را امتحان کن یا متن جست‌وجو را کوتاه‌تر کن.</p>`
 }
@@ -1103,6 +1556,7 @@ let suppressClickUntil = 0;
 const selectedIds = new Set();
 
 function enterSelectMode(initialId) {
+  if (selectMode) return;
   selectMode = true;
   selectedIds.clear();
   if (initialId) selectedIds.add(initialId);
@@ -1115,8 +1569,11 @@ function enterSelectMode(initialId) {
   }
   updateCardsSelection();
   updateSelBar();
+  _navPush("select");
 }
-function exitSelectMode() {
+/* خروج خالص بدون دست زدن به history — برای popstate */
+function _exitSelectModeRaw() {
+  if (!selectMode) return;
   selectMode = false;
   selectedIds.clear();
   document.body.classList.remove("selmode");
@@ -1128,6 +1585,13 @@ function exitSelectMode() {
   }
   updateCardsSelection();
   updateSelBar();
+}
+
+/* خروج از دکمهٔ X یا بعد از انجام عملیات — state رو هم pop می‌کنه */
+function exitSelectMode() {
+  if (!selectMode) return;
+  _exitSelectModeRaw();
+  _navSilentBack();
 }
 function toggleCardSelection(id) {
   if (selectedIds.has(id)) selectedIds.delete(id);
@@ -1327,11 +1791,13 @@ function openBulkMove() {
     })
     .join("");
   $("#bulkMoveBack").classList.add("open");
+  _navPush("overlay", "bulkMoveBack");
   refreshFocusTrap();
 }
 function closeBulkMove() {
-  $("#bulkMoveBack").classList.remove("open");
-  refreshFocusTrap();
+  if (!$("#bulkMoveBack")?.classList.contains("open")) return;
+  _CLOSE_RAW.bulkMoveBack();
+  _navSilentBack();
 }
 
 /* ورود با نگه‌داشتن روی کارت (لمس طولانی موبایل) */
@@ -1402,7 +1868,14 @@ $("#grid").addEventListener("click", (e) => {
     return;
   }
   const card = e.target.closest(".card");
-  if (!card) return;
+  if (!card) {
+    const cta = e.target.closest("[data-empty-act]");
+    if (cta && cta.dataset.emptyAct === "library") {
+      e.preventDefault();
+      openDrawer("library");
+    }
+    return;
+  }
   if (selectMode) {
     e.preventDefault();
     e.stopPropagation();
@@ -1563,16 +2036,6 @@ function updatePreviewGutter(text) {
   gutter.scrollTop = 0;
 }
 
-/* هم‌زمانی اسکرول عمودی گاتر با متن پیش‌نمایش */
-(function bindPreviewGutterSync() {
-  const pre = document.getElementById("pvContent");
-  const gutter = document.getElementById("pvGutter");
-  if (!pre || !gutter) return;
-  pre.addEventListener("scroll", () => {
-    gutter.scrollTop = pre.scrollTop;
-  });
-})();
-
 function openPreview(p) {
   currentPvId = p.id;
   const cat = catById(p.category);
@@ -1589,7 +2052,10 @@ function openPreview(p) {
   }
 
   $$("#pvDrawer .var-hint").forEach((el) => el.remove());
-  if (vars.length) {
+  /* hint فقط بار اول نشون داده می‌شه — توضیح کامل تو «درباره ← راهنما» */
+  if (vars.length && !PREFS.varHintSeen) {
+    PREFS.varHintSeen = true;
+    savePrefs();
     const hint = document.createElement("div");
     hint.className = "var-hint";
     hint.innerHTML =
@@ -1609,15 +2075,13 @@ function openPreview(p) {
   $("#pvDrawer").classList.add("open");
   $("#pvDrawer").setAttribute("aria-hidden", "false");
   $("#pvBack").classList.add("open");
+  _navPush("overlay", "pvDrawer");
   refreshFocusTrap();
 }
 function closePreview() {
-  currentPvId = null;
-  $("#pvDrawer").classList.remove("open");
-  $("#pvDrawer").setAttribute("aria-hidden", "true");
-  $("#pvBack").classList.remove("open");
-  closeAiMenu();
-  refreshFocusTrap();
+  if (!$("#pvDrawer")?.classList.contains("open")) return;
+  _CLOSE_RAW.pvDrawer();
+  _navSilentBack();
 }
 
 function renderAiMenu() {
@@ -1747,6 +2211,7 @@ function openVarModal(p, vars, opts) {
 
   updateVarPreview();
   $("#varModalBack").classList.add("open");
+  _navPush("overlay", "varModalBack");
   refreshFocusTrap();
   setTimeout(() => {
     if (inputs[0]) inputs[0].focus();
@@ -1782,9 +2247,9 @@ function setVarPreviewOpen(open) {
   }
 }
 function closeVarModal() {
-  $("#varModalBack").classList.remove("open");
-  refreshFocusTrap();
-  varState = null;
+  if (!$("#varModalBack")?.classList.contains("open")) return;
+  _CLOSE_RAW.varModalBack();
+  _navSilentBack();
 }
 function copyVarFinal() {
   if (!varState) return;
@@ -1860,15 +2325,6 @@ function updateEditorGutter() {
   editorGutter.scrollTop = editorArea.scrollTop;
 }
 
-function updateEditorStats() {
-  const v = editorArea.value;
-  const lines = v.split("\n").length;
-  $("#statLines").textContent = toFaNum(lines) + " خط";
-  $("#statChars").textContent = toFaNum(v.length) + " کاراکتر";
-  $("#statWords").textContent = toFaNum(countWords(v)) + " کلمه";
-  $("#statTokens").textContent =
-    "~" + toFaNum(estimateTokens(v)) + " توکن";
-}
 function syncEditor() {
   updateEditorGutter();
   updateEditorStats();
@@ -1876,12 +2332,43 @@ function syncEditor() {
 }
 
 editorArea.addEventListener("input", syncEditor);
-editorArea.addEventListener("scroll", () => {
-  editorGutter.scrollTop = editorArea.scrollTop;
-});
+editorArea.addEventListener(
+  "scroll",
+  () => {
+    /* scrollTop mirror — ساده‌ترین روش، همیشه هم‌تراز.
+       transform رو تست کردیم ولی تو WebView آفست عمودی می‌ساخت. */
+    editorGutter.scrollTop = editorArea.scrollTop;
+  },
+  { passive: true }
+);
+
+/* بازسازی گاترها بعد از لود فونت — فونت Vazirmatn async لود می‌شه و
+   قبل از رسیدنش، wrap شدن خطوط با متریک فونت fallback اندازه‌گیری
+   می‌شه. نتیجه: شماره‌های گاتر از خطوط متن جدا می‌افتن. بعد از لود
+   فونت، کش رو باطل کن و همه‌چیز رو دوباره اندازه بگیر. */
+if (document.fonts && document.fonts.ready) {
+  document.fonts.ready.then(() => {
+    _gutterCache = { lines: [], counts: [], width: -1 };
+    if (editorArea && editorArea.value) {
+      updateEditorGutter();
+    }
+    const pv = document.getElementById("pvContent");
+    if (pv && pv.textContent) {
+      updatePreviewGutter(pv.textContent);
+    }
+  });
+}
+
 /* موبایل: وقتی فوکوس میره رو متن (یعنی کیبورد باز می‌شه)، متادیتا رو جمع کن
    تا فضای متن + دکمه‌های پایین همیشه تضمین‌شده باشه —
    مستقل از موقعیت تو سند، بدون نیاز به اسکرول کل مودال */
+editorArea.addEventListener("focus", () => {
+  if (window.matchMedia("(max-width: 760px)").matches) {
+    editorModal.classList.add("meta-hidden");
+    metaToggleBtn.classList.remove("on");
+    metaToggleBtn.setAttribute("aria-pressed", "false");
+  }
+});
 
 editorArea.addEventListener("keydown", (e) => {
   if (
@@ -1926,6 +2413,13 @@ function refreshPromptCatSelect(selected) {
   $("#pCat").value = fallback;
 }
 function openModal(p) {
+  /* روی موبایل، بدنه رو قفل کن تا iOS موقع فوکوس، layout رو نکشه بالا */
+  if (isMobile()) {
+    const y = window.scrollY;
+    document.body.dataset.kbScroll = String(y);
+    document.body.style.top = `-${y}px`;
+    document.body.classList.add("kb-lock");
+  }
   $("#modalTitle").textContent = p ? "ویرایش پرامپت" : "افزودن پرامپت";
   $("#pId").value = p ? p.id : "";
   $("#pTitle").value = p ? p.title : "";
@@ -1940,9 +2434,11 @@ function openModal(p) {
 
   applyTextDir(editorArea, editorArea.value);
   editorArea.scrollTop = 0;
+  editorGutter.scrollTop = 0;
   scrollLogicalStart(editorArea);
 
   $("#modalBack").classList.add("open");
+  _navPush("overlay", "modalBack");
   refreshFocusTrap();
   syncEditor();
 
@@ -1952,8 +2448,9 @@ function openModal(p) {
   }, 100);
 }
 function closeModal() {
-  $("#modalBack").classList.remove("open");
-  refreshFocusTrap();
+  if (!$("#modalBack")?.classList.contains("open")) return;
+  _CLOSE_RAW.modalBack();
+  _navSilentBack();
 }
 function ensureMetaVisible() {
   if (editorModal.classList.contains("meta-hidden")) {
@@ -2042,12 +2539,14 @@ function openCatModal(cat) {
     b.classList.toggle("on", b.dataset.c === cur);
   });
   $("#catModalBack").classList.add("open");
+  _navPush("overlay", "catModalBack");
   refreshFocusTrap();
   setTimeout(() => $("#catName").focus(), 100);
 }
 function closeCatModal() {
-  $("#catModalBack").classList.remove("open");
-  refreshFocusTrap();
+  if (!$("#catModalBack")?.classList.contains("open")) return;
+  _CLOSE_RAW.catModalBack();
+  _navSilentBack();
 }
 function saveCatModal() {
   const id = $("#catId").value;
@@ -2079,6 +2578,21 @@ function saveCatModal() {
     toast("دسته افزوده شد");
   }
   closeCatModal();
+}
+
+/* جابه‌جایی دسته در آرایه — delta = -1 (بالا) یا +1 (پایین) */
+function moveCategory(id, delta) {
+  const idx = DATA.categories.findIndex((c) => c.id === id);
+  if (idx < 0) return;
+  const newIdx = idx + delta;
+  if (newIdx < 0 || newIdx >= DATA.categories.length) return;
+  commit((d) => {
+    const cats = d.categories;
+    const tmp = cats[idx];
+    cats[idx] = cats[newIdx];
+    cats[newIdx] = tmp;
+  });
+  SFX.play("tick");
 }
 
 async function deleteCategory(id) {
@@ -2334,6 +2848,7 @@ function openMobileSearchPanel() {
   mSearchBtn.setAttribute("title", "بستن");
   mSearchBtn.setAttribute("aria-label", "بستن");
   mSearchBtn.setAttribute("aria-expanded", "true");
+  _navPush("overlay", "mSearch");
   refreshFocusTrap();
   setTimeout(() => {
     mSearchIn.focus();
@@ -2341,15 +2856,9 @@ function openMobileSearchPanel() {
   }, 120);
 }
 function closeMobileSearchPanel() {
-  document.body.classList.remove("msearch-open");
-  mSearchBack.classList.remove("open");
-  mSearch.classList.remove("open");
-  mSearchBtn.classList.remove("on");
-  mSearchBtn.setAttribute("title", "جست‌وجو");
-  mSearchBtn.setAttribute("aria-label", "جست‌وجو");
-  mSearchBtn.setAttribute("aria-expanded", "false");
-  mSearchIn.blur();
-  refreshFocusTrap();
+  if (!mSearch.classList.contains("open")) return;
+  _CLOSE_RAW.mSearch();
+  _navSilentBack();
 }
 
 const debouncedGridRender = debounce(renderGrid, 160);
@@ -2441,6 +2950,7 @@ const ST_VIEWS = {
   data: "داده و پشتیبان",
   trash: "سطل آشغال",
   about: "درباره",
+  help: "راهنمای استفاده",
 };
 
 const ST_THEME_LABEL = { dark: "تاریک", light: "روشن", system: "سیستم" };
@@ -2457,9 +2967,158 @@ function isDesktopSettings() {
   return window.matchMedia("(min-width: 900px)").matches;
 }
 
-let _viewHistory = [];
+/* ═══ History Navigation ═══
+   هر overlay باز → یه state push. back فیزیکی → popstate → بستن بالاترین.
+   X button → UI فوری + silent back (بدون اجرای popstate دوباره). */
 
-/* نمایش view بدون دست زدن به تاریخچه — استفادهٔ داخلی */
+const _HK = "pmNav";
+let _suppressPopstate = false;
+let _goingBack = false;
+
+const VIEW_PARENT = {
+  trash: "data",
+  help: "about",
+};
+
+/* ترتیب پایین به بالا — برای پیدا کردن بالاترین overlay باز */
+const _OVERLAY_ORDER = [
+  "drawer",
+  "pvDrawer",
+  "mSearch",
+  "modalBack",
+  "varModalBack",
+  "catModalBack",
+  "dialogBack",
+  "bulkMoveBack",
+  "chlogBack",
+  "libPreviewBack",
+  "libSettingsBack",
+];
+
+function _navPush(kind, id, view) {
+  const prevDepth = (history.state && history.state.depth) || 0;
+  try {
+    history.pushState(
+      { [_HK]: 1, kind, id: id || null, view: view || null, depth: prevDepth + 1 },
+      ""
+    );
+  } catch (_) {}
+}
+
+function _navSilentBack() {
+  if (!history.state || !history.state[_HK]) return;
+  /* اسکرول رو قبل و بعد از back دستی حفظ می‌کنیم.
+     history.back غیرهمزمانـه و مرورگر ممکنه scrollRestoration
+     رو (حتی تو حالت manual) با یه تیک تأخیر اعمال کنه. */
+  const y = window.scrollY;
+  _suppressPopstate = true;
+  try {
+    history.back();
+  } catch (_) {
+    _suppressPopstate = false;
+    return;
+  }
+  /* چند فریم پشت‌سرهم چک کن — هر بار اگه مرورگر پرش زد، برگردون */
+  const restore = () => {
+    if (window.scrollY !== y) window.scrollTo(0, y);
+  };
+  requestAnimationFrame(restore);
+  setTimeout(restore, 0);
+  setTimeout(restore, 50);
+  setTimeout(restore, 150);
+}
+
+function _topOpenOverlay() {
+  for (let i = _OVERLAY_ORDER.length - 1; i >= 0; i--) {
+    const el = document.getElementById(_OVERLAY_ORDER[i]);
+    if (el && el.classList.contains("open")) return _OVERLAY_ORDER[i];
+  }
+  return null;
+}
+
+/* بستن خالص بدون side-effect تاریخچه — برای popstate */
+const _CLOSE_RAW = {
+  drawer: () => {
+    const d = $("#drawer");
+    if (!d || !d.classList.contains("open")) return;
+    d.classList.remove("open");
+    $("#drawerBack")?.classList.remove("open");
+    refreshFocusTrap();
+  },
+  pvDrawer: () => {
+    const d = $("#pvDrawer");
+    if (!d || !d.classList.contains("open")) return;
+    currentPvId = null;
+    d.classList.remove("open");
+    d.setAttribute("aria-hidden", "true");
+    $("#pvBack")?.classList.remove("open");
+    closeAiMenu();
+    refreshFocusTrap();
+  },
+  mSearch: () => {
+    if (!$("#mSearch")?.classList.contains("open")) return;
+    document.body.classList.remove("msearch-open");
+    $("#mSearchBack")?.classList.remove("open");
+    $("#mSearch")?.classList.remove("open");
+    $("#mSearchBtn")?.classList.remove("on");
+    $("#mSearchIn")?.blur();
+    refreshFocusTrap();
+  },
+  modalBack: () => {
+    if (!$("#modalBack")?.classList.contains("open")) return;
+    $("#modalBack").classList.remove("open");
+    if (document.body.classList.contains("kb-lock")) {
+      const y = Number(document.body.dataset.kbScroll || 0);
+      document.body.classList.remove("kb-lock");
+      document.body.style.top = "";
+      delete document.body.dataset.kbScroll;
+      window.scrollTo(0, y);
+    }
+    refreshFocusTrap();
+  },
+  varModalBack: () => {
+    if (!$("#varModalBack")?.classList.contains("open")) return;
+    $("#varModalBack").classList.remove("open");
+    varState = null;
+    refreshFocusTrap();
+  },
+  catModalBack: () => {
+    if (!$("#catModalBack")?.classList.contains("open")) return;
+    $("#catModalBack").classList.remove("open");
+    refreshFocusTrap();
+  },
+  dialogBack: () => {
+    if (!$("#dialogBack")?.classList.contains("open")) return;
+    $("#dialogBack").classList.remove("open");
+    refreshFocusTrap();
+    const r = dialogResolve;
+    dialogResolve = null;
+    if (r) r(dialogMode === "prompt" ? null : false);
+  },
+  bulkMoveBack: () => {
+    if (!$("#bulkMoveBack")?.classList.contains("open")) return;
+    $("#bulkMoveBack").classList.remove("open");
+    refreshFocusTrap();
+  },
+  chlogBack: () => {
+    if (!$("#chlogBack")?.classList.contains("open")) return;
+    $("#chlogBack").classList.remove("open");
+    refreshFocusTrap();
+  },
+  libPreviewBack: () => {
+    if (!$("#libPreviewBack")?.classList.contains("open")) return;
+    libPreviewIdx = -1;
+    $("#libPreviewBack").classList.remove("open");
+    refreshFocusTrap();
+  },
+  libSettingsBack: () => {
+    if (!$("#libSettingsBack")?.classList.contains("open")) return;
+    $("#libSettingsBack").classList.remove("open");
+    refreshFocusTrap();
+  },
+};
+
+/* نمایش view — استفادهٔ داخلی */
 function _applyView(view) {
   const drawer = $("#drawer");
   if (!drawer) return;
@@ -2467,8 +3126,13 @@ function _applyView(view) {
   /* روی دسکتاپ، home یک صفحهٔ مستقل نیست — همیشه سایدباره */
   if (desktop && view === "home") view = "appearance";
 
+  const prevView = drawer.dataset.view;
+  const isChange = prevView && prevView !== view;
+  /* back = ناوبری از دکمهٔ back، یا مقصد پدرِ view فعلیه */
+  const isBack = prevView && (_goingBack || VIEW_PARENT[prevView] === view);
+
   drawer.dataset.view = view;
-  drawer.dataset.canBack = _viewHistory.length ? "1" : "0";
+  drawer.dataset.canBack = VIEW_PARENT[view] ? "1" : "0";
 
   const title = $("#drawerTitle");
   if (title) title.textContent = ST_VIEWS[view] || "تنظیمات";
@@ -2485,26 +3149,56 @@ function _applyView(view) {
     r.classList.toggle("active", r.dataset.nav === view);
   });
 
-  if (view === "library") renderLibrary();
+  /* انیمیشن ورود فقط روی viewی که تازه ظاهر شد — home رو دست نمی‌زنیم */
+  if (isChange) {
+    const incoming = drawer.querySelector(`.st-view[data-view="${view}"]`);
+    if (incoming && !incoming.hidden) {
+      incoming.classList.remove("view-in-fwd", "view-in-back");
+      void incoming.offsetWidth; /* force reflow تا animation ری‌استارت شه */
+      incoming.classList.add(isBack ? "view-in-back" : "view-in-fwd");
+    }
+  }
+
+  if (view === "library") {
+    renderLibrary();
+    updateLibModeUI();
+  }
   if (view === "trash") renderTrash();
+  /* هر بار از view دسته‌ها خارج شیم، حالت مرتب‌سازی ریست شه */
+  if (view !== "categories" && _catReordering) {
+    _catReordering = false;
+    _catSelected.clear();
+  }
+  /* برگشت به view دسته‌ها، stagger ورود دوباره اجرا شه */
+  if (view === "categories") {
+    _catFirstRenderDone = false;
+  }
 
   const body = drawer.querySelector(".drawer-body");
   if (body) body.scrollTop = 0;
 }
 
-/* ناوبری به یه view */
+/* ناوبری به یه view — history state هم push می‌شه */
 function navigateSettings(view) {
+  const drawer = $("#drawer");
+  if (!drawer) return;
+  if (drawer.dataset.view === view) return;
+  if (drawer.classList.contains("open")) {
+    _navPush("drawer", "drawer", view);
+  }
   _applyView(view);
 }
 
-/* برگشت به والد منطقی — trash → data، بقیه → home */
-const VIEW_PARENT = {
-  trash: "data",
-};
-
+/* دکمهٔ back داخلی — به history مرورگر واگذار می‌کنه */
 function navigateBack() {
-  const cur = $("#drawer")?.dataset.view;
-  _applyView(VIEW_PARENT[cur] || "home");
+  const drawer = $("#drawer");
+  if (!drawer || !drawer.classList.contains("open")) return;
+  const cur = drawer.dataset.view;
+  if (!cur || cur === "home") {
+    closeDrawer();
+    return;
+  }
+  history.back();
 }
 
 function renderSettingsValues() {
@@ -2527,24 +3221,59 @@ function renderSettingsValues() {
 
 function openDrawer(initialView) {
   const drawer = $("#drawer");
-  /* اگه دراور از قبل بسته‌ست، state رو ریست کن قبل از نمایش */
-  if (drawer && !drawer.classList.contains("open")) {
-    _viewHistory = [];
-    delete drawer.dataset.view;
+  if (!drawer) return;
+  if (drawer.classList.contains("open")) {
+    navigateSettings(
+      initialView || (isDesktopSettings() ? "appearance" : "home")
+    );
+    return;
   }
+  delete drawer.dataset.view;
   const target =
     initialView || (isDesktopSettings() ? "appearance" : "home");
-  navigateSettings(target);
+
+  /* موبایل: اگه target=home نیست، home رو اول push کن
+     تا دکمهٔ back اول به home برگرده، نه خارج از اپ */
+  if (!isDesktopSettings() && target !== "home") {
+    _navPush("drawer", "drawer", "home");
+  }
+  _navPush("drawer", "drawer", target);
+
+  _applyView(target);
   drawer.classList.add("open");
   $("#drawerBack").classList.add("open");
   renderCatList();
   renderSettingsValues();
   refreshFocusTrap();
 }
+
 function closeDrawer() {
-  $("#drawer").classList.remove("open");
-  $("#drawerBack").classList.remove("open");
-  refreshFocusTrap();
+  const drawer = $("#drawer");
+  if (!drawer || !drawer.classList.contains("open")) return;
+  /* UI فوری */
+  _CLOSE_RAW.drawer();
+  /* دراور ممکنه چند تا state push کرده باشه (mobile: home + target + nav)
+     پس همه رو یه‌جا pop می‌کنیم، نه فقط یکی. */
+  if (history.state && history.state[_HK]) {
+    const depth = history.state.depth || 0;
+    if (depth > 0) {
+      const y = window.scrollY;
+      _suppressPopstate = true;
+      try {
+        history.go(-depth);
+      } catch (_) {
+        _suppressPopstate = false;
+        return;
+      }
+      const restore = () => {
+        if (window.scrollY !== y) window.scrollTo(0, y);
+      };
+      requestAnimationFrame(restore);
+      setTimeout(restore, 0);
+      setTimeout(restore, 50);
+      setTimeout(restore, 150);
+    }
+  }
 }
 
 $("#stBack")?.addEventListener("click", navigateBack);
@@ -2553,6 +3282,57 @@ $("#drawer")?.addEventListener("click", (e) => {
   if (!nav) return;
   navigateSettings(nav.dataset.nav);
 });
+
+/* ═══ دکمهٔ back فیزیکی ═══ */
+window.addEventListener("popstate", (e) => {
+  if (_suppressPopstate) {
+    _suppressPopstate = false;
+    return;
+  }
+  const st = e.state;
+
+  /* برگشت به یه state داخلی دراور — فقط view رو ست کن */
+  if (st && st[_HK] && st.kind === "drawer" && st.view) {
+    const drawer = $("#drawer");
+    if (drawer && drawer.classList.contains("open")) {
+      if (drawer.dataset.view !== st.view) {
+        _goingBack = true;
+        _applyView(st.view);
+        _goingBack = false;
+      }
+      refreshFocusTrap();
+      return;
+    }
+  }
+
+  /* بالاترین overlay باز رو ببند */
+  const top = _topOpenOverlay();
+  if (top) {
+    _CLOSE_RAW[top]();
+    refreshFocusTrap();
+    return;
+  }
+
+  /* هیچ overlay باز نیست ولی سلکت فعاله — از سلکت خارج شو */
+  if (selectMode) {
+    _exitSelectModeRaw();
+    refreshFocusTrap();
+    return;
+  }
+});
+
+/* اگه بعد از reload تو state دراور گیر کردیم، پاکش کن */
+(function _cleanupStaleHistory() {
+  if (history.state && history.state[_HK]) {
+    const d = history.state.depth || 1;
+    _suppressPopstate = true;
+    try {
+      history.go(-d);
+    } catch (_) {
+      _suppressPopstate = false;
+    }
+  }
+})();
 
 /* ═══ صفحهٔ صدا: اسلایدر شدت + پیش‌نمایش ═══ */
 function updateSoundSections() {
@@ -2584,6 +3364,98 @@ function updateSoundSections() {
     setTimeout(() => SFX.play("undo"), 440);
   });
 })();
+/* ── موتور PSwitch: اسلایدر بین N گزینه ──
+   موقعیت با JS اندازه‌گیری می‌شه چون CSS نمی‌تونه بفهمه کدوم گزینه فعاله.
+   ResizeObserver روی خود المان، برای باز شدن دیالوگ و تغییر عرض.
+   برای هر تعداد گزینه کار می‌کنه — flex:1 پهنای مساوی می‌ده. */
+const _pswInstances = new Map();
+
+function _initPsw(el) {
+  if (_pswInstances.has(el)) return;
+  const slide = el.querySelector(".pswitch-slide");
+  if (!slide) return;
+
+  let raf = 0;
+  const position = () => {
+    const active =
+      el.querySelector(".pswitch-opt.on") || el.querySelector(".pswitch-opt");
+    if (!active) return;
+    const r = active.getBoundingClientRect();
+    const er = el.getBoundingClientRect();
+    /* اگه مخفی‌ست (width=0)، هیچ کاری نکن */
+    if (r.width === 0) return;
+    slide.style.width = r.width + "px";
+    slide.style.transform = `translateX(${r.left - er.left}px)`;
+    el.classList.add("ready");
+  };
+  const schedule = () => {
+    cancelAnimationFrame(raf);
+    raf = requestAnimationFrame(position);
+  };
+  _pswInstances.set(el, schedule);
+
+  if (window.ResizeObserver) {
+    new ResizeObserver(schedule).observe(el);
+  }
+  schedule();
+}
+
+function _syncPsw(el) {
+  const key = el.dataset.pref;
+  if (!key) return;
+  el.querySelectorAll(".pswitch-opt").forEach((b) => {
+    const on = b.dataset.v === PREFS[key];
+    b.classList.toggle("on", on);
+    b.setAttribute("aria-pressed", on ? "true" : "false");
+  });
+  const sched = _pswInstances.get(el);
+  if (sched) sched();
+}
+
+function initAllPswitches() {
+  $$(".pswitch[data-pref]").forEach((el) => {
+    if (!_pswInstances.has(el)) {
+      _initPsw(el);
+      el.querySelectorAll(".pswitch-opt").forEach((b) => {
+        b.addEventListener("click", () => {
+          const key = el.dataset.pref;
+          if (!key || PREFS[key] === b.dataset.v) return;
+          PREFS[key] = b.dataset.v;
+          savePrefs();
+          applyPrefs();
+          _syncPsw(el);
+          renderSettingsValues();
+          if (key === "libMode") {
+            updateLibModeUI();
+            if ($("#drawer")?.dataset.view === "library") {
+              renderLibrary();
+            }
+          }
+          if (key === "sound") {
+            SFX.setEnabled(PREFS.sound === "on");
+            updateSoundSections();
+            if (PREFS.sound === "on") SFX.play("tick");
+          }
+          SFX.play("tick");
+        });
+      });
+    }
+    _syncPsw(el);
+  });
+}
+
+/* بعد از لود فونت دوباره اندازه‌گیری */
+if (document.fonts?.ready) {
+  document.fonts.ready.then(() => {
+    _pswInstances.forEach((sched) => sched());
+  });
+}
+
+/* resize پنجره */
+window.addEventListener("resize", () => {
+  _pswInstances.forEach((sched) => sched());
+});
+
 function renderPrefs() {
   $$(".seg[data-pref]").forEach((seg) => {
     const key = seg.dataset.pref;
@@ -2613,6 +3485,10 @@ function renderPrefs() {
         if (key === "soundTheme") {
           SFX.setTheme(PREFS.soundTheme);
           setTimeout(() => SFX.play("copy"), 30);
+        }
+        if (key === "libMode") {
+          updateLibModeUI();
+          if ($("#drawer")?.dataset.view === "library") renderLibrary();
         }
       };
     });
@@ -3160,36 +4036,41 @@ function askImportMode(count, rejectedN, onDone) {
       : `این فایل ${count} پرامپت دارد.<br>
 در اپ فعلی ${existing} پرامپت داری.`;
 
+    const modal = $("#dialogModal");
+    if (modal) {
+      modal.classList.remove("is-danger", "is-help", "is-down");
+      modal.classList.add("is-down");
+    }
+
     const dIcon = $("#dialogIcon");
+    dIcon.className = "dialog-ic";
     dIcon.innerHTML = icon("down");
-    dIcon.className = "modal-h-ic is-down";
+
     $("#dialogTitle").textContent = "ورودی فایل";
     $("#dialogMsg").innerHTML = msg;
     $("#dialogFieldWrap").style.display = "none";
 
-    /* سه دکمه: ادغام / جایگزینی / انصراف */
-    const foot = document.querySelector("#dialogBack .modal .foot");
+    /* سه دکمه: انصراف (راست) — جایگزین (وسط) — ادغام (چپ) */
+    const foot = document.querySelector("#dialogBack .dialog-foot");
     foot.innerHTML = `
-<button class="btn g" id="importMergeBtn">ادغام کن</button>
-<button class="btn dgr" id="importReplaceBtn">جایگزین کن</button>
-<button class="btn" id="importCancelBtn">انصراف</button>
+<button class="btn ghost" id="importCancelBtn">انصراف</button>
+<button class="btn" id="importReplaceBtn">جایگزین</button>
+<button class="btn g" id="importMergeBtn">ادغام</button>
 `;
 
     $("#importMergeBtn").onclick = () => {
       closeDialog("merge");
     };
     $("#importReplaceBtn").onclick = () => {
-      /* حتی در جایگزینی، یک تأیید دوباره */
-      const ok = confirm(
-        "همهٔ پرامپت‌ها و دسته‌های فعلی حذف می‌شوند. مطمئن هستی؟",
-      );
-      if (ok) closeDialog("replace");
+      /* پیام خود مودال به‌قدر کافی هشدار داده — تأیید دوباره لازم نیست */
+      closeDialog("replace");
     };
     $("#importCancelBtn").onclick = () => {
       closeDialog("cancel");
     };
 
     $("#dialogBack").classList.add("open");
+    _navPush("overlay", "dialogBack");
     refreshFocusTrap();
     setTimeout(() => $("#importMergeBtn").focus(), 100);
   });
@@ -3570,6 +4451,14 @@ $("#themeBtn").onclick = () => {
 $("#closeDrawer").onclick = closeDrawer;
 $("#drawerBack").onclick = closeDrawer;
 $("#addCatBtn").onclick = () => openCatModal();
+$("#reorderCatsBtn")?.addEventListener("click", enterCatReorderMode);
+$("#catReorderDoneBtn")?.addEventListener("click", exitCatReorderMode);
+$("#catMoveUpBtn")?.addEventListener("click", () =>
+  moveSelectedCategories(-1)
+);
+$("#catMoveDownBtn")?.addEventListener("click", () =>
+  moveSelectedCategories(1)
+);
 $("#exportBtn").onclick = exportData;
 $("#importBtn").onclick = () => $("#importFile").click();
 $("#importFile").addEventListener("change", (e) => {
@@ -3581,11 +4470,19 @@ $("#importFile").addEventListener("change", (e) => {
 $("#resetBtn").onclick = resetAll;
 
 $("#catList").addEventListener("click", (e) => {
-  const btn = e.target.closest("[data-act]");
-  if (!btn) return;
-  const item = btn.closest(".cat-item");
+  const item = e.target.closest(".cat-item");
   if (!item) return;
   const id = item.dataset.id;
+
+  /* حالت مرتب‌سازی: کلیک روی ردیف = toggle انتخاب */
+  if (_catReordering) {
+    toggleCatSelection(id);
+    return;
+  }
+
+  /* حالت عادی: فقط دکمه‌های ویرایش/حذف */
+  const btn = e.target.closest("[data-act]");
+  if (!btn || btn.disabled) return;
   const act = btn.dataset.act;
   if (act === "edit-cat") {
     const c = DATA.categories.find((x) => x.id === id);
@@ -3678,8 +4575,9 @@ document.addEventListener("keydown", (e) => {
   const overlayOpen = !!document.querySelector(
     ".modal-back.open, .drawer.open, .pv-drawer.open, .msearch.open",
   );
+  const isSlash = e.code === "Slash" || k === "/";
   if (
-    k === "/" &&
+    isSlash &&
     !overlayOpen &&
     !isTypingContext() &&
     !e.ctrlKey &&
@@ -3698,6 +4596,14 @@ document.addEventListener("keydown", (e) => {
   if (k === "Escape") {
     if ($("#libPreviewBack")?.classList.contains("open")) {
       closeLibPreview();
+      return;
+    }
+    if ($("#libSettingsBack")?.classList.contains("open")) {
+      closeLibSettings();
+      return;
+    }
+    if ($("#chlogBack")?.classList.contains("open")) {
+      closeChangelog();
       return;
     }
     if ($("#mdPreviewBack")?.classList.contains("open")) {
@@ -3744,15 +4650,18 @@ document.addEventListener("keydown", (e) => {
     return;
   }
 
-  if ((e.ctrlKey || e.metaKey) && k.toLowerCase() === "s") {
+  /* e.code نه e.key — چون تو چیدمان فارسی e.key می‌شه "س" */
+  const isS = e.code === "KeyS" || k.toLowerCase() === "s";
+  if ((e.ctrlKey || e.metaKey) && isS) {
+    /* Ctrl+S بومی مرورگر بلاک می‌شه — تو ادیتور «ذخیره»، بیرونش سکوت */
+    e.preventDefault();
     if ($("#modalBack").classList.contains("open")) {
-      e.preventDefault();
       savePrompt();
-      return;
     }
+    return;
   }
 
-  if ((e.ctrlKey || e.metaKey) && k === "Enter") {
+  if ((e.ctrlKey || e.metaKey) && (e.code === "Enter" || k === "Enter")) {
     if ($("#modalBack").classList.contains("open")) {
       savePrompt();
       return;
@@ -3779,79 +4688,207 @@ matchMedia("(prefers-color-scheme: dark)").addEventListener(
   },
 );
 
+/* ── resize: فقط وقتی عرض عوض شده دوباره اندازه بگیر ──
+   روی موبایل، باز/بسته شدن کیبورد فقط ارتفاع رو عوض می‌کنه و resize
+   چند بار پشت سر هم fire می‌شه. هر بار force reflow + اندازه‌گیری
+   گاتر گرون‌ـه و باعث lag می‌شه، در حالی که نتیجه‌اش هیچ فرقی نمی‌کنه. */
+let _resizeTimer = null;
+let _lastResizeW = window.innerWidth;
+
 window.addEventListener("resize", () => {
-  updateHeaderHeight();
-  /* بازسازی گاترها بعد از تغییر عرض */
-  if (document.getElementById("pvContent")) {
-    updatePreviewGutter($("#pvContent").textContent);
-  }
-  if (editorArea && $("#modalBack").classList.contains("open")) {
-    updateEditorGutter();
-  }
-  /* سازگاری تنظیمات با تغییر اندازه */
-  const drawer = $("#drawer");
-  if (drawer?.classList.contains("open")) {
-    if (isDesktopSettings() && drawer.dataset.view === "home") {
-      navigateSettings("appearance");
+  const w = window.innerWidth;
+  const widthChanged = Math.abs(w - _lastResizeW) > 1;
+  _lastResizeW = w;
+  if (!widthChanged) return;
+
+  clearTimeout(_resizeTimer);
+  _resizeTimer = setTimeout(() => {
+    updateHeaderHeight();
+    if (document.getElementById("pvContent")) {
+      updatePreviewGutter($("#pvContent").textContent);
     }
-  }
+    if (editorArea && $("#modalBack").classList.contains("open")) {
+      updateEditorGutter();
+    }
+    const drawer = $("#drawer");
+    if (drawer?.classList.contains("open")) {
+      if (isDesktopSettings() && drawer.dataset.view === "home") {
+        navigateSettings("appearance");
+      }
+    }
+  }, 120);
 });
 
-/* ═══════════════ تول‌تیپ لمسی ═══════════════ */
-/* روی دستگاه‌های بدون hover: لمسِ دکمه → نمایش تول‌تیپ به‌مدت ۱.۶ ثانیه */
-(function setupTouchTooltips() {
-  if (!matchMedia("(hover: none)").matches) return;
+/* ═══════════════ موتور tooltip گلوبال ═══════════════
+   چرا گلوبال: کارت‌ها content-visibility: auto دارن که paint containment
+   ایجاد می‌کنه و tooltip‌های بیرون‌زننده (مثل پین که بالای کارت باز می‌شه)
+   رو clip می‌کنه. این موتور tooltip رو تو یه عنصر سراسری با
+   position: fixed نشون می‌ده که از همهٔ contain contexts بیرونه. */
+(function setupGlobalTooltips() {
+  const tip = document.getElementById("gtip");
+  if (!tip) return;
 
-  const HOLD = 1600;
-  let timer = null;
-  let lastEl = null;
+  const isTouch = matchMedia("(hover: none)").matches;
+  let hideTimer = null;
+  let activeEl = null;
+
+  function position(el) {
+    const r = el.getBoundingClientRect();
+    const cx = r.left + r.width / 2;
+    const w = tip.offsetWidth;
+    const h = tip.offsetHeight;
+    const gap = 8;
+
+    /* ترجیح: بالا. اگه جا نیست: پایین. اگه اونم نیست: هر جوری بذار. */
+    let y;
+    if (r.top - h - gap >= 4) {
+      y = r.top - h - gap; /* بالای دکمه */
+    } else if (r.bottom + gap + h <= window.innerHeight - 4) {
+      y = r.bottom + gap; /* زیر دکمه */
+    } else {
+      y = Math.max(4, r.top - h - gap);
+    }
+
+    /* محدود کردن افقی — تولتیپ از لبه‌های viewport بیرون نزنه */
+    let x = cx;
+    const halfW = w / 2;
+    if (x - halfW < 4) x = halfW + 4;
+    if (x + halfW > window.innerWidth - 4) {
+      x = window.innerWidth - halfW - 4;
+    }
+
+    tip.style.left = x + "px";
+    tip.style.top = y + "px";
+  }
 
   function show(el) {
-    if (!el) return;
-    if (lastEl && lastEl !== el) lastEl.classList.remove("tip-show");
-    el.classList.add("tip-show");
-    lastEl = el;
-    clearTimeout(timer);
-    timer = setTimeout(() => {
-      el.classList.remove("tip-show");
-      if (lastEl === el) lastEl = null;
-    }, HOLD);
+    const text = el.getAttribute("data-tip");
+    if (!text) return;
+    activeEl = el;
+    tip.textContent = text;
+    tip.hidden = false;
+
+    /* مرحله ۱: یه بار با ابعاد محتوا — بعد از این فریم، ابعاد پایدارن */
+    position(el);
+
+    /* مرحله ۲: بعد از paint، اگه هنوز همون عنصریم، یه بار دیگه position
+       و کلاس show رو اضافه کن (animation رو اجرا می‌کنه) */
+    requestAnimationFrame(() => {
+      if (activeEl !== el) return;
+      position(el);
+      tip.classList.add("show");
+    });
+
+    clearTimeout(hideTimer);
   }
+
+  function hide() {
+    if (!tip.classList.contains("show")) {
+      tip.hidden = true;
+      activeEl = null;
+      return;
+    }
+    tip.classList.remove("show");
+    const localEl = activeEl;
+    activeEl = null;
+    setTimeout(() => {
+      if (activeEl === null) tip.hidden = true;
+    }, 180);
+    if (localEl) localEl.blur?.();
+  }
+
+  /* دسکتاپ — hover و focus
+     نکته: mouseover/mouseout روی خود دکمه هم fire می‌شن وقتی ماوس وارد
+     یا خارج یه فرزند (مثل SVG) می‌شه. اگه چک نکنیم، hide() و show()
+     پشت‌سرهم اجرا می‌شن و ترنزیشن transform/opacity از صفر شروع می‌شه —
+     همین باعث «لرزش چند پیکسلی» تولتیپ موقع حرکت ریز می‌شه. */
+  document.addEventListener("mouseover", (e) => {
+    if (isTouch) return;
+    const el = e.target.closest("[data-tip]");
+    if (!el || el === activeEl) return;
+    /* اگه از داخل همون دکمه میایم (تغییر فرزند)، نمایش دوباره لازم نیست */
+    if (e.relatedTarget && el.contains(e.relatedTarget)) return;
+    show(el);
+  });
+  document.addEventListener("mouseout", (e) => {
+    if (isTouch) return;
+    const el = e.target.closest("[data-tip]");
+    if (!el) return;
+    /* اگه داریم می‌ریم به یه فرزند، در واقع خارج نشدیم */
+    if (e.relatedTarget && el.contains(e.relatedTarget)) return;
+    hide();
+  });
+  document.addEventListener(
+    "focusin",
+    (e) => {
+      if (isTouch) return;
+      const el = e.target.closest("[data-tip]");
+      if (el) show(el);
+    },
+    true
+  );
+  document.addEventListener(
+    "focusout",
+    (e) => {
+      if (isTouch) return;
+      if (e.target.closest("[data-tip]")) hide();
+    },
+    true
+  );
+
+  /* ── موبایل: نگه‌داشتن → نمایش، برداشتن انگشت → مخفی ── */
+  const TOUCH_HOLD = 220;   /* قبل از نمایش، اینقدر نگه‌داری */
+  const TOUCH_RELEASE = 80; /* بعد از برداشتن انگشت، اینقدر بمونه */
+  let touchTimer = null;
+  let touchEl = null;
 
   document.addEventListener(
     "touchstart",
     (e) => {
       const el = e.target.closest("[data-tip]");
       if (!el) return;
-      show(el);
+      clearTimeout(touchTimer);
+      touchEl = el;
+      touchTimer = setTimeout(() => {
+        if (touchEl === el) show(el);
+      }, TOUCH_HOLD);
     },
-    { passive: true },
+    { passive: true }
   );
 
-  /* با شروع اسکرول یا لمس جای دیگر، پاک شود */
+  const onTouchEnd = () => {
+    clearTimeout(touchTimer);
+    touchTimer = null;
+    touchEl = null;
+    /* تأخیر کوچیک تا کاربر بتونه بخونه، بعد محو */
+    setTimeout(hide, TOUCH_RELEASE);
+  };
+  document.addEventListener("touchend", onTouchEnd, { passive: true });
+  document.addEventListener("touchcancel", onTouchEnd, { passive: true });
+
+  /* اگه انگشت حرکت کرد (اسکرول)، تولتیپ لغو شه */
   document.addEventListener(
-    "scroll",
+    "touchmove",
     () => {
-      if (lastEl) {
-        lastEl.classList.remove("tip-show");
-        lastEl = null;
+      if (touchTimer) {
+        clearTimeout(touchTimer);
+        touchTimer = null;
+        touchEl = null;
       }
-      clearTimeout(timer);
+      hide();
     },
-    { passive: true },
+    { passive: true }
   );
+
+  /* با اسکرول یا لمس جای دیگه، مخفی */
+  document.addEventListener("scroll", hide, { passive: true });
   document.addEventListener(
     "touchstart",
     (e) => {
-      if (!e.target.closest("[data-tip]")) {
-        if (lastEl) {
-          lastEl.classList.remove("tip-show");
-          lastEl = null;
-        }
-        clearTimeout(timer);
-      }
+      if (e.target.closest("[data-tip]")) return;
+      hide();
     },
-    { passive: true },
+    { passive: true }
   );
 })();
 
@@ -3936,6 +4973,8 @@ load();
 })();
 applyPrefs();
 renderPrefs();
+initAllPswitches();
+updateLibModeUI();
 renderChips();
 renderCatList();
 renderGrid();
@@ -4103,24 +5142,15 @@ ${
   /* کانتکست منو فقط دسکتاپ (در موبایل long-press معنایی نداره) */
   const isTouchDevice = matchMedia("(hover: none)").matches;
 
-  /* راست-کلیک روی کارت */
+  /* راست-کلیک روی کارت → منوی عملیات */
   $("#grid").addEventListener("contextmenu", (e) => {
-    e.preventDefault();
     if (isTouchDevice) return;
     if (selectMode) return;
     const card = e.target.closest(".card");
-    if (!card) return;
-    const p = DATA.prompts.find((x) => x.id === card.dataset.id);
-    if (!p) return;
-    show(e.clientX, e.clientY, p);
-  });
-
-  /* راست-کلیک روی فضای خالی گرید → پرامپت جدید */
-  $("#grid").addEventListener("contextmenu", (e) => {
+    if (!card) return; /* فضای خالی: بی‌عمل */
     e.preventDefault();
-    if (isTouchDevice) return;
-    if (e.target.closest(".card")) return;
-    openModal();
+    const p = DATA.prompts.find((x) => x.id === card.dataset.id);
+    if (p) show(e.clientX, e.clientY, p);
   });
 
   document.addEventListener("click", (e) => {
@@ -4205,6 +5235,7 @@ ${
 
 /* ═══════════ کتابخانه: رندر + پیش‌نمایش ═══════════ */
 let libPreviewIdx = -1;
+let _libSwapTimer = null;
 
 function isLibItemAdded(item) {
   return DATA.prompts.some(
@@ -4212,10 +5243,47 @@ function isLibItemAdded(item) {
   );
 }
 
+/* توضیح حالت پیشنهاد حالا تو خود duo هست — نیازی به hint جداگانه نیست. */
+function updateLibModeHint() {}
+function updateLibModeUI() {
+  const manual = PREFS.libMode === "manual";
+  const refreshBtn = $("#libRefreshBtn");
+  if (refreshBtn) refreshBtn.hidden = !manual;
+  updateLibModeHint();
+}
+function openLibSettings() {
+  $("#libSettingsBack").classList.add("open");
+  _navPush("overlay", "libSettingsBack");
+  refreshFocusTrap();
+  /* اسلایدر رو دوباره موقعیت‌دهی کن */
+  const el = document.querySelector('.pswitch[data-pref="libMode"]');
+  if (el) {
+    const sched = _pswInstances.get(el);
+    if (sched) sched();
+  }
+}
+function closeLibSettings() {
+  if (!$("#libSettingsBack")?.classList.contains("open")) return;
+  _CLOSE_RAW.libSettingsBack();
+  _navSilentBack();
+}
+function refreshLibrary() {
+  PREFS.libOffset = (PREFS.libOffset || 0) + 1;
+  savePrefs();
+  renderLibrary();
+  SFX.play("tick");
+  toast("کتابخانه آپدیت شد");
+}
+
 async function renderLibrary() {
   const grid = $("#libGrid");
   if (!grid) return;
-  grid.innerHTML = `<div class="lib-loading">در حال بارگذاری…</div>`;
+
+  /* فقط بار اول که کش خالیه loading نشون بده؛ رفرش دستی نباید پرش کنه */
+  const coldStart = !_libraryCache;
+  if (coldStart) {
+    grid.innerHTML = `<div class="lib-loading">در حال بارگذاری…</div>`;
+  }
 
   const all = await loadLibrary();
   if (!all.length) {
@@ -4227,7 +5295,7 @@ async function renderLibrary() {
 
   currentLibItems = pickDailyItems(all, LIBRARY_SHOWN);
 
-  grid.innerHTML = currentLibItems
+  const html = currentLibItems
     .map((item, i) => {
       const cat = catById(item.category);
       const added = isLibItemAdded(item);
@@ -4259,10 +5327,23 @@ async function renderLibrary() {
     <span class="btn sm ${added ? "" : "g"}" data-lib-add="${i}">${
         added ? "افزوده شده" : "افزودن"
       }</span>
-  </div>
-</button>`;
+      </div>
+    </button>`;
     })
     .join("");
+
+  if (coldStart) {
+    grid.innerHTML = html;
+  } else {
+    /* دو فاز: ۱) blur-out ۲) swap + blur-in
+       timing باید با CSS هماهنگ باشه (خروج ۱۴۰ms) */
+    clearTimeout(_libSwapTimer);
+    grid.classList.add("swapping");
+    _libSwapTimer = setTimeout(() => {
+      grid.innerHTML = html;
+      requestAnimationFrame(() => grid.classList.remove("swapping"));
+    }, 140);
+  }
 
   const allBtn = $("#libAddAll");
   if (allBtn) {
@@ -4311,13 +5392,14 @@ function openLibPreview(idx) {
   addBtn.textContent = added ? "افزوده شده" : "افزودن به لیست من";
   addBtn.disabled = added;
   $("#libPreviewBack").classList.add("open");
+  _navPush("overlay", "libPreviewBack");
   refreshFocusTrap();
 }
 
 function closeLibPreview() {
-  libPreviewIdx = -1;
-  $("#libPreviewBack").classList.remove("open");
-  refreshFocusTrap();
+  if (!$("#libPreviewBack")?.classList.contains("open")) return;
+  _CLOSE_RAW.libPreviewBack();
+  _navSilentBack();
 }
 
 function addLibByIndex(idx) {
@@ -4363,6 +5445,13 @@ $("#libAddAll")?.addEventListener("click", () => {
   renderLibrary();
 });
 
+$("#libRefreshBtn")?.addEventListener("click", refreshLibrary);
+$("#libSettingsBtn")?.addEventListener("click", openLibSettings);
+$("#libSettingsClose")?.addEventListener("click", closeLibSettings);
+$("#libSettingsBack")?.addEventListener("click", (e) => {
+  if (e.target.id === "libSettingsBack") closeLibSettings();
+});
+
 $("#libPreviewAdd")?.addEventListener("click", () => {
   if (libPreviewIdx >= 0) addLibByIndex(libPreviewIdx);
 });
@@ -4372,65 +5461,76 @@ $("#libPreviewBack")?.addEventListener("click", (e) => {
   if (e.target.id === "libPreviewBack") closeLibPreview();
 });
 
-
 /* ═══ چنج‌لاگ ═══ */
 const CHANGELOG = [
   {
-    version: "1.4",
-    date: "1404/07/01",
+    version: "1.5",
+    date: "1404/06/28",
     items: [
-      "قابلیت جدید: [سطل آشغال](trash) — پرامپت‌های حذف‌شده تا ۳۰ روز اینجا می‌مونن و هر وقت خواستی برمی‌گردونیشون.",
-      "شش پس‌زمینه برای اپ؛ از [ظاهر](appearance) شفق، رنگین، شبکه، نقطه‌ای، راه‌راه یا ساده رو انتخاب کن.",
-      "تم صوتی «زنگی» اضافه شد و کیفیت صدا برای هدفون و ایرباد بهتر شد — تو صفحهٔ [صدا](sound).",
-      "پیش‌نمایش [کتابخانه](library) حالا آمار متن نشون می‌ده: خط، کلمه، کاراکتر و تخمین توکن.",
-      "دکمهٔ «افزودن همه» تو [کتابخانه](library) ثابت شد؛ فقط کارت‌ها اسکرول می‌شن.",
-      "رنگ‌ها، اندازه‌ها و پس‌زمینه‌ها تو صفحهٔ [ظاهر](appearance) یکی شدن — همه‌چیز یه‌جا.",
-      "پیش‌نمایش متغیرها بازطراحی شد: تو دسکتاپ کارت از بغل مودال میاد بیرون، تو موبایل تمام‌صفحه از چپ با دکمه‌های برگشت، انصراف و کپی.",
-      "ادیتور پرامپت حالا برای متن لاتین مونواسپیس و برای فارسی Vazirmatn نشون می‌ده — خوانا و منظم، بدون فونت اضافه.",
-      "چنج‌لاگ حالا لینک‌داره؛ روی هر صفحه‌ای که بزنی، مستقیم می‌ری همون‌جا.",
-      "تمیزکاری CSS: کد مرده و بلاک‌های تکراری حذف شدن، بدون افت ظاهر. چند تا باگ رنگ hover و توست بازگردانی هم رفع شدن.",
+      "کتابخانه دو حالت دارد: چرخش روزانه و دستی. در حالت دستی، دکمهٔ ↻ در کنار «افزودن همه» هشت پیشنهاد تازه ارائه می‌کند. تنظیمات از دکمهٔ ? در دسترس است.",
+      "راهنمای استفاده به بخش [درباره](about) افزوده شد؛ شامل متغیرها، کتابخانه، باز کردن در AI، سطل آشغال، پشتیبان‌گیری و میان‌برهای کیبورد. راهنمای متغیرها اکنون تنها یک بار در پیش‌نمایش نمایش داده می‌شود.",
+      "بهبود کارایی گرید کارت ها: content-visibility روی کارت‌ها، کش جست‌وجو و محدودسازی انیمیشن ورود به بیست کارت نخست.",
+      "افزودن انیمیشن blur در به‌روزرسانی کتابخانه",
+      "ترنزیشن جهت‌دار میان شاخه‌های تنظیمات؛ دکمهٔ بازگشت در دسکتاپ برای [سطل آشغال](trash) و راهنما.",
+      "افزودن دکمهٔ «رفتن به کتابخانه» در حالت خالی.",
+      "تغییر محتوا در تنظیمات حالا با یک بلور جزئی و محو کوتاه همراه است؛ جهت ورود و خروج نیز حفظ شده.",
+    ],
+  },
+  {
+    version: "1.4",
+    date: "1404/06/27",
+    items: [
+      "افزودن [سطل آشغال](trash)؛ پرامپت‌های حذف‌شده تا سی روز قابل بازیابی هستند.",
+      "شش پس‌زمینه در بخش [ظاهر](appearance): شفق، رنگین، شبکه، نقطه‌ای، راه‌راه و ساده.",
+      "افزودن تم صوتی «زنگی» و بهبود کیفیت صدا برای هدفون و ایرباد در بخش [صدا](sound).",
+      "نمایش آمار متن (خط، کلمه، کاراکتر و تخمین توکن) در پیش‌نمایش [کتابخانه](library).",
+      "ثابت‌سازی دکمهٔ «افزودن همه» در [کتابخانه](library)؛ تنها کارت‌ها اسکرول می‌شوند.",
+      "یکپارچه‌سازی رنگ‌ها، اندازه‌ها و پس‌زمینه‌ها در بخش [ظاهر](appearance).",
+      "بازطراحی پیش‌نمایش متغیرها: کارت کنار مودال در دسکتاپ، تمام‌صفحه در موبایل.",
+      "نمایش مونواسپیس برای متن لاتین و Vazirmatn برای فارسی در ادیتور پرامپت.",
+      "افزودن پیوند به موارد چنج‌لاگ برای دسترسی مستقیم.",
+      "تمیزکاری CSS و حذف کدهای مرده.",
     ],
   },
   {
     version: "1.3",
     date: "1404/06/27",
     items: [
-      "انتخاب چندگانه با FAB: پرامپت جدید و انتخاب گروهی — سنجاق، انتقال، تکثیر و حذف با یه کلیک.",
-      "کانتکست منو تو دسکتاپ: راست-کلیک روی کارت → ویرایش، کپی، باز کردن در AI، سنجاق، انتقال به دسته، تکثیر، انتخاب و حذف.",
-      "جهت مرتب‌سازی صعودی / نزولی با دکمهٔ کنار فیلتر.",
-      "چیپس‌های دسته تو موبایل افقی و اسکرول‌شو شدن.",
-      "محافظت داده: قبل از مهاجرت، نسخهٔ خام داده بکاپ گرفته می‌شه.",
-      "لینک‌های کاربردی تو همین چنج‌لاگ — مثل [کتابخانه](library) و [داده و پشتیبان](data).",
+      "انتخاب چندگانه با FAB: سنجاق، انتقال، تکثیر و حذف گروهی.",
+      "منوی زمینه در دسکتاپ با راست‌کلیک روی کارت.",
+      "مرتب‌سازی صعودی/نزولی با دکمهٔ کنار فیلتر.",
+      "نمایش افقی و اسکرول‌پذیر چیپس‌های دسته در موبایل.",
+      "پشتیبان‌گیری خودکار از دادهٔ خام پیش از مهاجرت.",
+      "افزودن پیوندهای کاربردی درون چنج‌لاگ.",
     ],
   },
   {
     version: "1.2",
     date: "1404/06/26",
     items: [
-      "نصب روی گوشی مثل یه اپ واقعی — PWA با پشتیبانی آفلاین.",
-      "به‌روزرسانی آسان از [تنظیمات](home) با یه دکمه.",
-      "تاریخچهٔ تغییرات همین‌جاست؛ از [درباره](about) هم قابل دسترسیه.",
-      "ظاهر کارت‌ها مرتب‌تر شد و سرعت بارگذاری بهتر.",
-      "پس‌زمینهٔ تازه و ادیتور راحت‌تر روی موبایل.",
+      "نصب به‌صورت PWA با پشتیبانی آفلاین.",
+      "به‌روزرسانی یک‌کلیکی از [تنظیمات](home).",
+      "دسترسی به تاریخچهٔ تغییرات از [درباره](about).",
+      "بهبود ظاهر کارت‌ها و سرعت بارگذاری.",
+      "پس‌زمینهٔ تازه و ادیتور مناسب موبایل.",
     ],
   },
   {
     version: "1.1",
     date: "1404/06/25",
     items: [
-      "متغیرها: تو متن پرامپت {{موضوع}} یا {{لحن}} بذار؛ هنگام کپی، فرم پر کردن باز می‌شه.",
-      "باز کردن مستقیم پرامپت تو ChatGPT، Claude و ۷ سرویس دیگه — بدون کپی دستی.",
+      "پشتیبانی از متغیرها با {{نام}} و فرم پر کردن هنگام کپی.",
+      "باز کردن مستقیم پرامپت در ChatGPT، Claude و هفت سرویس دیگر.",
       "پشتیبان‌گیری و بازیابی با فایل JSON از [داده و پشتیبان](data).",
     ],
   },
   {
     version: "1.0",
     date: "1404/06/24",
-    items: [
-      "اولین نسخه — با جست‌وجو، دسته‌بندی و سنجاق.",
-    ],
+    items: ["نسخهٔ نخست؛ همراه با جست‌وجو، دسته‌بندی و سنجاق."],
   },
 ];
+
 let currentAppVer = null;
 
 /* لینک‌های inline تو چنج‌لاگ: [کلمه](view) */
@@ -4471,7 +5571,8 @@ function renderChangelog() {
 <div class="chlog-item">
   <div class="chlog-head">
     <span class="chlog-ver">
-      نسخه ${esc(c.version)}
+      <span class="chlog-ver-label">نسخه</span>
+      <span class="chlog-ver-num" dir="ltr">${esc(c.version)}</span>
       ${
         isCurrent || (!currentAppVer && i === 0)
           ? '<span class="chlog-current">فعلی</span>'
@@ -4487,12 +5588,17 @@ function renderChangelog() {
 function openChangelog() {
   renderChangelog();
   $("#chlogBack").classList.add("open");
+  _navPush("overlay", "chlogBack");
   refreshFocusTrap();
 }
 function closeChangelog() {
-  $("#chlogBack").classList.remove("open");
-  refreshFocusTrap();
+  if (!$("#chlogBack")?.classList.contains("open")) return;
+  _CLOSE_RAW.chlogBack();
+  _navSilentBack();
 }
+$("#helpBtn")?.addEventListener("click", () => {
+  navigateSettings("help");
+});
 $("#chlogBtn")?.addEventListener("click", openChangelog);
 $("#chlogCloseBtn")?.addEventListener("click", closeChangelog);
 $("#chlogList")?.addEventListener("click", (e) => {
