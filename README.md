@@ -19,16 +19,10 @@
 ## نصب
 
 ### روی گوشی / دسکتاپ
-آدرس سایت را در Chrome باز کن → منوی سه‌نقطه → **Install app**
+Chrome → Menu → **Install app**
 
-### iOS
+### روی iOS
 Safari → Share → **Add to Home Screen**
-
-## تکنولوژی
-
-- HTML + CSS + JS خالص (بدون build، بدون فریم‌ورک)
-- Service Worker برای کش و آفلاین
-- فونت Vazirmatn از CDN
 
 ## لایسنس
 
