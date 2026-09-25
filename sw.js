@@ -1,4 +1,4 @@
-const CACHE = "pm-v20";
+const CACHE = "pm-v21";
 const APP_VERSION = "1.6";
 
 const ASSETS = [
