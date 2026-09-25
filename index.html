@@ -15,7 +15,7 @@
   <link rel="apple-touch-icon" href="./icons/icon-192.png" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-title" content="پرامپتـام" />
-
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
   
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -23,9 +23,10 @@
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/vazirmatn@5.0.16/arabic-400.css" />
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/vazirmatn@5.0.16/arabic-700.css" />
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/vazirmatn@5.0.16/arabic-800.css" />
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Naskh+Arabic:wght@400;500;700&display=swap" />
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@500;700&display=swap" />
   
-  <link rel="stylesheet" href="./style.css" />
+  <link rel="stylesheet" href="./styles.css" />
 </head>
 <body>
 <header class="top" id="topHeader">
@@ -416,7 +417,7 @@ aria-labelledby="modalTitle"
     />
   </div>
 
-  <div class="editor-wrap">
+  <div class="editor-wrap" id="editorWrap">
     <div class="editor-gutter" id="editorGutter" aria-hidden="true">1</div>
     <textarea
       class="editor-area"
@@ -427,6 +428,9 @@ aria-labelledby="modalTitle"
       autocapitalize="off"
       placeholder="متن کامل پرامپت را اینجا پیست کنید…"
     ></textarea>
+    <div class="editor-md-preview" id="mdPreview" hidden>
+      <div class="md-body" id="mdBody"></div>
+    </div>
   </div>
 
   <div class="editor-status">
@@ -438,7 +442,20 @@ aria-labelledby="modalTitle"
     <span class="es-sep">·</span>
     <span id="statTokens">~۰ توکن</span>
     <span class="es-spacer"></span>
-    <span class="es-lang">Markdown</span>
+    <button
+      class="es-lang es-lang-btn"
+      id="mdToggle"
+      type="button"
+      data-tip="پیش‌نمایش Markdown"
+      aria-label="پیش‌نمایش Markdown"
+      aria-pressed="false"
+    >
+      <svg class="es-lang-eye" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+        <circle cx="12" cy="12" r="3"/>
+      </svg>
+      <span class="es-lang-txt">Markdown</span>
+    </button>
   </div>
 
   <div class="editor-actions">
@@ -557,99 +574,186 @@ aria-label="تنظیمات"
   </div>
 
   <!-- ═══ ظاهر ═══ -->
-  <div class="st-view" data-view="appearance" hidden>
-    <div class="pref-row">
-      <div class="pref-head">
-        <span class="pref-ico">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
-        </span>
-        <div class="pref-titles">
-          <b>پوسته</b>
-          <span>حالت نمایش اپ</span>
-        </div>
-      </div>
-      <div class="seg" data-pref="theme">
-        <button data-v="dark">تاریک</button>
-        <button data-v="light">روشن</button>
-        <button data-v="system">سیستم</button>
+<div class="st-view" data-view="appearance" hidden>
+
+  <!-- ═══ ظاهر پایه ═══ -->
+  <div class="st-section">
+    <div class="st-section-title">اسکین رابط</div>
+    <div class="skin-grid" data-pref="skin">
+      <button class="skin-opt" data-v="default" type="button">
+        <span class="skin-preview skin-prev-default"></span>
+        <span class="skin-opt-label">پیش‌فرض</span>
+      </button>
+      <button class="skin-opt" data-v="sharp" type="button">
+        <span class="skin-preview skin-prev-sharp"></span>
+        <span class="skin-opt-label">تیز</span>
+      </button>
+      <button class="skin-opt" data-v="soft" type="button">
+        <span class="skin-preview skin-prev-soft"></span>
+        <span class="skin-opt-label">نرم</span>
+      </button>
+      <button class="skin-opt" data-v="brutalist" type="button">
+        <span class="skin-preview skin-prev-brutalist"></span>
+        <span class="skin-opt-label">بروتال</span>
+      </button>
+      <button class="skin-opt" data-v="mono" type="button">
+        <span class="skin-preview skin-prev-mono"></span>
+        <span class="skin-opt-label">تک‌رنگ</span>
+      </button>
+      <button class="skin-opt" data-v="glass" type="button">
+        <span class="skin-preview skin-prev-glass"></span>
+        <span class="skin-opt-label">شیشه‌ای</span>
+      </button>
+      <button class="skin-opt" data-v="terminal" type="button">
+        <span class="skin-preview skin-prev-terminal"></span>
+        <span class="skin-opt-label">ترمینال</span>
+      </button>
+      <button class="skin-opt" data-v="editorial" type="button">
+        <span class="skin-preview skin-prev-editorial"></span>
+        <span class="skin-opt-label">مجله‌ای</span>
+      </button>
+    </div>
+  </div>
+
+  <div class="pref-row">
+    <div class="pref-head">
+      <span class="pref-ico">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+      </span>
+      <div class="pref-titles">
+        <b>پوسته</b>
+        <span>حالت نمایش اپ</span>
       </div>
     </div>
+    <div class="seg" data-pref="theme">
+      <button data-v="dark">تاریک</button>
+      <button data-v="light">روشن</button>
+      <button data-v="system">سیستم</button>
+    </div>
+  </div>
 
-    <div class="pref-row">
-      <div class="pref-head">
-        <span class="pref-ico">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="13.5" cy="6.5" r=".5" fill="currentColor"/><circle cx="17.5" cy="10.5" r=".5" fill="currentColor"/><circle cx="8.5" cy="7.5" r=".5" fill="currentColor"/><circle cx="6.5" cy="12.5" r=".5" fill="currentColor"/><path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10c.926 0 1.648-.746 1.648-1.688 0-.437-.18-.835-.437-1.125-.29-.289-.438-.652-.438-1.125a1.64 1.64 0 0 1 1.668-1.668h1.996c3.051 0 5.555-2.503 5.555-5.554C21.965 6.012 17.461 2 12 2z"/></svg>
-        </span>
-        <div class="pref-titles">
-          <b>پالت رنگ</b>
-          <span>رنگ برند و تأکیدها</span>
-        </div>
-      </div>
-      <div class="seg swatches" data-pref="accent">
-        <button data-v="default" class="sw-default" data-tip="پیش‌فرض" aria-label="پیش‌فرض"></button>
-        <button data-v="ocean" class="sw-ocean" data-tip="اقیانوس" aria-label="اقیانوس"></button>
-        <button data-v="forest" class="sw-forest" data-tip="جنگل" aria-label="جنگل"></button>
-        <button data-v="sunset" class="sw-sunset" data-tip="غروب" aria-label="غروب"></button>
-        <button data-v="galaxy" class="sw-galaxy" data-tip="کهکشان" aria-label="کهکشان"></button>
-        <button data-v="mono" class="sw-mono" data-tip="بی‌رنگ" aria-label="بی‌رنگ"></button>
+  <div class="pref-row">
+    <div class="pref-head">
+      <span class="pref-ico">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="13.5" cy="6.5" r=".5" fill="currentColor"/><circle cx="17.5" cy="10.5" r=".5" fill="currentColor"/><circle cx="8.5" cy="7.5" r=".5" fill="currentColor"/><circle cx="6.5" cy="12.5" r=".5" fill="currentColor"/><path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10c.926 0 1.648-.746 1.648-1.688 0-.437-.18-.835-.437-1.125-.29-.289-.438-.652-.438-1.125a1.64 1.64 0 0 1 1.668-1.668h1.996c3.051 0 5.555-2.503 5.555-5.554C21.965 6.012 17.461 2 12 2z"/></svg>
+      </span>
+      <div class="pref-titles">
+        <b>پالت رنگ</b>
+        <span>رنگ برند و تأکیدها</span>
       </div>
     </div>
+    <div class="seg swatches" data-pref="accent" id="accentSeg"></div>
+  </div>
 
-    <div class="pref-row">
-      <div class="pref-head">
-        <span class="pref-ico">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"/></svg>
-        </span>
-        <div class="pref-titles">
-          <b>پس‌زمینه</b>
-          <span>الگوی پشت‌زمینهٔ اپ</span>
-        </div>
-      </div>
-      <div class="seg swatches" data-pref="bg">
-        <button data-v="default" class="bg-default" data-tip="شفق" aria-label="شفق"></button>
-        <button data-v="mesh" class="bg-mesh" data-tip="رنگین" aria-label="رنگین"></button>
-        <button data-v="grid" class="bg-grid" data-tip="شبکه" aria-label="شبکه"></button>
-        <button data-v="dots" class="bg-dots" data-tip="نقطه‌ای" aria-label="نقطه‌ای"></button>
-        <button data-v="stripes" class="bg-stripes" data-tip="راه‌راه" aria-label="راه‌راه"></button>
-        <button data-v="clean" class="bg-clean" data-tip="ساده" aria-label="ساده"></button>
+  <!-- ═══ پس‌زمینه ═══ -->
+  <div class="st-section">
+    <div class="st-section-title">پس‌زمینه</div>
+    <div class="pswitch compact" data-pref="bgType" role="radiogroup" aria-label="نوع پس‌زمینه">
+      <div class="pswitch-slide" aria-hidden="true"></div>
+      <button
+        type="button"
+        class="pswitch-opt pswitch-opt-icon"
+        data-v="none"
+        role="radio"
+        aria-pressed="false"
+        data-tip="بدون پس‌زمینه"
+        aria-label="بدون پس‌زمینه"
+      >
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <circle cx="12" cy="12" r="9"/>
+          <path d="m5.64 5.64 12.72 12.72"/>
+        </svg>
+      </button>
+      <button type="button" class="pswitch-opt" data-v="pattern" role="radio" aria-pressed="false">
+        <b>پترن</b>
+      </button>
+      <button type="button" class="pswitch-opt" data-v="static" role="radio" aria-pressed="false">
+        <b>تصویر</b>
+      </button>
+      <button type="button" class="pswitch-opt" data-v="live" role="radio" aria-pressed="false">
+        <b>زنده</b>
+      </button>
+    </div>
+  </div>
+
+  <!-- محتوای پترن -->
+  <div class="pref-row" data-when="bgType-pattern" hidden>
+    <div class="pref-head">
+      <span class="pref-ico">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"/></svg>
+      </span>
+      <div class="pref-titles">
+        <b>الگوی پترن</b>
+        <span>رنگ‌ها از پالت فعلی گرفته می‌شن</span>
       </div>
     </div>
-
-    <div class="pref-row">
-      <div class="pref-head">
-        <span class="pref-ico">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="4 7 4 4 20 4 20 7"/><line x1="9" x2="15" y1="20" y2="20"/><line x1="12" x2="12" y1="4" y2="20"/></svg>
-        </span>
-        <div class="pref-titles">
-          <b>اندازهٔ متن</b>
-          <span>اندازهٔ پایهٔ کل اپ</span>
-        </div>
-      </div>
-      <div class="seg" data-pref="fs">
-        <button data-v="small">کوچک</button>
-        <button data-v="medium">متوسط</button>
-        <button data-v="large">بزرگ</button>
-      </div>
+    <div class="seg swatches" data-pref="bg" id="bgPatternSeg">
+      <button data-v="default" class="bg-default" data-tip="شفق" aria-label="شفق"></button>
+      <button data-v="mesh" class="bg-mesh" data-tip="رنگین" aria-label="رنگین"></button>
+      <button data-v="grid" class="bg-grid" data-tip="شبکه" aria-label="شبکه"></button>
+      <button data-v="dots" class="bg-dots" data-tip="نقطه‌ای" aria-label="نقطه‌ای"></button>
+      <button data-v="stripes" class="bg-stripes" data-tip="راه‌راه" aria-label="راه‌راه"></button>
     </div>
+  </div>
 
-    <div class="pref-row cols-row">
-      <div class="pref-head">
-        <span class="pref-ico">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg>
-        </span>
-        <div class="pref-titles">
-          <b>ستون‌ها</b>
-          <span>تعداد ستون‌های گرید</span>
-        </div>
+  <!-- محتوای والپیپر (static یا live) -->
+  <div class="st-section" data-when="bgType-wall" hidden>
+    <div class="wall-cats" id="wallCats"></div>
+    <div class="wall-grid" id="wallGrid"></div>
+    <div class="wall-controls" id="wallControls">
+      <div class="st-slider-wrap">
+        <span class="wall-ctrl-lbl">تیرگی</span>
+        <input type="range" id="wallDim" class="st-slider" min="0" max="80" step="5">
+        <span class="st-slider-val" id="wallDimVal">۴۰٪</span>
       </div>
-      <div class="seg" data-pref="cols">
-        <button data-v="2">۲</button>
-        <button data-v="3">۳</button>
-        <button data-v="4">۴</button>
+      <div class="st-slider-wrap">
+        <span class="wall-ctrl-lbl">محو</span>
+        <input type="range" id="wallBlur" class="st-slider" min="0" max="20" step="1">
+        <span class="st-slider-val" id="wallBlurVal">۰px</span>
       </div>
     </div>
   </div>
 
+  <!-- ═══ چیدمان ═══ -->
+  <div class="st-section">
+    <div class="st-section-title">چیدمان</div>
+  </div>
+
+  <div class="pref-row">
+    <div class="pref-head">
+      <span class="pref-ico">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="4 7 4 4 20 4 20 7"/><line x1="9" x2="15" y1="20" y2="20"/><line x1="12" x2="12" y1="4" y2="20"/></svg>
+      </span>
+      <div class="pref-titles">
+        <b>اندازهٔ متن</b>
+        <span>اندازهٔ پایهٔ کل اپ</span>
+      </div>
+    </div>
+    <div class="seg" data-pref="fs">
+      <button data-v="small">کوچک</button>
+      <button data-v="medium">متوسط</button>
+      <button data-v="large">بزرگ</button>
+    </div>
+  </div>
+
+  <div class="pref-row cols-row">
+    <div class="pref-head">
+      <span class="pref-ico">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg>
+      </span>
+      <div class="pref-titles">
+        <b>ستون‌ها</b>
+        <span>تعداد ستون‌های گرید</span>
+      </div>
+    </div>
+    <div class="seg" data-pref="cols">
+      <button data-v="2">۲</button>
+      <button data-v="3">۳</button>
+      <button data-v="4">۴</button>
+    </div>
+  </div>
+
+</div>
   <!-- ═══ صدا ═══ -->
   <div class="st-view" data-view="sound" hidden>
     <div class="st-section">
@@ -1381,7 +1485,7 @@ aria-labelledby="dialogTitle"
 <span class="undo-progress" aria-hidden="true"></span>
 </div>
 
-<script src="./app.js" defer></script>
+<script type="module" src="./app.js"></script>
 
 </body>
 </html>

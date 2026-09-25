@@ -1,0 +1,81 @@
+# ── وابستگی‌ها ──
+node_modules/
+.pnp
+.pnp.js
+
+# ── خروجی build ──
+dist/
+dist-ssr/
+build/
+*.local
+
+# ── Vite ──
+.vite/
+.vite-inspect/
+.cache/
+
+# ── PWA / Service Worker dev ──
+dev-dist/
+workbox-*.js
+workbox-*.js.map
+sw.js.map
+
+# ── لاگ‌ها ──
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+# ── متغیرهای محیطی ──
+.env
+.env.local
+.env.*.local
+
+# ── سیستم‌عامل ──
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+
+# ── ادیتورها ──
+.vscode/*
+!.vscode/extensions.json
+!.vscode/settings.json
+!.vscode/launch.json
+.idea/
+*.swp
+*.swo
+*~
+.project
+.classpath
+.settings/
+
+# ── تست و coverage ──
+coverage/
+*.lcov
+.nyc_output/
+
+# ── Python (چون Code_Combiner.py داری) ──
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+venv/
+env/
+ENV/
+.venv/
+
+# ── ابزارهای موقت ──
+.eslintcache
+.stylelintcache
+*.tsbuildinfo
+aggregate.config.json
+Code_Combiner.py

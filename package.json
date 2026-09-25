@@ -1,0 +1,35 @@
+{
+  "name": "promptam",
+  "version": "1.6.0",
+  "description": "PWA سبک و آفلاین برای مدیریت، دسته‌بندی و استفادهٔ سریع از پرامپت‌ها. بدون بک‌اند، بدون ثبت‌نام — همهٔ داده‌ها در localStorage مرورگر کاربر.",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/PhysLVR/Promptam.git"
+  },
+  "keywords": [
+    "pwa",
+    "prompt-manager",
+    "prompt",
+    "chatgpt",
+    "claude",
+    "offline-first",
+    "local-first"
+  ],
+  "author": "PhysLVR",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/PhysLVR/Promptam/issues"
+  },
+  "homepage": "https://github.com/PhysLVR/Promptam#readme",
+  "devDependencies": {
+    "vite": "^8.3.1",
+    "vite-plugin-pwa": "^1.3.0"
+  }
+}

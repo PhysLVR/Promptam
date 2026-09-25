@@ -1,5 +1,7 @@
 "use strict";
 
+import { loadWallpaperCatalog } from "./wallpapers/index.js";
+
 /* ═══════════════ ابزارها ═══════════════ */
 /* مرورگر به‌صورت پیش‌فرض موقع history.back/forward اسکرول رو ری‌ست می‌کنه.
    ما خودمون مدیریت می‌کنیم (lock/unlock) — پس این رو دست‌دستی خاموش می‌کنیم. */
@@ -674,10 +676,42 @@ function migrate(d) {
   return cur;
 }
 
+/* ═══ پالت‌های رنگ — منبع یگانهٔ حقیقت ═══ */
+const PALETTES = {
+  default:      { label: "پیش‌فرض",     sw: "conic-gradient(from 90deg, #a78bfa 0 90deg, #60a5fa 90deg 180deg, #34d399 180deg 270deg, #fbbf24 270deg 360deg)" },
+  ocean:        { label: "اقیانوس",     sw: "linear-gradient(135deg, #60a5fa, #22d3ee)" },
+  forest:       { label: "جنگل",        sw: "linear-gradient(135deg, #34d399, #84cc16)" },
+  sunset:       { label: "غروب",        sw: "linear-gradient(135deg, #fb7185, #fbbf24)" },
+  galaxy:       { label: "کهکشان",      sw: "linear-gradient(135deg, #c084fc, #f472b6)" },
+  mono:         { label: "بی‌رنگ",      sw: "linear-gradient(135deg, #e2e8f0, #475569)" },
+  "crt-green":  { label: "فسفری سبز",   sw: "radial-gradient(circle at 35% 35%, #c4ffd0 0%, #4ade80 45%, #166534 100%)" },
+  "crt-amber":  { label: "کهربایی",     sw: "radial-gradient(circle at 35% 35%, #ffe9b3 0%, #fbbf24 45%, #92400e 100%)" },
+  "crt-cyan":   { label: "فیروزه‌ای",    sw: "radial-gradient(circle at 35% 35%, #a5f3fc 0%, #22d3ee 45%, #0e7490 100%)" },
+  "crt-white":  { label: "سفید فسفری",  sw: "radial-gradient(circle at 35% 35%, #ffffff 0%, #cbd5e1 45%, #475569 100%)" },
+  "crt-magenta":{ label: "ارغوانی",     sw: "radial-gradient(circle at 35% 35%, #fce7f3 0%, #f472b6 45%, #9d174d 100%)" },
+};
+
+const DEFAULT_PALETTES = ["default", "ocean", "forest", "sunset", "galaxy", "mono"];
+const CRT_PALETTES     = ["crt-green", "crt-amber", "crt-cyan", "crt-white", "crt-magenta"];
+
+/* ═══ تعریف اسکین‌ها — قوانین هر اسکین ═══ */
+const SKIN_DEFS = {
+  default:   { themes: ["dark", "light", "system"], palettes: DEFAULT_PALETTES, label: "پیش‌فرض" },
+  sharp:     { themes: ["dark", "light", "system"], palettes: DEFAULT_PALETTES, label: "تیز" },
+  soft:      { themes: ["dark", "light", "system"], palettes: DEFAULT_PALETTES, label: "نرم" },
+  brutalist: { themes: ["dark", "light"],           palettes: DEFAULT_PALETTES, label: "بروتال" },
+  mono:      { themes: ["dark", "light"],           palettes: ["mono"],         label: "تک‌رنگ" },
+  glass:     { themes: ["dark", "light", "system"], palettes: DEFAULT_PALETTES, label: "شیشه‌ای" },
+  terminal:  { themes: ["dark"], forced: "dark",    palettes: CRT_PALETTES,     label: "ترمینال" },
+  editorial: { themes: ["light"], forced: "light",  palettes: ["default", "forest", "sunset"], label: "مجله‌ای" },
+};
+
 const PREF_DEFAULTS = {
   theme: "system",
   accent: "default",
   bg: "default",
+  bgType: "pattern",       /* "none" | "pattern" | "static" | "live" */
+  skin: "default",
   fs: "medium",
   cols: "3",
   sort: "updated",
@@ -688,6 +722,9 @@ const PREF_DEFAULTS = {
   libMode: "daily",
   libOffset: 0,
   varHintSeen: false,
+  wall: "none",
+  wallDim: 40,
+  wallBlur: 0,
 };
 
 let PREFS = Object.assign({}, PREF_DEFAULTS);
@@ -703,6 +740,21 @@ function loadPrefs() {
       /* migrate: تم صوتی deep حذف شد — برگردون به soft */
       if (PREFS.soundTheme === "deep") {
         PREFS.soundTheme = "soft";
+        savePrefs();
+      }
+      /* migrate: پترن clean حذف شد — برگردون به default */
+      if (PREFS.bg === "clean") {
+        PREFS.bg = "default";
+        savePrefs();
+      }
+      /* migrate: اگه کاربر wall داشت ولی bgType نداشت،
+         پس پترن بوده — مگه اینکه wall فعال بوده */
+      if (PREFS.bgType === undefined) {
+        if (PREFS.wall && PREFS.wall !== "none") {
+          PREFS.bgType = "live";  /* فرض: کاربر والپیپر داشته */
+        } else {
+          PREFS.bgType = "pattern";
+        }
         savePrefs();
       }
     }
@@ -721,8 +773,179 @@ function resolveTheme(val) {
   return val;
 }
 let _lastTheme = null;
+
+/* ═══════════════ والپیپر ═══════════════ */
+let _wallCatalog = null;
+let _wallInstance = null;
+let _wallLayer = null;
+let _lastWall = null;
+
+const _wallPointer = { x: 0, y: 0, nx: 0.5, ny: 0.5, inside: false, down: false };
+["pointermove", "pointerdown", "pointerup"].forEach((ev) => {
+  window.addEventListener(ev, (e) => {
+    if (ev === "pointerup") { _wallPointer.down = false; return; }
+    _wallPointer.x = e.clientX;
+    _wallPointer.y = e.clientY;
+    _wallPointer.nx = e.clientX / innerWidth;
+    _wallPointer.ny = e.clientY / innerHeight;
+    _wallPointer.inside = true;
+    if (ev === "pointerdown") _wallPointer.down = true;
+  }, { passive: true });
+});
+
+async function loadWallCatalog() {
+  if (_wallCatalog) return _wallCatalog;
+  try {
+    const data = await loadWallpaperCatalog();
+    _wallCatalog = data.items || [];
+    return _wallCatalog;
+  } catch (e) {
+    console.warn("wallpapers load failed", e);
+    _wallCatalog = [];
+    return [];
+  }
+}
+
+function ensureWallLayer() {
+  if (_wallLayer) return _wallLayer;
+  const el = document.createElement("div");
+  el.id = "wallpaperLayer";
+  el.setAttribute("aria-hidden", "true");
+  document.body.insertBefore(el, document.body.firstChild);
+  _wallLayer = el;
+  return el;
+}
+
+function clearWall() {
+  if (_wallInstance) {
+    try { _wallInstance.unmount && _wallInstance.unmount(); } catch (_) {}
+    _wallInstance = null;
+  }
+  if (_wallLayer) _wallLayer.innerHTML = "";
+}
+
+function readWallPal() {
+  const cs = getComputedStyle(document.documentElement);
+  const v = (n) => cs.getPropertyValue(n).trim();
+  return {
+    bg: v("--bg"), deep: v("--deep"), card: v("--card"),
+    txt: v("--txt"), mut: v("--mut"), dim: v("--dim"),
+    acc: v("--acc"), vio: v("--vio"), blu: v("--blu"), cyn: v("--cyn"),
+    amb: v("--amb"), ros: v("--ros"),
+    light: document.documentElement.dataset.theme === "light",
+  };
+}
+
+async function applyWallpaper(id) {
+  clearWall();
+  if (!id || id === "none") {
+    delete document.documentElement.dataset.wall;
+    return;
+  }
+
+  const catalog = await loadWallCatalog();
+  const item = catalog.find((x) => x.id === id);
+  if (!item) {
+    console.warn("wallpaper not found:", id);
+    return;
+  }
+
+  document.documentElement.dataset.wall = item.type;
+  const layer = ensureWallLayer();
+
+  if (item.type === "static") {
+    const img = document.createElement("img");
+    img.src = item.src;
+    img.alt = "";
+    img.decoding = "async";
+    img.style.cssText =
+      "position:absolute;inset:0;width:100%;height:100%;object-fit:cover;" +
+      "opacity:0;transition:opacity .6s var(--ease-ios);";
+    layer.appendChild(img);
+    const show = () => (img.style.opacity = "1");
+    if (img.complete) requestAnimationFrame(show);
+    else img.onload = show;
+    _wallInstance = {
+      start() {}, stop() {}, resize() {},
+      unmount() { img.remove(); },
+    };
+  } else if (item.type === "live") {
+    try {
+      /* module دیگه یه آبجکته، نه مسیر */
+      const mod = item.module;
+      /* اگه Vite از eager استفاده نکرد، fallback به dynamic import */
+      const resolved = mod && typeof mod.mount === "function"
+        ? mod
+        : (await import(/* @vite-ignore */ mod))?.default;
+
+      if (!resolved || typeof resolved.mount !== "function") {
+        throw new Error("ماژول معتبر نیست");
+      }
+      const ctx = {
+        pal: readWallPal(),
+        pointer: _wallPointer,
+        theme: document.documentElement.dataset.theme || "dark",
+        RM: matchMedia("(prefers-reduced-motion: reduce)").matches,
+        on: (ev, fn) => window.addEventListener(ev, fn),
+      };
+      const inst = resolved.mount(layer, ctx);
+      _wallInstance = inst;
+      inst.start && inst.start();
+
+      /* پال به‌روزرسانی */
+      window.addEventListener("wallpal", () => {
+        if (_wallInstance && _wallInstance.pal) {
+          _wallInstance.pal(readWallPal());
+        }
+      });
+
+      /* pause/resume */
+      document.addEventListener("visibilitychange", () => {
+        if (!_wallInstance) return;
+        if (document.hidden) _wallInstance.stop && _wallInstance.stop();
+        else _wallInstance.start && _wallInstance.start();
+      }, { passive: true });
+    } catch (e) {
+      console.error("live wallpaper failed:", id, e);
+    }
+  }
+}
+
+function syncWallpaper() {
+  const bgType = PREFS.bgType || "pattern";
+  const wantWall = bgType === "static" || bgType === "live";
+  const id = wantWall ? (PREFS.wall || "none") : "none";
+  const key = bgType + ":" + id;
+  if (key === _lastWall) return;
+  _lastWall = key;
+  applyWallpaper(id);
+}
+
+/* نمایش/مخفی بخش‌های وابسته به bgType */
+function updateAppearanceSections() {
+  const bgType = PREFS.bgType || "pattern";
+  $$('[data-when="bgType-pattern"]').forEach((el) => {
+    el.hidden = bgType !== "pattern";
+  });
+  $$('[data-when="bgType-wall"]').forEach((el) => {
+    el.hidden = bgType !== "static" && bgType !== "live";
+  });
+}
+
 function applyPrefs() {
   const html = document.documentElement;
+  /* اگه اسکین فعلی تم رو قفل کرده باشه، اعمالش کن */
+  const skinDef = SKIN_DEFS[PREFS.skin] || SKIN_DEFS.default;
+  if (skinDef.forced && PREFS.theme !== skinDef.forced) {
+    PREFS.theme = skinDef.forced;
+    savePrefs();
+  }
+  /* پالت مجاز اسکین — اگه accent فعلی تو لیست نباشه، اولین گزینه */
+  const allowedPalettes = skinDef.palettes || DEFAULT_PALETTES;
+  if (!allowedPalettes.includes(PREFS.accent)) {
+    PREFS.accent = allowedPalettes[0];
+    savePrefs();
+  }
   const newTheme = resolveTheme(PREFS.theme);
   const themeChanged = _lastTheme !== null && _lastTheme !== newTheme;
 
@@ -733,8 +956,35 @@ function applyPrefs() {
 
   html.dataset.theme = newTheme;
   html.dataset.accent = PREFS.accent;
-  html.dataset.bg = PREFS.bg || "default";
+  window.dispatchEvent(new Event("wallpal"));
+  html.dataset.skin = PREFS.skin || "default";
   html.dataset.fs = PREFS.fs;
+
+  /* ── منطق پس‌زمینه ──
+     فقط یکی از این سه حالت می‌تونه فعال باشه:
+     - bgType=pattern → data-bg از PREFS.bg
+     - bgType=static/live → data-wall, data-bg="none"
+     - bgType=none → هر دو "none" */
+  const bgType = PREFS.bgType || "pattern";
+  html.dataset.bgType = bgType;
+
+  if (bgType === "pattern") {
+    html.dataset.bg = PREFS.bg || "default";
+    delete html.dataset.wall;
+  } else if (bgType === "none") {
+    html.dataset.bg = "none";
+    delete html.dataset.wall;
+  } else {
+    /* static یا live — applyWallpaper مسئول set data-wall هست */
+    html.dataset.bg = "none";
+  }
+
+  html.style.setProperty("--wall-dim", (PREFS.wallDim || 0) / 100);
+  html.style.setProperty("--wall-blur", (PREFS.wallBlur || 0) + "px");
+
+  syncWallpaper();
+  updateAppearanceSections();
+  renderAccentSwatches();
   html.style.setProperty("--cols", PREFS.cols);
   $("#themeBtn").innerHTML =
     newTheme === "light" ? icon("sun") : icon("moon");
@@ -821,14 +1071,36 @@ function load() {
       );
     } catch (_) {}
     console.error("load: migrate failed, raw backup saved", e);
-    DATA.categories = JSON.parse(JSON.stringify(DEFAULT_CATEGORIES));
-    DATA.prompts = [];
-    DATA.trash = [];
+
+    /* سعی کن از autobackup بازیابی کنی */
+    let restored = false;
+    try {
+      const auto = localStorage.getItem(DATA_KEY + "_autobackup");
+      if (auto) {
+        const autoParsed = JSON.parse(auto);
+        if (autoParsed && Array.isArray(autoParsed.prompts)) {
+          DATA.categories = autoParsed.categories || DEFAULT_CATEGORIES;
+          DATA.prompts = autoParsed.prompts;
+          DATA.trash = Array.isArray(autoParsed.trash) ? autoParsed.trash : [];
+          restored = true;
+          console.warn("load: restored from autobackup, prompts:", DATA.prompts.length);
+        }
+      }
+    } catch (_) {}
+
+    if (!restored) {
+      DATA.categories = JSON.parse(JSON.stringify(DEFAULT_CATEGORIES));
+      DATA.prompts = [];
+      DATA.trash = [];
+    }
+
     setTimeout(
       () =>
         toast(
-          "مهاجرت داده‌ها ناموفق بود؛ نسخهٔ قبلی بکاپ شد",
-          "err"
+          restored
+            ? "داده‌ها از پشتیبان اضطراری بازیابی شد"
+            : "مهاجرت داده‌ها ناموفق بود؛ نسخهٔ قبلی بکاپ شد",
+          restored ? "warn" : "err"
         ),
       500
     );
@@ -1448,7 +1720,8 @@ function renderGrid() {
   g.classList.toggle("mass-list", list.length > ANIM_CAP);
   if (!list.length) {
     const empty = DATA.prompts.length === 0;
-    g.innerHTML = `<div class="empty" style="grid-column:1/-1">
+    g.innerHTML = `<div class="empty">
+<div class="empty-inner">
 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
 stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
 <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
@@ -1460,12 +1733,18 @@ ${
 empty
 ? `<h3>هنوز پرامپتی نداری</h3>
 <p>روی «＋ پرامپت جدید» بزن یا از کتابخانه شروع کن.</p>
+<div class="empty-actions">
 <button class="empty-cta" type="button" data-empty-act="library">
 ${icon("sparkle")}<span>رفتن به کتابخانه</span>
-</button>`
+</button>
+<button class="empty-cta help" type="button" data-empty-act="help">
+${icon("help")}<span>راهنما</span>
+</button>
+</div>`
 : `<h3>موردی پیدا نشد</h3>
 <p>دستهٔ دیگری را امتحان کن یا متن جست‌وجو را کوتاه‌تر کن.</p>`
 }
+</div>
 </div>`;
     return;
   }
@@ -1477,6 +1756,13 @@ ${icon("sparkle")}<span>رفتن به کتابخانه</span>
         .join("");
       const varCount = extractVars(p.content).length;
       const copyTip = varCount ? `کپی (${varCount} متغیر)` : "کپی متن";
+      const q = query.trim();
+      const titleHtml = q
+        ? highlight(p.title, q)
+        : esc(p.title);
+      const descHtml = q
+        ? highlight(p.description || "", q)
+        : esc(p.description || "");
       return `
 <div class="card" data-id="${p.id}">
 <div class="phead">
@@ -1490,10 +1776,10 @@ stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
 <path d="M5 17h14v-1.76a2 2 0 0 0-1.11-1.79l-1.78-.9A2 2 0 0 1 15 10.76V6h1a2 2 0 0 0 0-4H8a2 2 0 0 0 0 4h1v4.76a2 2 0 0 1-1.11 1.79l-1.78.9A2 2 0 0 0 5 15.24Z"/>
 </svg>
 </button>
-<b dir="auto">${esc(p.title)}</b>
+<b dir="auto">${titleHtml}</b>
 <span class="pcat ${cat.color}">${esc(cat.name)}</span>
 </div>
-${p.description ? `<div class="pdesc" dir="auto">${esc(p.description)}</div>` : ""}
+${p.description ? `<div class="pdesc" dir="auto">${descHtml}</div>` : ""}
 ${tags ? `<div class="ptags">${tags}</div>` : ""}
 <div class="pfoot">
 <button class="ibtn" data-act="toggle" data-tip="نمایش متن" aria-label="نمایش متن">
@@ -1870,9 +2156,11 @@ $("#grid").addEventListener("click", (e) => {
   const card = e.target.closest(".card");
   if (!card) {
     const cta = e.target.closest("[data-empty-act]");
-    if (cta && cta.dataset.emptyAct === "library") {
+    if (cta) {
       e.preventDefault();
-      openDrawer("library");
+      const act = cta.dataset.emptyAct;
+      if (act === "library") openDrawer("library");
+      else if (act === "help") openDrawer("help");
     }
     return;
   }
@@ -2329,6 +2617,14 @@ function syncEditor() {
   updateEditorGutter();
   updateEditorStats();
   applyTextDir(editorArea, editorArea.value);
+  /* اگه preview روشن باشه، با هر تغییر آپدیت کن */
+  if (_mdPreviewOn) {
+    const body = $("#mdBody");
+    if (body) {
+      body.innerHTML = mdToHtml(editorArea.value || "");
+      applyTextDir(body, editorArea.value || "");
+    }
+  }
 }
 
 editorArea.addEventListener("input", syncEditor);
@@ -2441,6 +2737,8 @@ function openModal(p) {
   _navPush("overlay", "modalBack");
   refreshFocusTrap();
   syncEditor();
+  /* ریست حالت پیش‌نمایش — هر بار ادیتور تازه باز می‌شه */
+  setMdPreview(false);
 
   setTimeout(() => {
     if (!$("#pTitle").value) $("#pTitle").focus();
@@ -2824,6 +3122,12 @@ function openDesktopSearchPanel() {
 function closeDesktopSearchPanel() {
   searchRes.classList.remove("show");
   searchIn.setAttribute("aria-expanded", "false");
+  /* اگه query هنوز داره، گرید رو رندر کن تا هایلایت حذف شه */
+  if (query.trim()) {
+    query = "";
+    searchIn.value = "";
+    renderGrid();
+  }
 }
 
 function updateHeaderHeight() {
@@ -2859,6 +3163,13 @@ function closeMobileSearchPanel() {
   if (!mSearch.classList.contains("open")) return;
   _CLOSE_RAW.mSearch();
   _navSilentBack();
+  /* پاک کردن query تا هایلایت و فیلتر برداشته شه */
+  if (query.trim()) {
+    query = "";
+    mSearchIn.value = "";
+    searchIn.value = "";
+    renderGrid();
+  }
 }
 
 const debouncedGridRender = debounce(renderGrid, 160);
@@ -3173,7 +3484,9 @@ function _applyView(view) {
   if (view === "categories") {
     _catFirstRenderDone = false;
   }
-
+  if (view === "appearance") {
+  renderWallpaperGrid();
+ }
   const body = drawer.querySelector(".drawer-body");
   if (body) body.scrollTop = 0;
 }
@@ -3436,6 +3749,12 @@ function initAllPswitches() {
             updateSoundSections();
             if (PREFS.sound === "on") SFX.play("tick");
           }
+          if (key === "bgType") {
+            updateAppearanceSections();
+            if (PREFS.bgType === "static" || PREFS.bgType === "live") {
+              renderWallpaperGrid();
+            }
+          }
           SFX.play("tick");
         });
       });
@@ -3456,10 +3775,151 @@ window.addEventListener("resize", () => {
   _pswInstances.forEach((sched) => sched());
 });
 
+/* ═══ رندر پالت‌ها بر اساس اسکین فعلی ═══
+   منبع حقیقت: SKIN_DEFS[skin].palettes + PALETTES
+   خروجی: دکمه‌های swatch با --sw اینلاین */
+function renderAccentSwatches() {
+  const seg = document.getElementById("accentSeg");
+  if (!seg) return;
+  const skinDef = SKIN_DEFS[PREFS.skin] || SKIN_DEFS.default;
+  const palettes = skinDef.palettes || DEFAULT_PALETTES;
+
+  seg.innerHTML = palettes
+    .map((id) => {
+      const p = PALETTES[id];
+      if (!p) return "";
+      const on = id === PREFS.accent ? " on" : "";
+      return `<button type="button" data-v="${esc(id)}" class="${on.trim()}" style="--sw: ${p.sw};" data-tip="${esc(p.label)}" aria-label="${esc(p.label)}"></button>`;
+    })
+    .join("");
+
+  seg.querySelectorAll("button").forEach((b) => {
+    b.onclick = () => {
+      if (PREFS.accent === b.dataset.v) return;
+      PREFS.accent = b.dataset.v;
+      savePrefs();
+      applyPrefs();
+      seg.querySelectorAll("button").forEach((x) =>
+        x.classList.toggle("on", x === b)
+      );
+      SFX.play("tick");
+    };
+  });
+}
+
+/* ═══ رندر گرید والپیپر ═══ */
+let _wallCatFilter = "all";
+
+async function renderWallpaperGrid() {
+  const grid = $("#wallGrid");
+  const cats = $("#wallCats");
+  const controls = $("#wallControls");
+  if (!grid) return;
+
+  const bgType = PREFS.bgType || "pattern";
+  if (bgType !== "static" && bgType !== "live") return;
+
+  const all = await loadWallCatalog();
+  /* فقط آیتم‌های مرتبط با bgType فعلی */
+  const catalog = all.filter((x) => x.type === bgType);
+
+  if (!catalog.length) {
+    if (cats) cats.innerHTML = "";
+    const label = bgType === "static" ? "تصویر" : "زنده";
+    grid.innerHTML = `<div class="wall-empty">
+      هنوز والپیپر ${label}ی نداری.<br>
+      ${
+        bgType === "static"
+          ? `یه عکس بذار تو <code>wallpapers/static/</code>`
+          : `یه ماژول JS بذار تو <code>wallpapers/live/</code>`
+      }
+    </div>`;
+    if (controls) controls.hidden = true;
+    return;
+  }
+
+  /* اگه wall فعلی توی این دسته نیست، اولین رو انتخاب کن */
+  const valid = catalog.find((x) => x.id === PREFS.wall);
+  if (!valid) {
+    PREFS.wall = catalog[0].id;
+    savePrefs();
+    applyWallpaper(PREFS.wall);
+  }
+
+  /* فیلتر دسته‌ها */
+  const allCats = [...new Set(catalog.map(x => x.category))].sort();
+  if (_wallCatFilter !== "all" && !allCats.includes(_wallCatFilter)) {
+    _wallCatFilter = "all";
+  }
+
+  if (cats) {
+    cats.innerHTML =
+      `<button class="wall-cat ${_wallCatFilter === "all" ? "on" : ""}" data-c="all">` +
+        `<span class="wc-name">همه</span>` +
+        `<span class="wc-count">${toFaNum(catalog.length)}</span>` +
+      `</button>` +
+      allCats.map(c => {
+        const n = catalog.filter(x => x.category === c).length;
+        return `<button class="wall-cat ${_wallCatFilter === c ? "on" : ""}" data-c="${esc(c)}">` +
+          `<span class="wc-name">${esc(c)}</span>` +
+          `<span class="wc-count">${toFaNum(n)}</span>` +
+        `</button>`;
+      }).join("");
+  }
+
+  /* آیتم‌ها */
+  const filtered = _wallCatFilter === "all"
+    ? catalog
+    : catalog.filter(x => x.category === _wallCatFilter);
+
+  grid.innerHTML = filtered.map(item => {
+    const isLive = item.type === "live";
+    const on = PREFS.wall === item.id;
+    const thumb = item.thumb
+      ? `<img src="${esc(item.thumb)}" alt="" loading="lazy" decoding="async">`
+      : `<div class="wall-prev">${isLive ? "◐" : "▢"}</div>`;
+    return `<button class="wall-card ${on ? "on" : ""}" data-id="${esc(item.id)}" type="button" title="${esc(item.title)}">
+      ${thumb}
+      <span class="wall-badge ${isLive ? "live" : ""}">${isLive ? "لایو" : "استاتیک"}</span>
+      <span class="wall-name" dir="auto">${esc(item.title)}</span>
+    </button>`;
+  }).join("");
+
+  if (controls) controls.hidden = false;
+  syncWallControls();
+}
+
+function syncWallControls() {
+  const dim = $("#wallDim"), dimV = $("#wallDimVal");
+  const blur = $("#wallBlur"), blurV = $("#wallBlurVal");
+  if (dim) {
+    dim.value = PREFS.wallDim || 40;
+    if (dimV) dimV.textContent = toFaNum(dim.value) + "٪";
+  }
+  if (blur) {
+    blur.value = PREFS.wallBlur || 0;
+    if (blurV) blurV.textContent = toFaNum(blur.value) + "px";
+  }
+}
+
 function renderPrefs() {
-  $$(".seg[data-pref]").forEach((seg) => {
+  $$(".seg[data-pref], .skin-grid[data-pref]").forEach((seg) => {
     const key = seg.dataset.pref;
+    if (key === "accent") return; /* با renderAccentSwatches مدیریت می‌شه */
+
     seg.querySelectorAll("button").forEach((b) => {
+      if (key === "theme") {
+        const skinDef = SKIN_DEFS[PREFS.skin] || SKIN_DEFS.default;
+        const allowed = !skinDef.forced || b.dataset.v === skinDef.forced;
+        b.disabled = !allowed;
+        b.classList.toggle("locked", !allowed);
+        b.setAttribute("aria-disabled", allowed ? "false" : "true");
+        b.title = allowed
+          ? ""
+          : `اسکین ${skinDef.label} فقط حالت ${
+              skinDef.forced === "dark" ? "تاریک" : "روشن"
+            } را پشتیبانی می‌کند`;
+      }
       b.classList.toggle("on", b.dataset.v === PREFS[key]);
       b.onclick = () => {
         PREFS[key] = b.dataset.v;
@@ -3489,6 +3949,28 @@ function renderPrefs() {
         if (key === "libMode") {
           updateLibModeUI();
           if ($("#drawer")?.dataset.view === "library") renderLibrary();
+        }
+        if (key === "skin") {
+          const newDef = SKIN_DEFS[PREFS.skin] || SKIN_DEFS.default;
+
+          const themeSeg = document.querySelector('.seg[data-pref="theme"]');
+          if (themeSeg) {
+            themeSeg.querySelectorAll("button").forEach((tb) => {
+              const allowed = !newDef.forced || tb.dataset.v === newDef.forced;
+              tb.disabled = !allowed;
+              tb.classList.toggle("locked", !allowed);
+              tb.classList.toggle("on", tb.dataset.v === PREFS.theme);
+            });
+          }
+          /* پالت‌ها با applyPrefs خودکار رندر می‌شن */
+
+          if (newDef.forced) {
+            toast(
+              `اسکین ${newDef.label} — تم قفل شد روی ${
+                newDef.forced === "dark" ? "تاریک" : "روشن"
+              }`
+            );
+          }
         }
       };
     });
@@ -4636,6 +5118,10 @@ document.addEventListener("keydown", (e) => {
       return;
     }
     if ($("#modalBack").classList.contains("open")) {
+      if (_mdPreviewOn) {
+        setMdPreview(false);
+        return;
+      }
       closeModal();
       return;
     }
@@ -4955,6 +5441,221 @@ function scrollLogicalStart(el) {
   }
 }
 
+/* ═══════════════ Markdown Preview ═══════════════ */
+
+/* پارسر سبک — فقط syntax پرکاربرد، بدون dependency.
+   امنیت: اول همه چیز escape می‌شه، بعد فنس/اینلاین‌کد
+   با placeholder جدا می‌شن، بعد مارک‌آپ اعمال می‌شه. */
+function _mdInline(txt) {
+  return txt
+    .replace(/\*\*([^*\n]+)\*\*/g, "<strong>$1</strong>")
+    .replace(/__([^_\n]+)__/g, "<strong>$1</strong>")
+    .replace(/(^|[^*])\*([^*\n]+)\*(?!\*)/g, "$1<em>$2</em>")
+    .replace(/(^|[^_])_([^_\n]+)_(?!_)/g, "$1<em>$2</em>")
+    .replace(/~~([^~\n]+)~~/g, "<del>$1</del>")
+    .replace(
+      /\[([^\]]+)\]\(([^)\s]+)\)/g,
+      '<a href="$2" target="_blank" rel="noopener noreferrer">$1</a>'
+    );
+}
+
+function mdToHtml(src) {
+  if (!src) return "";
+  const raw = String(src);
+
+  /* ۱) جدا کردن fenced code از متن — با placeholder یونیکد */
+  const fences = [];
+  let s = raw.replace(/```([^\n`]*)\n?([\s\S]*?)```/g, (_, lang, code) => {
+    const i = fences.length;
+    fences.push(code.replace(/\n$/, ""));
+    return `\u0001F${i}\u0001`;
+  });
+
+  /* ۲) جدا کردن inline code */
+  const inlines = [];
+  s = s.replace(/`([^`\n]+)`/g, (_, code) => {
+    const i = inlines.length;
+    inlines.push(code);
+    return `\u0001I${i}\u0001`;
+  });
+
+  /* ۳) escape کل باقی‌مانده */
+  s = esc(s);
+
+  /* ۴) برگرداندن inline code به شکل امن */
+  inlines.forEach((code, i) => {
+    s = s.replace(
+      `\u0001I${i}\u0001`,
+      `<code class="md-icode">${esc(code)}</code>`
+    );
+  });
+
+  /* ۵) پردازش خط‌به‌خط */
+  const lines = s.split(/\r?\n/);
+  const out = [];
+  let inList = null; /* "ul" | "ol" | null */
+  let inQuote = false;
+
+  const closeList = () => {
+    if (inList) {
+      out.push(`</${inList}>`);
+      inList = null;
+    }
+  };
+  const closeQuote = () => {
+    if (inQuote) {
+      out.push("</blockquote>");
+      inQuote = false;
+    }
+  };
+
+  for (const rawLine of lines) {
+    const line = rawLine.trim();
+
+    /* فنس کد */
+    const fm = line.match(/^\u0001F(\d+)\u0001$/);
+    if (fm) {
+      closeList(); closeQuote();
+      const i = Number(fm[1]);
+      out.push(
+        `<pre class="md-code"><code>${esc(fences[i] || "")}</code></pre>`
+      );
+      continue;
+    }
+
+    /* خط خالی */
+    if (!line) {
+      closeList(); closeQuote();
+      continue;
+    }
+
+    /* افقی */
+    if (/^[-*_]{3,}$/.test(line)) {
+      closeList(); closeQuote();
+      out.push('<hr class="md-hr">');
+      continue;
+    }
+
+    /* هدر */
+    const hm = line.match(/^(#{1,6})\s+(.+)$/);
+    if (hm) {
+      closeList(); closeQuote();
+      const lvl = hm[1].length;
+      out.push(
+        `<h${lvl} class="md-h${lvl}">${_mdInline(hm[2])}</h${lvl}>`
+      );
+      continue;
+    }
+
+    /* نقل قول — esc() علامت > رو به &gt; تبدیل کرده */
+    const qm = line.match(/^&gt;\s?(.*)$/);
+    if (qm) {
+      closeList();
+      if (!inQuote) {
+        out.push('<blockquote class="md-quote">');
+        inQuote = true;
+      }
+      out.push(`<p>${_mdInline(qm[1])}</p>`);
+      continue;
+    } else {
+      closeQuote();
+    }
+
+    /* لیست نقطه‌ای */
+    const ulm = line.match(/^[-*+]\s+(.+)$/);
+    if (ulm) {
+      closeQuote();
+      if (inList !== "ul") { closeList(); out.push('<ul class="md-ul">'); inList = "ul"; }
+      out.push(`<li>${_mdInline(ulm[1])}</li>`);
+      continue;
+    }
+
+    /* لیست شماره‌دار */
+    const olm = line.match(/^\d+\.\s+(.+)$/);
+    if (olm) {
+      closeQuote();
+      if (inList !== "ol") { closeList(); out.push('<ol class="md-ol">'); inList = "ol"; }
+      out.push(`<li>${_mdInline(olm[1])}</li>`);
+      continue;
+    }
+
+    /* پاراگراف */
+    closeList();
+    out.push(`<p class="md-p">${_mdInline(line)}</p>`);
+  }
+  closeList(); closeQuote();
+
+  return out.join("\n");
+}
+
+/* ── وضعیت و toggle ── */
+let _mdPreviewOn = false;
+
+function setMdPreview(on) {
+  if (_mdPreviewOn === on) return;
+  _mdPreviewOn = on;
+
+  const preview = $("#mdPreview");
+  const body = $("#mdBody");
+  const wrap = $("#editorWrap");
+  const btn = $("#mdToggle");
+  const gutter = $("#editorGutter");
+
+  if (!preview || !body || !wrap) return;
+
+  if (on) {
+    const raw = editorArea.value || "";
+    body.innerHTML = mdToHtml(raw);
+    /* جهت رو مثل ادیتور ست کن */
+    applyTextDir(body, raw);
+    /* اسکرول از اول */
+    preview.scrollTop = 0;
+    preview.hidden = false;
+    /* textarea و گاتر بمونن ولی مخفی شن (بدون نمایش: none تا فریم‌بافر نشه) */
+    editorArea.style.visibility = "hidden";
+    if (gutter) gutter.style.visibility = "hidden";
+  } else {
+    preview.hidden = true;
+    body.innerHTML = "";
+    editorArea.style.visibility = "";
+    if (gutter) gutter.style.visibility = "";
+    /* برگشت به ادیتور — فوکوس رو برگردون */
+    editorArea.focus({ preventScroll: true });
+  }
+
+  if (btn) {
+    btn.setAttribute("aria-pressed", on ? "true" : "false");
+    btn.setAttribute(
+      "data-tip",
+      on ? "بازگشت به ویرایش" : "پیش‌نمایش Markdown"
+    );
+    btn.setAttribute(
+      "aria-label",
+      on ? "بازگشت به ویرایش" : "پیش‌نمایش Markdown"
+    );
+  }
+  editorModal.classList.toggle("md-preview-on", on);
+}
+
+/* کلیک روی بج */
+$("#mdToggle")?.addEventListener("click", () => {
+  setMdPreview(!_mdPreviewOn);
+  SFX.play("tick");
+});
+
+/* راهنما: کلید Ctrl+M برای سوییچ سریع */
+document.addEventListener("keydown", (e) => {
+  if (
+    (e.ctrlKey || e.metaKey) &&
+    (e.code === "KeyM" || e.key.toLowerCase() === "m") &&
+    $("#modalBack")?.classList.contains("open")
+  ) {
+    e.preventDefault();
+    setMdPreview(!_mdPreviewOn);
+  }
+});
+
+
 initPromptCatSelect();
 initSortSelect();
 loadPrefs();
@@ -4971,9 +5672,160 @@ load();
     );
   }
 })();
+
+/* ═══ اسکرول‌بار سفارشی PWA ═══ */
+(function initCustomScrollbar() {
+  if (matchMedia("(max-width: 760px)").matches) return;
+  if (matchMedia("(hover: none)").matches) return;
+
+  const el = document.createElement("div");
+  el.id = "customScrollbar";
+  el.setAttribute("aria-hidden", "true");
+  document.body.appendChild(el);
+
+  let hideTimer = null;
+  let raf = 0;
+
+  function update() {
+    cancelAnimationFrame(raf);
+    raf = requestAnimationFrame(() => {
+      const doc = document.documentElement;
+      const scrollTop = doc.scrollTop || document.body.scrollTop;
+      const scrollH = doc.scrollHeight;
+      const viewH = doc.clientHeight;
+      const maxScroll = scrollH - viewH;
+
+      if (maxScroll <= 4) {
+        el.hidden = true;
+        return;
+      }
+      el.hidden = false;
+
+      /* ارتفاع نوار متناسب با محتوا */
+      const ratio = viewH / scrollH;
+      const trackH = viewH - 6; /* padding ناچیز بالا/پایین */
+      const thumbH = Math.max(22, trackH * ratio);
+      const thumbY = (scrollTop / maxScroll) * (trackH - thumbH) + 3;
+
+      el.style.height = thumbH + "px";
+      el.style.transform = `translateY(${thumbY}px)`;
+    });
+  }
+
+  function show() {
+    el.classList.add("visible");
+    clearTimeout(hideTimer);
+    hideTimer = setTimeout(() => {
+      el.classList.remove("visible");
+      el.classList.remove("hover");
+    }, 700);
+  }
+
+  /* چند منبع برای trigger — چون بعضی WebViewها scroll رو
+     روی window fire نمی‌کنن (خصوصاً وقتی html خودش اسکرول‌کننده‌ست). */
+  const trigger = () => {
+    update();
+    show();
+  };
+  window.addEventListener("scroll", trigger, { passive: true });
+  document.addEventListener("scroll", trigger, {
+    passive: true,
+    capture: true,
+  });
+  window.addEventListener("wheel", trigger, { passive: true });
+  window.addEventListener("touchmove", trigger, { passive: true });
+  window.addEventListener(
+    "keydown",
+    (e) => {
+      if (
+        e.key === "PageUp" ||
+        e.key === "PageDown" ||
+        e.key === "ArrowUp" ||
+        e.key === "ArrowDown" ||
+        e.key === "Home" ||
+        e.key === "End" ||
+        e.key === " "
+      )
+        trigger();
+    },
+    { passive: true }
+  );
+
+  window.addEventListener("resize", update, { passive: true });
+
+  /* هر بار محتوا بزرگ‌تر/کوچک‌تر شد، availability رو دوباره حساب کن */
+  if (window.ResizeObserver) {
+    new ResizeObserver(update).observe(document.body);
+  }
+
+  /* فقط نمایشی — بدون drag. hover صرفاً تأکید بصریه. */
+  el.addEventListener("mouseenter", () => {
+    el.classList.add("hover");
+    show();
+  });
+  el.addEventListener("mouseleave", () => {
+    el.classList.remove("hover");
+  });
+
+  /* مقدار اولیه — دو بار با تأخیر، چون DOM اولیه هنوز کامل نیست */
+  update();
+  requestAnimationFrame(update);
+  setTimeout(() => {
+    update();
+    /* اگه صفحه از همون اول اسکرول‌پذیره، یک‌بار نشونش بده تا کاربر بفهمه هست */
+    if (
+      document.documentElement.scrollHeight >
+      document.documentElement.clientHeight + 4
+    ) {
+      show();
+    }
+  }, 450);
+})();
+
 applyPrefs();
 renderPrefs();
 initAllPswitches();
+
+/* ═══ رویدادهای والپیپر ═══ */
+$("#wallCats")?.addEventListener("click", (e) => {
+  const btn = e.target.closest(".wall-cat");
+  if (!btn) return;
+  const c = btn.dataset.c;
+  if (c === _wallCatFilter) return;
+  _wallCatFilter = c;
+  renderWallpaperGrid();
+});
+
+$("#wallGrid")?.addEventListener("click", (e) => {
+  const card = e.target.closest(".wall-card");
+  if (!card) return;
+  const id = card.dataset.id;
+  if (PREFS.wall === id) return;
+  PREFS.wall = id;
+  savePrefs();
+  applyWallpaper(id);
+  renderWallpaperGrid();
+  SFX.play("tick");
+});
+
+$("#wallDim")?.addEventListener("input", (e) => {
+  const v = Number(e.target.value) || 0;
+  PREFS.wallDim = v;
+  savePrefs();
+  document.documentElement.style.setProperty("--wall-dim", v / 100);
+  const el = $("#wallDimVal");
+  if (el) el.textContent = toFaNum(v) + "٪";
+});
+
+$("#wallBlur")?.addEventListener("input", (e) => {
+  const v = Number(e.target.value) || 0;
+  PREFS.wallBlur = v;
+  savePrefs();
+  document.documentElement.style.setProperty("--wall-blur", v + "px");
+  const el = $("#wallBlurVal");
+  if (el) el.textContent = toFaNum(v) + "px";
+});
+
 updateLibModeUI();
 renderChips();
 renderCatList();
@@ -5255,11 +6107,15 @@ function openLibSettings() {
   $("#libSettingsBack").classList.add("open");
   _navPush("overlay", "libSettingsBack");
   refreshFocusTrap();
-  /* اسلایدر رو دوباره موقعیت‌دهی کن */
+  /* اسلایدر رو چند بار موقعیت‌دهی کن — برای layout و فونت async */
   const el = document.querySelector('.pswitch[data-pref="libMode"]');
   if (el) {
     const sched = _pswInstances.get(el);
-    if (sched) sched();
+    if (sched) {
+      requestAnimationFrame(sched);
+      setTimeout(sched, 60);
+      setTimeout(sched, 200);
+    }
   }
 }
 function closeLibSettings() {
@@ -5463,6 +6319,22 @@ $("#libPreviewBack")?.addEventListener("click", (e) => {
 
 /* ═══ چنج‌لاگ ═══ */
 const CHANGELOG = [
+    {
+    version: "1.6",
+    date: "1405/07/03",
+    items: [
+      "هشت ظاهر تازه برای اپ در [ظاهر](appearance): از مینیمال و شیشه‌ای تا ترمینال فسفری و مجله‌ای — هرکدام شخصیت خودش را دارد.",
+      "والپیپر: تصویر ثابت یا پس‌زمینهٔ زندهٔ متحرک، با گالری آماده و کنترل تیرگی و محو. روی [ظاهر](appearance) → تصویر امتحان کن.",
+      "پیش‌نمایش Markdown در ادیتور پرامپت — با دکمهٔ چشم یا Ctrl+M. تیترها، لیست‌ها و کد بلوکی همان‌طور که در AI دیده می‌شوند.",
+      "کتابخانه حالا دو حالت دارد: پیشنهاد خودکار روزانه، یا انتخاب دستی با دکمهٔ ↻. پیش از افزودن، آمار متن (خط، کلمه، کاراکتر، تخمین توکن) را می‌بینی.",
+      "پس‌زمینه چهار حالت مستقل گرفت: بدون، پترن، تصویر، زنده — دیگر لازم نیست بین پترن و والپیپر یکی را انتخاب کنی.",
+      "راهنمای کامل استفاده در [درباره](about) → راهنما؛ از متغیرها و کتابخانه تا میان‌برهای کیبورد.",
+      "منوی راست‌کلیک روی کارت حالا زیرمنو دارد: باز کردن مستقیم در هر سرویس AI، و انتقال سریع به هر دسته.",
+      "در تنظیمات دسکتاپ، جابه‌جایی بین بخش‌ها با انیمیشن نرم و دکمهٔ بازگشت انجام می‌شود.",
+      "کارت‌ها در لیست‌های بزرگ روان‌تر اسکرول می‌شوند و جست‌وجو سریع‌تر نتیجه می‌دهد.",
+      "شمارهٔ نسخه در فوتر و صفحهٔ درباره نمایش داده می‌شود و با هر به‌روزرسانی خودکار عوض می‌شود.",
+    ],
+  },
   {
     version: "1.5",
     date: "1404/06/28",
@@ -5728,6 +6600,30 @@ if ("serviceWorker" in navigator) {
     navigator.serviceWorker.addEventListener("controllerchange", () => {
       if (refreshing) return;
       refreshing = true;
+
+      /* ── بکاپ اضطراری قبل از reload ──
+         حتی اگه کاربر دستی بکاپ نگرفته، موقع آپدیت یه نسخه
+         از داده‌های فعلی رو نگه‌دار. اگر migrate خراب شد،
+         این fallback در دسترسه. */
+      try {
+        const currentData = localStorage.getItem("promptManager_public_v1");
+        if (currentData) {
+          localStorage.setItem(
+            "promptManager_public_v1_autobackup",
+            currentData
+          );
+          /* فقط آخرین ۲ نسخه رو نگه‌دار تا حجم نره بالا */
+          const oldKey = "promptManager_public_v1_autobackup_prev";
+          const prev = localStorage.getItem("promptManager_public_v1_autobackup");
+          if (prev) {
+            try {
+              localStorage.setItem(oldKey, prev);
+            } catch (_) { /* quota */ }
+          }
+        }
+      } catch (_) { /* quota — نادیده */ }
+
+      /* حالا reload */
       window.location.reload();
     });
   });

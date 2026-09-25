@@ -13,7 +13,7 @@
   transform: translateX(-50%) translateY(30px) scale(0.9);
   background: var(--card);
   border: 1px solid var(--line2);
-  border-radius: 14px;
+  border-radius: var(--r-lg);
   padding: 0.75rem 1rem;
   font-size: var(--f-xs);
   font-weight: 600;
@@ -46,10 +46,10 @@
   padding-inline-end: 4px;
 }
 .chlog-item {
-  border: 1px solid var(--line);
-  border-radius: 12px;
+  border: 1px solid var(--s2-bc);
+  border-radius: var(--r-md);
   padding: 0.85rem 1rem;
-  background: var(--deep);
+  background: var(--s2-bg);
 }
 .chlog-head {
   display: flex;
@@ -140,7 +140,7 @@
   background: color-mix(in srgb, var(--acc) 15%, transparent);
   border: 1px solid color-mix(in srgb, var(--acc) 40%, transparent);
   padding: 1px 8px;
-  border-radius: 999px;
+  border-radius: var(--r-pill);
 }
 /* ═══ نشان آپدیت روی دکمهٔ تنظیمات ═══ */
 #settingsBtn.has-update::before {
@@ -212,6 +212,16 @@
     sans-serif;
 }
 :root[data-theme="light"] {
+  --code-bg: #f8fafd;
+  --code-gutter-bg: rgba(23, 44, 110, 0.03);
+  --code-gutter-fg: #8b95b8;
+  --code-fg: #1f2a4a;
+  --code-border: rgba(23, 44, 110, 0.08);
+  --code-caret: var(--blu);
+  --select-bg: rgba(109, 40, 217, 0.2);
+  --scrollbar-thumb: #c2cbe3;
+  --scrollbar-thumb-hover: #a5b0d2;
+  --shadow-hover-card: 0 20px 48px rgba(90, 110, 170, 0.28);
   --bg: #f3f5fb;
   --bg2: #eaeef8;
   --card: #fff;
@@ -259,6 +269,48 @@
   --acc-ink: #0b0f1e;
 }
 
+/* ── پالت‌های فسفری CRT ── */
+:root[data-accent="crt-green"] {
+  --acc: #4ade80;
+  --acc-ink: #041a0a;
+  --vio: #4ade80;
+  --cyn: #4ade80;
+  --grn: #4ade80;
+  --focus: #4ade80;
+}
+:root[data-accent="crt-amber"] {
+  --acc: #fbbf24;
+  --acc-ink: #1a0f04;
+  --vio: #fbbf24;
+  --cyn: #fbbf24;
+  --grn: #fbbf24;
+  --focus: #fbbf24;
+}
+:root[data-accent="crt-cyan"] {
+  --acc: #22d3ee;
+  --acc-ink: #04141a;
+  --vio: #22d3ee;
+  --cyn: #22d3ee;
+  --grn: #22d3ee;
+  --focus: #22d3ee;
+}
+:root[data-accent="crt-white"] {
+  --acc: #e2e8f0;
+  --acc-ink: #0a0f14;
+  --vio: #e2e8f0;
+  --cyn: #e2e8f0;
+  --grn: #e2e8f0;
+  --focus: #e2e8f0;
+}
+:root[data-accent="crt-magenta"] {
+  --acc: #f472b6;
+  --acc-ink: #1a0410;
+  --vio: #f472b6;
+  --cyn: #f472b6;
+  --grn: #f472b6;
+  --focus: #f472b6;
+}
+
 :root[data-accent="mono"] .brand .logo {
   background: var(--acc-ink);
 }
@@ -304,11 +356,17 @@
 html {
   scroll-behavior: smooth;
   font-size: var(--fs-base);
-  /* غیرفعال‌سازی pull-to-refresh بومی — جایگزین: pull نرم برای sync */
   overscroll-behavior-y: contain;
-  /* همیشه جای اسکرول‌بار رزرو می‌شود → باز/بسته شدن پنل‌ها هیچ جابه‌جایی‌ای ایجاد نمی‌کند */
-  scrollbar-gutter: stable;
   overflow-y: scroll;
+  /* اسکرول‌بار بومی حذف — والپیپر تا لبه می‌ره */
+  scrollbar-width: none;      /* Firefox */
+  -ms-overflow-style: none;   /* IE/Edge قدیمی */
+}
+html::-webkit-scrollbar,
+body::-webkit-scrollbar {
+  width: 0;
+  height: 0;
+  display: none;
 }
 body {
   font-family: "Vazirmatn", system-ui, sans-serif;
@@ -338,6 +396,7 @@ body.kb-lock {
   width: 100%;
   overflow: hidden;
 }
+/* ── پترن پایه (aurora) — رنگ‌ها از پالت فعال ── */
 body::before {
   content: "";
   position: fixed;
@@ -346,20 +405,28 @@ body::before {
   background:
     radial-gradient(
       900px 500px at 88% -8%,
-      rgba(124, 58, 237, 0.15),
+      color-mix(in srgb, var(--acc) 15%, transparent),
       transparent 60%
     ),
     radial-gradient(
       700px 600px at 50% 112%,
-      rgba(59, 130, 246, 0.12),
+      color-mix(in srgb, var(--blu) 12%, transparent),
       transparent 60%
     ),
     radial-gradient(
       circle,
-      rgba(167, 139, 250, 0.14) 1.1px,
+      color-mix(in srgb, var(--acc) 14%, transparent) 1.1px,
       transparent 1.3px
     );
   background-size: auto, auto, 32px 32px;
+  transition: opacity 0.5s var(--ease-ios);
+}
+
+/* ── پنهان‌سازی پترن وقتی والپیپر یا none فعاله ── */
+:root[data-bg="none"] body::before,
+:root[data-wall="static"] body::before,
+:root[data-wall="live"] body::before {
+  opacity: 0;
 }
 :root[data-theme="light"] body::before {
   background:
@@ -386,79 +453,52 @@ body::before {
 /* ── رنگین (mesh) ── */
 :root[data-bg="mesh"] body::before {
   background:
-    radial-gradient(60% 55% at 18% 12%, rgba(167, 139, 250, 0.22), transparent 72%),
-    radial-gradient(55% 50% at 85% 22%, rgba(96, 165, 250, 0.18), transparent 75%),
-    radial-gradient(55% 55% at 28% 92%, rgba(52, 211, 153, 0.14), transparent 72%),
-    radial-gradient(48% 52% at 92% 88%, rgba(251, 191, 36, 0.12), transparent 72%);
-}
-:root[data-theme="light"][data-bg="mesh"] body::before {
-  background:
-    radial-gradient(60% 55% at 18% 12%, rgba(124, 58, 237, 0.1), transparent 72%),
-    radial-gradient(55% 50% at 85% 22%, rgba(37, 99, 235, 0.08), transparent 75%),
-    radial-gradient(55% 55% at 28% 92%, rgba(5, 150, 105, 0.07), transparent 72%),
-    radial-gradient(48% 52% at 92% 88%, rgba(180, 83, 9, 0.06), transparent 72%);
+    radial-gradient(60% 55% at 18% 12%,
+      color-mix(in srgb, var(--acc) 22%, transparent), transparent 72%),
+    radial-gradient(55% 50% at 85% 22%,
+      color-mix(in srgb, var(--blu) 18%, transparent), transparent 75%),
+    radial-gradient(55% 55% at 28% 92%,
+      color-mix(in srgb, var(--cyn) 14%, transparent), transparent 72%),
+    radial-gradient(48% 52% at 92% 88%,
+      color-mix(in srgb, var(--vio) 12%, transparent), transparent 72%);
 }
 
 /* ── شبکه (grid) ── */
 :root[data-bg="grid"] body::before {
   background:
-    radial-gradient(700px 420px at 88% -10%, rgba(124, 58, 237, 0.1), transparent 70%),
-    linear-gradient(rgba(140, 160, 255, 0.055) 1px, transparent 1px) 0 0 / 44px 44px,
-    linear-gradient(90deg, rgba(140, 160, 255, 0.055) 1px, transparent 1px) 0 0 / 44px 44px;
-}
-:root[data-theme="light"][data-bg="grid"] body::before {
-  background:
-    radial-gradient(700px 420px at 88% -10%, rgba(124, 58, 237, 0.05), transparent 70%),
-    linear-gradient(rgba(23, 44, 110, 0.06) 1px, transparent 1px) 0 0 / 44px 44px,
-    linear-gradient(90deg, rgba(23, 44, 110, 0.06) 1px, transparent 1px) 0 0 / 44px 44px;
+    radial-gradient(700px 420px at 88% -10%,
+      color-mix(in srgb, var(--acc) 10%, transparent), transparent 70%),
+    linear-gradient(
+      color-mix(in srgb, var(--acc) 6%, transparent) 1px,
+      transparent 1px
+    ) 0 0 / 44px 44px,
+    linear-gradient(90deg,
+      color-mix(in srgb, var(--acc) 6%, transparent) 1px,
+      transparent 1px
+    ) 0 0 / 44px 44px;
 }
 
 /* ── نقطه‌ای (dots) ── */
 :root[data-bg="dots"] body::before {
   background:
-    radial-gradient(700px 420px at 88% -10%, rgba(124, 58, 237, 0.1), transparent 70%),
-    radial-gradient(circle, rgba(167, 139, 250, 0.16) 1.3px, transparent 1.6px) 0 0 / 26px 26px;
-}
-:root[data-theme="light"][data-bg="dots"] body::before {
-  background:
-    radial-gradient(700px 420px at 88% -10%, rgba(124, 58, 237, 0.05), transparent 70%),
-    radial-gradient(circle, rgba(109, 40, 217, 0.11) 1.3px, transparent 1.6px) 0 0 / 26px 26px;
+    radial-gradient(700px 420px at 88% -10%,
+      color-mix(in srgb, var(--acc) 10%, transparent), transparent 70%),
+    radial-gradient(circle,
+      color-mix(in srgb, var(--acc) 18%, transparent) 1.3px,
+      transparent 1.6px
+    ) 0 0 / 26px 26px;
 }
 
 /* ── راه‌راه (stripes) ── */
 :root[data-bg="stripes"] body::before {
   background:
-    radial-gradient(700px 420px at 88% -10%, rgba(124, 58, 237, 0.09), transparent 70%),
+    radial-gradient(700px 420px at 88% -10%,
+      color-mix(in srgb, var(--acc) 9%, transparent), transparent 70%),
     repeating-linear-gradient(
       135deg,
-      rgba(140, 160, 255, 0.045) 0 18px,
+      color-mix(in srgb, var(--acc) 5%, transparent) 0 18px,
       transparent 18px 44px
     );
-}
-:root[data-theme="light"][data-bg="stripes"] body::before {
-  background:
-    radial-gradient(700px 420px at 88% -10%, rgba(124, 58, 237, 0.05), transparent 70%),
-    repeating-linear-gradient(
-      135deg,
-      rgba(23, 44, 110, 0.05) 0 18px,
-      transparent 18px 44px
-    );
-}
-
-/* ── ساده (clean) ── */
-:root[data-bg="clean"] body::before {
-  background: radial-gradient(
-    900px 500px at 50% -10%,
-    rgba(124, 58, 237, 0.06),
-    transparent 70%
-  );
-}
-:root[data-theme="light"][data-bg="clean"] body::before {
-  background: radial-gradient(
-    900px 500px at 50% -10%,
-    rgba(124, 58, 237, 0.04),
-    transparent 70%
-  );
 }
 
 /* body::after (grid overlay) حذف شد برای عملکرد WebView */
@@ -470,18 +510,15 @@ body::before {
   background: var(--bg);
 }
 ::-webkit-scrollbar-thumb {
-  background: #26335c;
+  background: var(--scrollbar-thumb);
   border-radius: 8px;
   border: 2px solid var(--bg);
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: #374a82;
-}
-:root[data-theme="light"] ::-webkit-scrollbar-thumb {
-  background: #c2cbe3;
+  background: var(--scrollbar-thumb-hover);
 }
 ::selection {
-  background: rgba(139, 92, 246, 0.45);
+  background: var(--select-bg);
 }
 button,
 input,
@@ -527,8 +564,8 @@ header.top {
   gap: 0.75rem;
   padding: 0.65rem 0.9rem;
   background: var(--header-bg);
-  backdrop-filter: blur(5px) saturate(1.5);
-  -webkit-backdrop-filter: blur(5px) saturate(1.5);
+  backdrop-filter: blur(10px) saturate(1.5);
+  -webkit-backdrop-filter: blur(10px) saturate(1.5);
   border-bottom: 1px solid var(--line);
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.06);
   min-height: var(--header-h);
@@ -544,7 +581,7 @@ header.top {
 .brand .logo {
   width: 2.35rem;
   height: 2.35rem;
-  border-radius: 12px;
+  border-radius: var(--r-md);
   background: var(--acc);
   display: grid;
   place-items: center;
@@ -578,7 +615,7 @@ header.top {
 .icon-btn {
   width: 2.5rem;
   height: 2.5rem;
-  border-radius: 12px;
+  border-radius: var(--r-md);
   border: 1px solid var(--line);
   background: var(--card);
   cursor: pointer;
@@ -622,7 +659,7 @@ header.top {
   min-width: 0;
   width: 100%;
   padding: 0.6rem 2.5rem 0.6rem 0.85rem;
-  border-radius: 12px;
+  border-radius: var(--r-md);
   border: 1px solid var(--line);
   background: var(--deep);
   font-size: var(--f-sm);
@@ -660,7 +697,7 @@ header.top {
   left: 0;
   background: var(--card);
   border: 1px solid var(--line2);
-  border-radius: 14px;
+  border-radius: var(--r-lg);
   box-shadow: var(--shadow);
   max-height: min(460px, 72vh);
   overflow-y: auto;
@@ -713,7 +750,9 @@ header.top {
    تا بک‌دراپ تیره از پشت شیشهٔ نیمه‌شفافشان دیده نشود */
 body.msearch-open header.top,
 body.msearch-open footer.app-footer {
-  background: var(--card);
+  background: var(--s1-tint);
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
 }
 
 .msearch-back {
@@ -751,10 +790,10 @@ body.msearch-open footer.app-footer {
   top: var(--header-h);
   max-height: calc(100vh - var(--header-h) - 16px);
   max-height: calc(100dvh - var(--header-h) - 16px);
-  background: linear-gradient(180deg, var(--card), var(--deep));
-  border-bottom: 1px solid var(--line2);
-  border-radius: 0 0 20px 20px;
-  box-shadow: 0 20px 50px rgba(2, 5, 18, 0.6);
+  /* background از S1 binding میاد */
+  border-bottom: 1px solid var(--s1-bc);
+  border-radius: 0 0 var(--r-xl) var(--r-xl);
+  box-shadow: var(--shadow);
   transform: translateY(-24px);
   opacity: 0;
   visibility: hidden;
@@ -780,7 +819,7 @@ body.msearch-open footer.app-footer {
   align-items: center;
   gap: 0.65rem;
   padding: 0.85rem 1rem;
-  border-bottom: 1px solid var(--line);
+  border-bottom: 1px solid var(--s2-bc);
   flex-shrink: 0;
 }
 .msearch-bar .mb-ic {
@@ -834,7 +873,7 @@ body.msearch-open footer.app-footer {
   width: 100%;
   text-align: right;
   padding: 0.6rem 0.7rem;
-  border-radius: 10px;
+  border-radius: var(--r-md);
   border: none;
   background: transparent;
   color: var(--txt);
@@ -849,7 +888,7 @@ body.msearch-open footer.app-footer {
 .sp-item-ic {
   width: 2.1rem;
   height: 2.1rem;
-  border-radius: 9px;
+  border-radius: var(--r-md);
   flex-shrink: 0;
   background: var(--deep);
   border: 1px solid var(--line);
@@ -899,7 +938,7 @@ body.msearch-open footer.app-footer {
   font-size: var(--f-2xs);
   color: var(--dim);
   padding: 2px 9px;
-  border-radius: 999px;
+  border-radius: var(--r-pill);
   background: var(--deep);
   border: 1px solid var(--line);
   flex-shrink: 0;
@@ -938,7 +977,7 @@ main {
   align-items: center;
   gap: 0.5rem;
   padding: 0.42rem 0.9rem;
-  border-radius: 999px;
+  border-radius: var(--r-pill);
   background: var(--card2);
   border: 1px solid var(--line);
   font-size: var(--f-xs);
@@ -957,15 +996,16 @@ main {
   transform: scale(0.95);
 }
 .chip.on {
-  background: color-mix(in srgb, var(--acc) 15%, transparent);
+  background: color-mix(in srgb, var(--acc) 20%, var(--card2));
   color: var(--txt);
-  border-color: color-mix(in srgb, var(--acc) 55%, transparent);
+  border-color: color-mix(in srgb, var(--acc) 60%, transparent);
+  box-shadow: inset 0 1px 0 color-mix(in srgb, var(--acc) 15%, transparent);
 }
 .chip .cnt {
   font-size: var(--f-2xs);
   padding: 1px 7px;
-  border-radius: 999px;
-  background: rgba(140, 160, 255, 0.1);
+  border-radius: var(--r-pill);
+  background: color-mix(in srgb, var(--card) 70%, transparent);
   border: 1px solid var(--line);
 }
 .chip.on .cnt {
@@ -975,7 +1015,7 @@ main {
 .chip .dot {
   width: 0.5rem;
   height: 0.5rem;
-  border-radius: 50%;
+  border-radius: var(--r-circle);
   flex-shrink: 0;
 }
 .dot.b-vio {
@@ -1024,7 +1064,7 @@ main {
   justify-content: center;
   gap: 0.5rem;
   padding: 0.55rem 1.1rem;
-  border-radius: 11px;
+  border-radius: var(--r-md);
   border: 1px solid var(--line2);
   background: var(--card2);
   font-size: var(--f-sm);
@@ -1051,7 +1091,7 @@ main {
 .btn.sm {
   padding: 0.4rem 0.8rem;
   font-size: var(--f-xs);
-  border-radius: 9px;
+  border-radius: var(--r-sm);
 }
 .btn.dgr {
   border-color: rgba(251, 113, 133, 0.5);
@@ -1082,7 +1122,7 @@ main {
   align-items: center;
   gap: 0.55rem;
   padding: 0.5rem 0.8rem;
-  border-radius: 10px;
+  border-radius: var(--r-md);
   border: 1px solid var(--line);
   background: var(--card2);
   font-size: var(--f-xs);
@@ -1148,7 +1188,7 @@ main {
   overflow-y: auto;
   background: var(--card);
   border: 1px solid var(--line2);
-  border-radius: 12px;
+  border-radius: var(--r-md);
   box-shadow: var(--shadow);
   padding: 5px;
   opacity: 0;
@@ -1176,7 +1216,7 @@ main {
   width: 100%;
   text-align: right;
   padding: 0.55rem 0.7rem;
-  border-radius: 8px;
+  border-radius: var(--r-sm);
   border: none;
   background: transparent;
   color: var(--txt);
@@ -1187,7 +1227,10 @@ main {
   font-family: inherit;
 }
 .cselect-item:hover {
-  background: var(--card2);
+  background: color-mix(in srgb, var(--s4-tint) 92%, var(--s2-tint));
+}
+:root[data-theme="light"][data-skin="glass"] .cselect-item:hover {
+  background: rgba(23, 44, 110, 0.06);
 }
 .cselect-item .ci-check {
   width: 0.9rem;
@@ -1217,15 +1260,13 @@ main {
   gap: var(--gap);
 }
 .grid.filtering {
-  animation: gridIn 0.32s var(--ease-ios);
+  animation: gridIn 0.28s var(--ease-ios);
 }
 @keyframes gridIn {
   from {
-    opacity: 0.4;
-    transform: translateY(6px);
+    transform: translateY(4px);
   }
   to {
-    opacity: 1;
     transform: none;
   }
 }
@@ -1241,9 +1282,9 @@ main {
 }
 
 .card {
-  background: linear-gradient(160deg, var(--card), var(--deep));
+  background: var(--card-bg);
   border: 1px solid var(--line);
-  border-radius: 16px;
+  border-radius: var(--r-xl);
   padding: 1.1rem 1.1rem 0.85rem;
   box-shadow: var(--shadow);
   display: flex;
@@ -1255,12 +1296,19 @@ main {
     border-color 0.35s var(--ease-ios),
     box-shadow 0.35s var(--ease-ios);
   animation: rise 0.5s var(--ease-ios) both;
-  /* مرورگر کارت‌های خارج از viewport رو رندر نمی‌کنه.
-     12rem: اندازهٔ تخمینی هر کارت برای layout پایدار.
-     content-visibility: auto رفتار پیش‌فرض بافر رو داره (~۵۰٪ viewport).
-     با ۱۰۰-۲۰۰ کارت معمولی، این کافیه. */
+  /* مرورگر کارت‌های خارج از viewport رو رندر نمی‌کنه. */
   content-visibility: auto;
   contain-intrinsic-size: auto 13rem;
+}
+
+/* موبایل: content-visibility باعث می‌شه موقع اسکرول سریع
+   پلیس‌هولدر کم‌وضوح ببینی و بعد swap کنه. با backdrop-filter
+   این swap خیلی گرون می‌شه. خاموشش می‌کنیم. */
+@media (max-width: 760px) {
+  .card {
+    content-visibility: visible;
+    contain-intrinsic-size: none;
+  }
 }
 .card:hover {
   border-color: var(--line2);
@@ -1322,7 +1370,7 @@ main {
 .phead .pin {
   width: 2rem;
   height: 2rem;
-  border-radius: 9px;
+  border-radius: var(--r-md);
   border: 1px solid var(--line2);
   background: var(--deep);
   color: var(--mut);
@@ -1379,7 +1427,7 @@ main {
 .pcat {
   font-size: var(--f-2xs);
   padding: 3px 10px;
-  border-radius: 999px;
+  border-radius: var(--r-pill);
   border: 1px solid;
   font-weight: 800;
   flex-shrink: 0;
@@ -1427,6 +1475,17 @@ main {
   -webkit-box-orient: vertical;
   overflow: hidden;
 }
+/* هایلایت نتایج جستجو روی کارت‌ها */
+.card .phead b mark,
+.card .pdesc mark {
+  background: color-mix(in srgb, var(--amb) 28%, transparent);
+  color: var(--amb);
+  border-radius: 4px;
+  padding: 0 3px;
+  font-weight: inherit;
+  box-decoration-break: clone;
+  -webkit-box-decoration-break: clone;
+}
 .ptags {
   display: flex;
   gap: 5px;
@@ -1436,7 +1495,7 @@ main {
 .tag {
   font-size: var(--f-2xs);
   padding: 3px 10px;
-  border-radius: 999px;
+  border-radius: var(--r-pill);
   background: var(--card2);
   border: 1px solid var(--line);
   color: var(--dim);
@@ -1469,7 +1528,7 @@ main {
 .ibtn {
   width: 2.5rem;
   height: 2.5rem;
-  border-radius: 11px;
+  border-radius: var(--r-md);
   border: 1px solid var(--line);
   background: var(--card2);
   display: grid;
@@ -1523,46 +1582,94 @@ main {
 
 /* ══════════════ حالت خالی ══════════════ */
 .empty {
-  text-align: center;
-  color: var(--dim);
-  padding: 60px 20px;
+  grid-column: 1 / -1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  /* ارتفاع ناحیهٔ گرید: کل ویوپورت منهای هدر، فوتر و فیلترها */
+  min-height: calc(
+    100dvh
+    - var(--header-h)
+    - 7.5rem /* فیلترها + فاصله‌ها + فوتر */
+  );
+  padding: 1.5rem 1rem;
   font-size: var(--f-md);
+  color: var(--dim);
 }
-.empty svg {
+
+/* کارت نیمه‌شفاف پشت محتوا */
+.empty-inner {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  width: 100%;
+  max-width: 26rem;
+  padding: 2.4rem 1.6rem 1.9rem;
+  border-radius: 20px;
+  background: color-mix(in srgb, var(--card) 45%, transparent);
+  border: 1px solid var(--line);
+  backdrop-filter: blur(10px) saturate(1.2);
+  -webkit-backdrop-filter: blur(10px) saturate(1.2);
+  box-shadow:
+    0 10px 40px -16px color-mix(in srgb, var(--ink) 55%, transparent),
+    inset 0 1px 0 color-mix(in srgb, #fff 5%, transparent);
+  /* روی والپیپر: کمی جدا شو تا شیشه‌ای دیده شه */
+  isolation: isolate;
+}
+
+.empty-inner > svg {
   width: 3.5rem;
   height: 3.5rem;
-  opacity: 0.35;
-  margin-bottom: 1rem;
+  opacity: 0.4;
+  margin-bottom: 0.9rem;
   color: var(--vio);
 }
-.empty h3 {
+.empty-inner h3 {
   font-size: var(--f-lg);
   font-weight: 700;
-  color: var(--mut);
-  margin-bottom: 0.5rem;
+  color: var(--txt);
+  margin-bottom: 0.4rem;
 }
-.empty p {
+.empty-inner p {
   line-height: 1.8;
-  margin-bottom: 1rem;
+  color: var(--mut);
+  margin-bottom: 1.4rem;
+  max-width: 20rem;
 }
+
+.empty-actions {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  justify-content: center;
+  width: 100%;
+}
+
 .empty-cta {
   display: inline-flex;
   align-items: center;
-  gap: 0.5rem;
-  padding: 0.6rem 1.1rem;
-  margin-top: 0.75rem;
-  border-radius: 11px;
+  justify-content: center;
+  gap: 0.45rem;
+  padding: 0.62rem 1.05rem;
+  border-radius: var(--r-md);
   border: 1px dashed color-mix(in srgb, var(--acc) 45%, transparent);
-  background: color-mix(in srgb, var(--acc) 6%, transparent);
-  color: color-mix(in srgb, var(--acc) 75%, var(--mut));
+  background: color-mix(in srgb, var(--acc) 7%, transparent);
+  color: color-mix(in srgb, var(--acc) 80%, var(--mut));
   font-family: inherit;
   font-size: var(--f-sm);
   font-weight: 700;
   cursor: pointer;
-  transition: 0.18s var(--ease);
+  flex: 1 1 auto;
+  min-width: 0;
+  transition:
+    background 0.18s var(--ease),
+    border-color 0.18s var(--ease),
+    color 0.18s var(--ease),
+    transform 0.12s var(--ease);
 }
 .empty-cta:hover {
-  background: color-mix(in srgb, var(--acc) 12%, transparent);
+  background: color-mix(in srgb, var(--acc) 14%, transparent);
   border-style: solid;
   color: var(--acc);
 }
@@ -1574,6 +1681,43 @@ main {
   height: 1rem;
   display: block;
   flex-shrink: 0;
+}
+
+/* راهنما — لحن خنثی‌تر، بدون رنگ accent */
+.empty-cta.help {
+  border-color: var(--line2);
+  background: color-mix(in srgb, var(--card2) 55%, transparent);
+  color: var(--mut);
+}
+.empty-cta.help:hover {
+  color: var(--txt);
+  border-color: var(--line2);
+  background: var(--card2);
+}
+
+@media (max-width: 480px) {
+  .empty {
+    min-height: calc(100dvh - var(--header-h) - 10rem);
+    padding: 1.2rem 0.75rem;
+  }
+  .empty-inner {
+    padding: 1.9rem 1.2rem 1.5rem;
+    border-radius: 18px;
+  }
+  .empty-actions {
+    flex-direction: column;
+  }
+  .empty-cta {
+    width: 100%;
+  }
+}
+
+/* لندسکیپ موبایل یا صفحه‌های کوتاه — نذار کارت از کادر بزنه */
+@media (max-height: 560px) {
+  .empty {
+    min-height: auto;
+    padding: 1.5rem 1rem;
+  }
 }
 
 /* ══════════════ Modal ══════════════ */
@@ -1598,9 +1742,9 @@ main {
   overscroll-behavior: contain;
 }
 .modal {
-  background: linear-gradient(160deg, var(--card), var(--deep));
+  background: var(--card-bg);
   border: 1px solid var(--line2);
-  border-radius: 16px;
+  border-radius: var(--r-xl);
   box-shadow: var(--shadow);
   width: 100%;
   max-width: 780px;
@@ -1626,7 +1770,7 @@ main {
 .modal textarea {
   width: 100%;
   padding: 0.6rem 0.8rem;
-  border-radius: 10px;
+  border-radius: var(--r-md);
   border: 1px solid var(--line);
   background: var(--deep);
   font-size: var(--f-sm);
@@ -1681,7 +1825,7 @@ main {
   max-height: min(90vh, 900px);
   height: min(90vh, 900px);
   overflow: visible;
-  border-radius: 14px;
+  border-radius: var(--r-lg);
 }
 .editor-modal.meta-hidden .editor-meta {
   display: none;
@@ -1702,7 +1846,7 @@ main {
   background: var(--deep);
   border-bottom: 1px solid var(--line);
   flex-shrink: 0;
-  border-radius: 14px 14px 0 0;
+  border-radius: var(--r-lg) var(--r-lg) 0 0;
 }
 .editor-titlebar .etb-dots {
   display: flex;
@@ -1748,7 +1892,7 @@ main {
 .editor-titlebar .etb-close {
   width: 2rem;
   height: 2rem;
-  border-radius: 9px;
+  border-radius: var(--r-md);
   border: 1px solid var(--line);
   background: var(--card2);
   color: var(--mut);
@@ -1810,7 +1954,7 @@ main {
   grid-column: 1 / -1;
   width: 100%;
   padding: 0.7rem 0.85rem;
-  border-radius: 10px;
+  border-radius: var(--r-md);
   border: 1px solid var(--line);
   background: var(--deep);
   font-size: var(--f-md);
@@ -1832,7 +1976,7 @@ main {
 .editor-meta .em-desc {
   width: 100%;
   padding: 0.6rem 0.85rem;
-  border-radius: 10px;
+  border-radius: var(--r-md);
   border: 1px solid var(--line);
   background: var(--deep);
   font-size: var(--f-sm);
@@ -1852,7 +1996,7 @@ main {
   min-height: 0;
   display: flex;
   direction: ltr;
-  background: #080d1c;
+  background: var(--code-bg);
   overflow: hidden;
 }
 .editor-gutter {
@@ -1866,29 +2010,22 @@ main {
   font-weight: 400;
   font-size: var(--f-xs);
   line-height: 1.5rem;
-  color: #5d6b98;
-  background: rgba(255, 255, 255, 0.015);
-  border-right: 1px solid rgba(140, 160, 255, 0.08);
+  color: var(--code-gutter-fg);
+  background: var(--code-gutter-bg);
+  border-right: 1px solid var(--code-border);
   user-select: none;
   overflow: hidden;
   white-space: pre;
   pointer-events: none;
 }
-:root[data-theme="light"] .editor-wrap {
-  background: #f8fafd;
-}
-:root[data-theme="light"] .editor-gutter {
-  color: #8b95b8;
-  background: rgba(23, 44, 110, 0.03);
-  border-right-color: rgba(23, 44, 110, 0.08);
-}
+
 .editor-area {
   flex: 1;
   min-width: 0;
   padding: 0.85rem 1rem;
   border: none;
   background: transparent;
-  color: #b9dcff;
+  color: var(--code-fg);
   font-family: var(--mono);
   font-weight: 400;
   font-size: var(--f-xs);
@@ -1905,7 +2042,7 @@ main {
   tab-size: 2;
   unicode-bidi: normal;
   text-align: start;
-  caret-color: var(--vio);
+  caret-color: var(--code-caret);
   -webkit-overflow-scrolling: touch;
 }
 .editor-area::-webkit-resizer {
@@ -1919,20 +2056,13 @@ main {
 .pv-body pre::-webkit-scrollbar-corner {
   background: transparent;
 }
-:root[data-theme="light"] .editor-area {
-  color: #1f2a4a;
-  caret-color: var(--blu);
-}
-:root[data-theme="light"] .editor-area::placeholder {
-  color: #8b95b8;
+
+.editor-area::placeholder {
+  color: var(--code-gutter-fg);
   opacity: 0.7;
 }
-.editor-area::placeholder {
-  color: var(--dim);
-  opacity: 0.55;
-}
 .editor-area::selection {
-  background: rgba(139, 92, 246, 0.35);
+  background: var(--select-bg);
 }
 
 .editor-status {
@@ -1957,7 +2087,7 @@ main {
 }
 .editor-status .es-lang {
   padding: 2px 10px;
-  border-radius: 999px;
+  border-radius: var(--r-pill);
   background: var(--card2);
   border: 1px solid var(--line);
   color: var(--mut);
@@ -1973,7 +2103,7 @@ main {
   background: var(--card);
   border-top: 1px solid var(--line);
   flex-shrink: 0;
-  border-radius: 0 0 14px 14px;
+  border-radius: 0 0 var(--r-lg) var(--r-lg);
 }
 .editor-actions .btn {
   min-width: 6rem;
@@ -1983,7 +2113,7 @@ main {
 .editor-titlebar .etb-toggle {
   width: 2rem;
   height: 2rem;
-  border-radius: 9px;
+  border-radius: var(--r-md);
   border: 1px solid var(--line);
   background: var(--card2);
   color: var(--mut);
@@ -2096,11 +2226,6 @@ main {
     white-space: pre;
     pointer-events: none;
   }
-  :root[data-theme="light"] .editor-gutter {
-    color: #8b95b8;
-    background: transparent;
-    border-right: none;
-  }
 
   .editor-area {
     padding: 0.85rem 0.75rem;
@@ -2145,12 +2270,189 @@ main {
   }
 }
 
+/* ═══ دکمهٔ toggle پیش‌نمایش Markdown ═══ */
+.es-lang-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 2px 10px;
+  border: 1px solid var(--s2-bc);
+  background: var(--s2-bg);
+  color: var(--mut);
+  cursor: pointer;
+  font-family: "Vazirmatn", system-ui, sans-serif;
+  font-size: var(--f-2xs);
+  font-weight: 700;
+  border-radius: var(--r-pill);
+  transition:
+    background 0.18s var(--ease),
+    color 0.18s var(--ease),
+    border-color 0.18s var(--ease);
+  -webkit-tap-highlight-color: transparent;
+}
+.es-lang-btn:hover {
+  color: var(--txt);
+  border-color: var(--line2);
+  background: var(--card2);
+}
+.es-lang-btn:active { transform: scale(0.96); }
+.es-lang-btn[aria-pressed="true"] {
+  color: var(--acc);
+  border-color: color-mix(in srgb, var(--acc) 45%, transparent);
+  background: color-mix(in srgb, var(--acc) 12%, transparent);
+}
+.es-lang-eye {
+  width: 0.85rem;
+  height: 0.85rem;
+  display: block;
+  flex-shrink: 0;
+  opacity: 0.75;
+}
+.es-lang-btn[aria-pressed="true"] .es-lang-eye { opacity: 1; }
+
+/* ═══ لایهٔ پیش‌نمایش Markdown ═══ */
+.editor-wrap {
+  position: relative; /* anchor برای absolute preview */
+}
+.editor-md-preview {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+  padding: 1rem 1.2rem;
+  background: var(--sc-bg);
+  color: var(--code-fg);
+  font-family: "Vazirmatn", system-ui, sans-serif;
+  font-size: var(--f-sm);
+  line-height: 1.85;
+  unicode-bidi: plaintext;
+  text-align: start;
+  animation: mdFadeIn 0.2s var(--ease-ios);
+}
+.editor-md-preview[hidden] { display: none; }
+@keyframes mdFadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+/* ── typography Markdown ── */
+.md-body { max-width: 100%; overflow-wrap: anywhere; }
+.md-body > *:first-child { margin-top: 0; }
+.md-body > *:last-child { margin-bottom: 0; }
+
+.md-h1, .md-h2, .md-h3,
+.md-h4, .md-h5, .md-h6 {
+  font-weight: 800;
+  line-height: 1.35;
+  margin: 1.2em 0 0.6em;
+  color: var(--txt);
+  letter-spacing: 0.1px;
+}
+.md-h1 { font-size: 1.5em; padding-bottom: 0.3em; border-bottom: 1px solid var(--s2-bc); }
+.md-h2 { font-size: 1.3em; padding-bottom: 0.25em; border-bottom: 1px solid var(--s2-bc); }
+.md-h3 { font-size: 1.15em; }
+.md-h4 { font-size: 1.05em; }
+.md-h5 { font-size: 1em; color: var(--mut); }
+.md-h6 { font-size: 0.92em; color: var(--mut); text-transform: uppercase; letter-spacing: 0.6px; }
+
+.md-p { margin: 0.75em 0; }
+.md-body p:empty { display: none; }
+
+.md-ul, .md-ol {
+  margin: 0.65em 0;
+  padding-inline-start: 1.6em;
+}
+.md-ul li, .md-ol li {
+  margin: 0.25em 0;
+  line-height: 1.75;
+}
+.md-ul li::marker { color: var(--acc); }
+.md-ol li::marker { color: var(--acc); font-weight: 700; }
+
+.md-quote {
+  margin: 0.85em 0;
+  padding: 0.5em 0.9em;
+  border-inline-start: 3px solid var(--acc);
+  background: color-mix(in srgb, var(--acc) 6%, transparent);
+  border-radius: 0 var(--r-sm) var(--r-sm) 0;
+  color: var(--mut);
+  font-style: italic;
+}
+.md-quote p { margin: 0.3em 0; }
+
+.md-hr {
+  border: none;
+  height: 1px;
+  background: var(--s2-bc);
+  margin: 1.5em 0;
+}
+
+.md-icode {
+  font-family: var(--mono);
+  font-size: 0.88em;
+  color: var(--cyn);
+  background: color-mix(in srgb, var(--cyn) 10%, transparent);
+  border: 1px solid color-mix(in srgb, var(--cyn) 22%, transparent);
+  border-radius: 5px;
+  padding: 1px 6px;
+  direction: ltr;
+  unicode-bidi: embed;
+  display: inline-block;
+  line-height: 1.4;
+}
+
+.md-code {
+  margin: 0.9em 0;
+  padding: 0.85em 1em;
+  background: color-mix(in srgb, var(--code-bg) 82%, #000);
+  border: 1px solid var(--s2-bc);
+  border-radius: var(--r-md);
+  overflow-x: auto;
+  direction: ltr;
+  text-align: left;
+  font-size: 0.85em;
+  line-height: 1.65;
+}
+.md-code code {
+  font-family: var(--mono);
+  color: var(--code-fg);
+  white-space: pre;
+  display: block;
+}
+
+.md-body strong { color: var(--txt); font-weight: 800; }
+.md-body em { font-style: italic; color: var(--txt); }
+.md-body del { color: var(--dim); }
+
+.md-body a {
+  color: var(--cyn);
+  text-decoration: none;
+  border-bottom: 1px dotted color-mix(in srgb, var(--cyn) 45%, transparent);
+  transition: color 0.15s var(--ease), border-bottom-color 0.15s var(--ease);
+}
+.md-body a:hover {
+  color: var(--txt);
+  border-bottom-color: var(--txt);
+}
+
+/* موبایل: padding کمتر */
+@media (max-width: 760px) {
+  .editor-md-preview {
+    padding: 0.85rem 1rem;
+    font-size: var(--f-xs);
+    line-height: 1.8;
+  }
+  .md-code { padding: 0.7rem 0.8rem; font-size: 0.8em; }
+}
+
 /* ══════════════ Dialog — Premium ══════════════ */
 .dialog-modal {
   max-width: 400px;
   padding: 0;
   overflow: hidden;
-  border-radius: 16px;
+  border-radius: var(--r-xl);
 }
 .dialog-accent {
   height: 3px;
@@ -2257,9 +2559,9 @@ main {
 .dialog-foot #dialogCancel,
 .dialog-foot #importCancelBtn,
 .dialog-foot #bulkMoveCancelBtn {
-  background: transparent;
-  border-color: var(--line);
-  color: var(--mut);
+  background: var(--card2);
+  border: 1px solid var(--line2);
+  color: var(--txt);
   font-weight: 700;
 }
 .dialog-foot #dialogCancel:hover,
@@ -2278,6 +2580,7 @@ main {
   color: var(--acc-ink);
   border: none;
   font-weight: 800;
+  box-shadow: 0 2px 8px color-mix(in srgb, var(--acc) 30%, transparent);
 }
 .dialog-foot #dialogOk:hover,
 .dialog-foot #importMergeBtn:hover {
@@ -2318,7 +2621,7 @@ main {
   .dialog-modal {
     max-width: none;
     width: 100%;
-    border-radius: 14px;
+    border-radius: var(--r-xl);
   }
   .dialog-body {
     padding: 0.95rem 1rem 0.85rem;
@@ -2404,7 +2707,6 @@ main {
   gap: 0.65rem;
   padding: 0.5rem 1rem;
   min-height: 3.5rem;
-  background: var(--deep);
   border-bottom: 1px solid var(--line);
   flex-shrink: 0;
 }
@@ -2485,15 +2787,13 @@ main {
   display: flex;
   gap: 5px;
   flex-wrap: wrap;
-  background: var(--deep);
   padding: 3px;
-  border-radius: 10px;
-  border: 1px solid var(--line);
+  border-radius: var(--r-md);
 }
 .seg:not(.swatches) button {
   position: relative;
   padding: 0.4rem 0.9rem;
-  border-radius: 999px;
+  border-radius: var(--r-pill);
   border: none;
   background: transparent;
   color: var(--mut);
@@ -2533,14 +2833,13 @@ main {
 .seg.swatches {
   gap: 10px;
   padding: 0.5rem 0.75rem;
-  background: var(--deep);
-  border-radius: 12px;
+  border-radius: var(--r-md);
 }
 .seg.swatches button {
   width: 2.25rem;
   height: 2.25rem;
   padding: 0;
-  border-radius: 50%;
+  border-radius: var(--r-circle);
   background: transparent;
   border: 1px solid var(--line);
   position: relative;
@@ -2556,7 +2855,7 @@ main {
   content: "";
   width: 1.65rem;
   height: 1.65rem;
-  border-radius: 50%;
+  border-radius: var(--r-circle);
   background: var(--sw);
   transition: transform 0.2s var(--ease);
 }
@@ -2572,30 +2871,6 @@ main {
 }
 .seg.swatches button.on::before {
   transform: scale(1.06);
-}
-.sw-default {
-  --sw: conic-gradient(
-    from 90deg,
-    #a78bfa 0 90deg,
-    #60a5fa 90deg 180deg,
-    #34d399 180deg 270deg,
-    #fbbf24 270deg 360deg
-  );
-}
-.sw-ocean {
-  --sw: linear-gradient(135deg, #60a5fa, #22d3ee);
-}
-.sw-forest {
-  --sw: linear-gradient(135deg, #34d399, #84cc16);
-}
-.sw-sunset {
-  --sw: linear-gradient(135deg, #fb7185, #fbbf24);
-}
-.sw-galaxy {
-  --sw: linear-gradient(135deg, #c084fc, #f472b6);
-}
-.sw-mono {
-  --sw: linear-gradient(135deg, #e2e8f0, #475569);
 }
 
 /* ═══ پیش‌نمایش پس‌زمینه‌ها ═══ */
@@ -2658,7 +2933,7 @@ main {
 .cat-tool-btn {
   width: 2.3rem;
   height: 2.3rem;
-  border-radius: 10px;
+  border-radius: var(--r-md);
   border: 1px solid var(--line);
   background: var(--deep);
   color: var(--txt);
@@ -2725,7 +3000,7 @@ main {
   padding: 0.55rem 0.95rem;
   height: 2.3rem;
   border: none;
-  border-radius: 10px;
+  border-radius: var(--r-md);
   background: var(--acc);
   color: var(--acc-ink);
   font-family: inherit;
@@ -2851,9 +3126,7 @@ main {
   align-items: center;
   gap: 0.55rem;
   padding: 0.6rem 0.8rem;
-  border-radius: 10px;
-  background: var(--deep);
-  border: 1px solid var(--line);
+  border-radius: var(--r-md);
   transition:
     background 0.18s var(--ease),
     border-color 0.18s var(--ease),
@@ -2907,7 +3180,7 @@ button.cat-item.selected .cat-check svg {
 .cat-item .dot {
   width: 0.55rem;
   height: 0.55rem;
-  border-radius: 50%;
+  border-radius: var(--r-circle);
   flex-shrink: 0;
 }
 
@@ -2915,7 +3188,7 @@ button.cat-item.selected .cat-check svg {
 .cat-check {
   width: 1.2rem;
   height: 1.2rem;
-  border-radius: 6px;
+  border-radius: var(--r-sm);
   border: 1.5px solid var(--line2);
   background: var(--card);
   display: grid;
@@ -2949,14 +3222,14 @@ button.cat-item.selected .cat-check svg {
   font-size: var(--f-2xs);
   color: var(--dim);
   padding: 1px 8px;
-  border-radius: 999px;
+  border-radius: var(--r-pill);
   background: var(--card2);
   border: 1px solid var(--line);
 }
 .cat-item-btn {
   width: 1.5rem;
   height: 1.5rem;
-  border-radius: 6px;
+  border-radius: var(--r-sm);
   border: 1px solid var(--line);
   background: var(--card2);
   cursor: pointer;
@@ -2995,7 +3268,7 @@ button.cat-item.selected .cat-check svg {
 .cat-colors button {
   width: 2.15rem;
   height: 2.15rem;
-  border-radius: 50%;
+  border-radius: var(--r-circle);
   border: none;
   cursor: pointer;
   background: var(--c);
@@ -3084,7 +3357,7 @@ button.cat-item.selected .cat-check svg {
 .pv-meta .tag {
   font-size: var(--f-2xs);
   padding: 3px 10px;
-  border-radius: 999px;
+  border-radius: var(--r-pill);
   background: var(--card2);
   border: 1px solid var(--line);
   color: var(--dim);
@@ -3112,20 +3385,15 @@ button.cat-item.selected .cat-check svg {
   flex: 1;
   display: flex;
   direction: ltr;
-  background: #080d1c;
+  background: var(--code-bg);
   border: 1px solid var(--line);
-  border-radius: 12px;
-  /* scroll روی خود wrap می‌شینه — گاتر و متن با هم، native */
+  border-radius: var(--r-md);
   overflow: auto;
   overscroll-behavior: contain;
   min-width: 0;
   min-height: 0;
   scrollbar-width: thin;
-  scrollbar-color: #26335c transparent;
-}
-:root[data-theme="light"] .pv-wrap {
-  scrollbar-color: #c2cbe3 transparent;
-  background: #f8fafd;
+  scrollbar-color: var(--scrollbar-thumb) transparent;
 }
 .pv-gutter {
   flex-shrink: 0;
@@ -3136,9 +3404,9 @@ button.cat-item.selected .cat-check svg {
   font-weight: 400;
   font-size: var(--f-xs);
   line-height: 1.5rem;
-  color: #4a5680;
-  background: rgba(255, 255, 255, 0.015);
-  border-right: 1px solid rgba(140, 160, 255, 0.08);
+  color: var(--code-gutter-fg);
+  background: var(--code-gutter-bg);
+  border-right: 1px solid var(--code-border);
   user-select: none;
   overflow: hidden;
   white-space: pre;
@@ -3147,12 +3415,6 @@ button.cat-item.selected .cat-check svg {
   left: 0;
   align-self: flex-start;
 }
-:root[data-theme="light"] .pv-gutter {
-  color: #8b95b8;
-  background: rgba(23, 44, 110, 0.03);
-  border-right-color: rgba(23, 44, 110, 0.08);
-}
-
 .pv-body pre {
   flex: 1;
   min-width: 0;
@@ -3161,7 +3423,7 @@ button.cat-item.selected .cat-check svg {
   background: transparent;
   font-size: var(--f-xs);
   line-height: 1.5rem;
-  color: #b9dcff;
+  color: var(--code-fg);
   font-family: var(--mono);
   font-weight: 400;
   white-space: pre-wrap;
@@ -3172,10 +3434,6 @@ button.cat-item.selected .cat-check svg {
   margin: 0;
   unicode-bidi: normal;
   text-align: start;
-}
-:root[data-theme="light"] .pv-body pre {
-  scrollbar-color: #c2cbe3 transparent;
-  color: #1f2a4a;
 }
 .pv-foot {
   padding: 0.8rem 1rem;
@@ -3208,7 +3466,7 @@ button.cat-item.selected .cat-check svg {
   min-width: 190px;
   background: var(--card);
   border: 1px solid var(--line2);
-  border-radius: 12px;
+  border-radius: var(--r-md);
   box-shadow: var(--shadow);
   padding: 5px;
   opacity: 0;
@@ -3236,7 +3494,7 @@ button.cat-item.selected .cat-check svg {
   width: 100%;
   text-align: right;
   padding: 0.5rem 0.7rem;
-  border-radius: 8px;
+  border-radius: var(--r-sm);
   border: none;
   background: transparent;
   color: var(--txt);
@@ -3247,12 +3505,15 @@ button.cat-item.selected .cat-check svg {
   font-family: inherit;
 }
 .ai-open-item:hover {
-  background: var(--card2);
+  background: color-mix(in srgb, var(--s4-tint) 92%, var(--s2-tint));
+}
+:root[data-theme="light"][data-skin="glass"] .ai-open-item:hover {
+  background: rgba(23, 44, 110, 0.06);
 }
 .ai-open-item .ai-dot {
   width: 1.5rem;
   height: 1.5rem;
-  border-radius: 6px;
+  border-radius: var(--r-sm);
   flex-shrink: 0;
   display: grid;
   place-items: center;
@@ -3269,7 +3530,7 @@ button.cat-item.selected .cat-check svg {
   font-weight: 800;
   color: var(--dim);
   padding: 1px 7px;
-  border-radius: 999px;
+  border-radius: var(--r-pill);
   background: var(--deep);
   border: 1px solid var(--line);
   margin-inline-start: auto;
@@ -3287,7 +3548,7 @@ button.cat-item.selected .cat-check svg {
   color: var(--amb);
   background: rgba(251, 191, 36, 0.14);
   border: 1px solid rgba(251, 191, 36, 0.35);
-  border-radius: 5px;
+  border-radius: var(--r-sm);
   padding: 0 5px;
   font-weight: 700;
 }
@@ -3301,7 +3562,7 @@ button.cat-item.selected .cat-check svg {
   margin: 0 1rem 0.5rem;
   background: rgba(251, 191, 36, 0.08);
   border: 1px solid rgba(251, 191, 36, 0.25);
-  border-radius: 9px;
+  border-radius: var(--r-md);
   line-height: 1.6;
 }
 .var-hint b {
@@ -3363,7 +3624,7 @@ button.cat-item.selected .cat-check svg {
 .var-preview-toggle {
   width: 2.2rem;
   height: 2.2rem;
-  border-radius: 10px;
+  border-radius: var(--r-md);
   border: 1px solid var(--line);
   background: var(--card2);
   color: var(--mut);
@@ -3401,7 +3662,7 @@ button.cat-item.selected .cat-check svg {
   display: flex;
   flex-direction: column;
   overflow: hidden;
-  border-radius: 14px;
+  border-radius: var(--r-lg);
   border: 1px solid var(--line2);
   background: linear-gradient(160deg, var(--card), var(--deep));
   box-shadow: var(--shadow);
@@ -3425,8 +3686,7 @@ button.cat-item.selected .cat-check svg {
   align-items: center;
   gap: 0.5rem;
   padding: 0.75rem 0.9rem;
-  border-bottom: 1px solid color-mix(in srgb, var(--vio) 18%, var(--line));
-  background: color-mix(in srgb, var(--vio) 5%, transparent);
+  border-bottom: 1px solid var(--s2-bc);
   font-size: var(--f-xs);
   font-weight: 700;
   color: var(--mut);
@@ -3440,7 +3700,7 @@ button.cat-item.selected .cat-check svg {
   display: none;
   width: 2.2rem;
   height: 2.2rem;
-  border-radius: 10px;
+  border-radius: var(--r-md);
   border: 1px solid var(--line);
   background: var(--card2);
   color: var(--mut);
@@ -3581,7 +3841,7 @@ button.cat-item.selected .cat-check svg {
   padding: 0.6rem 0.85rem;
   background: rgba(251, 191, 36, 0.06);
   border: 1px solid rgba(251, 191, 36, 0.18);
-  border-radius: 9px;
+  border-radius: var(--r-md);
   margin-bottom: 1.1rem;
 }
 .var-intro code {
@@ -3607,7 +3867,7 @@ button.cat-item.selected .cat-check svg {
 .var-form .var-row input {
   width: 100%;
   padding: 0.6rem 0.8rem;
-  border-radius: 10px;
+  border-radius: var(--r-md);
   border: 1px solid var(--line);
   background: var(--deep);
   font-size: var(--f-sm);
@@ -3668,23 +3928,24 @@ button.cat-item.selected .cat-check svg {
 }
 .var-foot .var-btn-primary {
   font-weight: 800;
+  box-shadow: 0 4px 14px color-mix(in srgb, var(--acc) 35%, transparent);
 }
 .var-foot .var-btn-sec {
-  color: var(--mut);
-  background: transparent;
-  border-color: var(--line);
+  color: var(--txt);
+  background: var(--card2);
+  border: 1px solid var(--line2);
   font-weight: 700;
 }
 .var-foot .var-btn-sec:hover {
   color: var(--txt);
-  border-color: var(--line2);
-  background: var(--card2);
+  border-color: var(--focus);
+  background: var(--card);
   box-shadow: none;
 }
 .var-foot .var-btn-ghost {
   background: transparent;
-  border-color: var(--line);
-  color: var(--mut);
+  border: 1px solid var(--line2);
+  color: var(--txt);
   font-weight: 700;
   padding-inline: 0.75rem;
 }
@@ -3692,7 +3953,7 @@ button.cat-item.selected .cat-check svg {
   color: var(--txt);
   background: var(--card2);
   box-shadow: none;
-  border-color: var(--line2);
+  border-color: var(--focus);
 }
 
 @media (max-width: 520px) {
@@ -3725,7 +3986,7 @@ button.cat-item.selected .cat-check svg {
   transform: translateX(-50%) translateY(30px) scale(0.9);
   background: var(--card);
   border: 1px solid var(--line2);
-  border-radius: 14px;
+  border-radius: var(--r-lg);
   padding: 0.65rem 1.1rem;
   font-size: var(--f-sm);
   font-weight: 600;
@@ -3827,7 +4088,7 @@ button.cat-item.selected .cat-check svg {
   transform: translateX(-50%) translateY(30px) scale(0.9);
   background: var(--card);
   border: 1px solid var(--line2);
-  border-radius: 14px;
+  border-radius: var(--r-lg);
   padding: 0.35rem 0.35rem 0.35rem 0.85rem;
   font-size: var(--f-sm);
   font-weight: 600;
@@ -3868,7 +4129,7 @@ button.cat-item.selected .cat-check svg {
   padding: 0;
   margin: 0;
   border: none;
-  border-radius: 10px;
+  border-radius: var(--r-md);
   background: var(--acc);
   color: var(--acc-ink);
   font-size: 0;
@@ -3910,7 +4171,7 @@ button.cat-item.selected .cat-check svg {
   transform: scaleX(1);
   pointer-events: none;
   opacity: 1;
-  border-radius: 0 0 14px 14px;
+  border-radius: 0 0 var(--r-lg) var(--r-lg);
 }
 #toastUndo.show .undo-progress {
   animation: undoCountdown var(--undo-dur, 5000ms) linear forwards;
@@ -4116,8 +4377,8 @@ footer.app-footer {
   font-size: var(--f-2xs);
   line-height: 1.6;
   background: var(--header-bg);
-  backdrop-filter: blur(4px) saturate(1.4);
-  -webkit-backdrop-filter: blur(4px) saturate(1.4);
+  backdrop-filter: blur(10px) saturate(1.4);
+  -webkit-backdrop-filter: blur(10px) saturate(1.4);
   border-top: 1px solid var(--line);
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.05);
   pointer-events: none;
@@ -4404,7 +4665,7 @@ body.selmode .card::after {
   inset-inline-end: 0.7rem;
   width: 1.5rem;
   height: 1.5rem;
-  border-radius: 50%;
+  border-radius: var(--r-circle);
   border: 2px solid var(--line2);
   background: var(--card);
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25);
@@ -4446,9 +4707,7 @@ body.selmode .card .phead .pin {
   align-items: center;
   gap: 0.4rem;
   padding: 0.35rem 0.4rem 0.35rem 0.55rem;
-  border-radius: 14px;
-  background: var(--card);
-  border: 1px solid var(--line2);
+  border-radius: var(--r-lg);
   box-shadow: var(--shadow);
   z-index: 80;
   opacity: 0;
@@ -4497,7 +4756,7 @@ body.selmode .card .phead .pin {
   height: 2.15rem;
   padding: 0 0.7rem;
   border: none;
-  border-radius: 9px;
+  border-radius: var(--r-md);
   background: transparent;
   color: var(--mut);
   font-family: inherit;
@@ -4558,8 +4817,11 @@ body.selmode .card .phead .pin {
   top: 0;
   bottom: 0;
   width: 1px;
-  background: var(--line);
+  background: var(--line2);
   pointer-events: none;
+}
+:root[data-theme="light"] .sel-close::before {
+  background: rgba(23, 44, 110, 0.14);
 }
 .sel-close:hover {
   color: var(--ros);
@@ -4606,7 +4868,7 @@ body.selmode .card .phead .pin {
     max-width: calc(100vw - 20px);
     bottom: calc(64px + env(safe-area-inset-bottom, 0px));
     transform: translateX(-50%) translateY(calc(100% + 24px));
-    border-radius: 14px;
+    border-radius: var(--r-lg);
     padding: 0.35rem 0.35rem 0.35rem 0.35rem;
     gap: 0.35rem;
   }
@@ -4669,9 +4931,7 @@ button.cat-item:hover {
   left: 24px;
   bottom: calc(60px + env(safe-area-inset-bottom, 0px));
   z-index: 70;
-  background: var(--card);
-  border: 1.5px solid var(--line2);
-  border-radius: 14px;
+  border-radius: var(--r-lg);
   overflow: hidden;
   display: flex;
   align-items: stretch;
@@ -4723,15 +4983,48 @@ button.cat-item:hover {
   align-self: stretch;
   background: var(--line2);
 }
+:root[data-theme="light"] .quick-fab .qf-sep {
+  background: rgba(23, 44, 110, 0.14);
+}
 body.selmode .quick-fab {
   display: none;
+}
+
+/* ── استروک دکمه‌های شناور — جدا از توکن‌های سطح ──
+   این دو المان روی محتوای روشن/تیره شنا می‌کنن، پس استروک
+   باید از `--line2` قوی‌تر باشه تا لبه‌شون دیده شه. */
+.quick-fab,
+.sel-bar {
+  border: 1px solid color-mix(in srgb, var(--line2) 140%, transparent);
+}
+
+:root[data-theme="light"] .quick-fab,
+:root[data-theme="light"] .sel-bar {
+  border: 1px solid rgba(23, 44, 110, 0.22);
+  box-shadow:
+    var(--shadow),
+    0 1px 0 rgba(255, 255, 255, 0.8) inset;
+}
+
+:root[data-theme="dark"] .quick-fab,
+:root[data-theme="dark"] .sel-bar {
+  border: 1px solid rgba(255, 255, 255, 0.14);
+}
+
+:root[data-theme="light"][data-skin="glass"] .quick-fab,
+:root[data-theme="light"][data-skin="glass"] .sel-bar {
+  border-color: rgba(23, 44, 110, 0.18);
+  box-shadow:
+    0 6px 24px rgba(15, 23, 42, 0.12),
+    0 1px 0 rgba(255, 255, 255, 0.7) inset,
+    0 0 0 1px rgba(23, 44, 110, 0.04);
 }
 
 @media (max-width: 760px) {
   .quick-fab {
     left: 20px;
     bottom: calc(62px + env(safe-area-inset-bottom, 0px));
-    border-radius: 14px;
+    border-radius: var(--r-lg);
   }
   .quick-fab .qf-part {
     padding: 0.75rem 1rem;
@@ -4761,24 +5054,22 @@ body.selmode .quick-fab {
   z-index: 500;
   min-width: 220px;
   max-width: 280px;
-  background: var(--card);
-  border: 1px solid var(--line2);
-  border-radius: 12px;
+  background: var(--s4-bg);
+  border: 1px solid var(--s4-bc);
+  border-radius: var(--r-md);
   box-shadow: var(--menu-shadow);
   padding: 5px;
   font-size: var(--f-sm);
-  animation: ctxIn 0.14s var(--ease-ios);
+  animation: ctxIn 0.16s var(--ease-ios);
+  isolation: isolate;
 }
-.ctx-menu[hidden] {
-  display: none;
-}
+.ctx-menu:not([hidden]) .ctx-submenu {}
+
 @keyframes ctxIn {
   from {
-    opacity: 0;
-    transform: scale(0.96) translateY(-2px);
+    transform: scale(0.97) translateY(-1px);
   }
   to {
-    opacity: 1;
     transform: none;
   }
 }
@@ -4790,7 +5081,7 @@ body.selmode .quick-fab {
   text-align: start;
   padding: 0.5rem 0.7rem;
   border: none;
-  border-radius: 8px;
+  border-radius: var(--r-sm);
   background: transparent;
   color: var(--txt);
   font-family: inherit;
@@ -4802,8 +5093,12 @@ body.selmode .quick-fab {
 }
 .ctx-menu button:hover,
 .ctx-menu button:focus-visible {
-  background: var(--card2);
+  background: color-mix(in srgb, var(--s4-tint) 92%, var(--s2-tint));
   outline: none;
+}
+:root[data-theme="light"][data-skin="glass"] .ctx-menu button:hover,
+:root[data-theme="light"][data-skin="glass"] .ctx-menu button:focus-visible {
+  background: rgba(23, 44, 110, 0.06);
 }
 .ctx-menu button svg {
   width: 1rem;
@@ -4852,36 +5147,60 @@ body.selmode .quick-fab {
   min-width: 190px;
   max-height: 280px;
   overflow-y: auto;
-  background: var(--card);
-  border: 1px solid var(--line2);
-  border-radius: 12px;
-  box-shadow: var(--menu-shadow);
+  background: var(--s4-bg);
+  border: 1px solid var(--s4-bc);
+  border-radius: var(--r-md);
+  /* سایهٔ سبک — blur 44px رو حذف کردیم،
+     چون paintش روی هر open/close گرون بود. */
+  box-shadow:
+    0 10px 24px rgba(2, 5, 18, 0.4),
+    0 2px 6px rgba(2, 5, 18, 0.2);
   padding: 5px;
   opacity: 0;
-  visibility: hidden;
-  transform: translateX(4px);
+  transform: translateX(6px) scale(0.98);
+  transform-origin: top right;
   transition:
-    opacity 0.14s var(--ease-ios),
-    transform 0.14s var(--ease-ios),
-    visibility 0s linear 0.14s;
+    opacity 0.11s var(--ease-ios),
+    transform 0.16s var(--ease-ios);
   pointer-events: none;
+  isolation: isolate;
+  /* GPU layer — قبل از hover آمادهٔ نمایشه */
+  will-change: transform, opacity;
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+  /* محدود کردن scope — فرزندها layout/paint بیرون نزنن */
+  contain: layout paint;
 }
 .ctx-sub:hover > .ctx-submenu,
 .ctx-sub:focus-within > .ctx-submenu,
 .ctx-sub.open > .ctx-submenu {
   opacity: 1;
-  visibility: visible;
   transform: none;
   pointer-events: auto;
-  transition:
-    opacity 0.14s var(--ease-ios),
-    transform 0.14s var(--ease-ios),
-    visibility 0s;
 }
+
+/* پل نامرئی روی گپ ۴px — جلوگیری از قطع :hover موقع رد شدن موس */
+.ctx-sub::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  inset-inline-end: -6px;
+  width: 6px;
+  background: transparent;
+  pointer-events: auto;
+  z-index: 1;
+}
+/* وقتی ساب‌منو بازه، پل هم فعال بمونه */
+.ctx-sub:hover > .ctx-submenu ~ .ctx-sub::after,
+.ctx-sub.open::after {
+  pointer-events: auto;
+}
+
 .ctx-submenu .ai-dot {
   width: 1.35rem;
   height: 1.35rem;
-  border-radius: 6px;
+  border-radius: var(--r-sm);
   flex-shrink: 0;
   display: grid;
   place-items: center;
@@ -4894,6 +5213,25 @@ body.selmode .quick-fab {
   line-height: 1;
 }
 
+/* ── گلس: منو و ساب‌منو بدون backdrop تودرتو ──
+   ساب‌منو داخل منوی والد قرار داره؛ اگه خودش backdrop-filter داشته باشه،
+   از پشت والد (که بلور خورده) نمونه می‌گیره، نه از صفحه. پس تو گلس:
+   ساب‌منو یه سطح سالیدتر می‌شه بدون بلور مستقل. */
+
+/* سایهٔ سبک — روی همهٔ اسکین‌ها */
+.ctx-submenu {
+  box-shadow: 0 8px 20px rgba(2, 5, 18, 0.28);
+}
+:root[data-theme="light"] .ctx-submenu {
+  box-shadow: 0 8px 22px rgba(15, 23, 42, 0.12);
+}
+/* همین قانون برای منوی AI تو پیش‌نمایش */
+:root[data-skin="glass"] .ai-open-menu {
+  background: var(--s4-bg);
+  backdrop-filter: var(--s4-fx);
+  -webkit-backdrop-filter: var(--s4-fx);
+}
+
 /* ══════════════ جهت مرتب‌سازی ══════════════ */
 .sort-dir {
   display: grid;
@@ -4901,7 +5239,7 @@ body.selmode .quick-fab {
   align-self: stretch;
   padding: 0 0.7rem;
   min-width: 2.2rem;
-  border-radius: 10px;
+  border-radius: var(--r-md);
   border: 1px solid var(--line);
   background: var(--card2);
   color: var(--mut);
@@ -5057,13 +5395,7 @@ body.selmode .quick-fab {
   gap: 0.85rem;
   width: 100%;
   padding: 0.85rem 1rem;
-  border-radius: 14px;
-  background: linear-gradient(
-    160deg,
-    var(--card2),
-    color-mix(in srgb, var(--deep) 92%, var(--card2))
-  );
-  border: 1px solid var(--line);
+  border-radius: var(--r-lg);
   color: var(--txt);
   font-family: inherit;
   cursor: pointer;
@@ -5104,7 +5436,7 @@ body.selmode .quick-fab {
 .st-icon {
   width: 2.4rem;
   height: 2.4rem;
-  border-radius: 11px;
+  border-radius: var(--r-md);
   display: grid;
   place-items: center;
   background: var(--st-c, var(--acc));
@@ -5167,7 +5499,7 @@ body.selmode .quick-fab {
   font-weight: 600;
   white-space: nowrap;
   padding: 3px 9px;
-  border-radius: 999px;
+  border-radius: var(--r-pill);
   background: var(--deep);
   border: 1px solid var(--line);
   min-width: 3.2rem;
@@ -5201,7 +5533,7 @@ body.selmode .quick-fab {
   gap: 0.75rem;
   padding: 0.8rem 0.95rem;
   margin-bottom: 1rem;
-  border-radius: 14px;
+  border-radius: var(--r-lg);
   background: linear-gradient(
     160deg,
     color-mix(in srgb, var(--ros) 14%, var(--card)),
@@ -5388,7 +5720,7 @@ body.selmode .quick-fab {
 .about-logo {
   width: 4.5rem;
   height: 4.5rem;
-  border-radius: 20px;
+  border-radius: var(--r-xl);
   display: grid;
   place-items: center;
   background: linear-gradient(140deg, var(--vio), var(--acc));
@@ -5430,9 +5762,9 @@ body.selmode .quick-fab {
   font-weight: 700;
   color: var(--mut);
   padding: 4px 11px;
-  border-radius: 999px;
-  background: var(--deep);
-  border: 1px solid var(--line);
+  border-radius: var(--r-pill);
+  background: var(--s2-bg);
+  border: 1px solid var(--s2-bc);
 }
 .about-desc {
   font-size: var(--f-xs);
@@ -5454,9 +5786,9 @@ body.selmode .quick-fab {
   align-items: center;
   gap: 0.5rem;
   padding: 0.55rem 1.05rem;
-  border-radius: 10px;
-  border: 1px solid var(--line);
-  background: var(--deep);
+  border-radius: var(--r-md);
+  border: 1px solid var(--s2-bc);
+  background: var(--s2-bg);
   color: var(--mut);
   font-family: inherit;
   font-size: var(--f-xs);
@@ -5512,7 +5844,7 @@ body.selmode .quick-fab {
   letter-spacing: 0.3px;
   font-size: var(--f-sm);
   padding: 4px 10px;
-  border-radius: 8px;
+  border-radius: var(--r-sm);
   transition: background 0.18s var(--ease);
   direction: ltr;
   unicode-bidi: isolate;
@@ -5599,10 +5931,10 @@ body.selmode .quick-fab {
   font-size: var(--f-2xs);
   font-weight: 700;
   color: var(--txt);
-  background: var(--deep);
-  border: 1px solid var(--line2);
+  background: var(--s2-bg);
+  border: 1px solid var(--s2-bc);
   border-bottom-width: 2px;
-  border-radius: 6px;
+  border-radius: var(--r-sm);
   line-height: 1;
 }
 
@@ -5637,9 +5969,7 @@ body.selmode .quick-fab {
   flex-direction: column;
   gap: 0.5rem;
   padding: 0.85rem 0.95rem;
-  border-radius: 12px;
-  border: 1px solid var(--line);
-  background: var(--deep);
+  border-radius: var(--r-md);
   transition: border-color 0.18s var(--ease);
 }
 .trash-item:hover {
@@ -5788,7 +6118,7 @@ body.selmode .quick-fab {
 }
 .lib-grid::-webkit-scrollbar-thumb {
   background: var(--line2);
-  border-radius: 999px;
+  border-radius: var(--r-pill);
 }
 @media (min-width: 900px) {
   .lib-grid {
@@ -5800,9 +6130,7 @@ body.selmode .quick-fab {
   flex-direction: column;
   gap: 0.55rem;
   padding: 0.85rem 0.9rem;
-  border-radius: 12px;
-  border: 1px solid var(--line);
-  background: var(--deep);
+  border-radius: var(--r-md);
   cursor: pointer;
   transition: border-color 0.15s var(--ease);
   text-align: start;
@@ -5835,7 +6163,7 @@ body.selmode .quick-fab {
 .lib-card-cat .dot {
   width: 0.5rem;
   height: 0.5rem;
-  border-radius: 50%;
+  border-radius: var(--r-circle);
 }
 .lib-card-b {
   flex: 1;
@@ -5853,7 +6181,7 @@ body.selmode .quick-fab {
   background: color-mix(in srgb, var(--grn) 14%, transparent);
   border: 1px solid color-mix(in srgb, var(--grn) 40%, transparent);
   padding: 2px 8px;
-  border-radius: 999px;
+  border-radius: var(--r-pill);
   flex-shrink: 0;
 }
 .lib-card-desc {
@@ -5895,7 +6223,7 @@ body.selmode .quick-fab {
 .lib-card-foot .btn {
   padding: 0.35rem 0.75rem;
   font-size: var(--f-2xs);
-  border-radius: 8px;
+  border-radius: var(--r-sm);
   min-height: 1.9rem;
   font-weight: 800;
 }
@@ -5917,7 +6245,7 @@ body.selmode .quick-fab {
   flex: 1;
   padding: 0.65rem;
   font-size: var(--f-sm);
-  border-radius: 11px;
+  border-radius: var(--r-md);
   border-style: dashed;
   display: inline-flex;
   align-items: center;
@@ -5928,7 +6256,7 @@ body.selmode .quick-fab {
 .lib-icon-btn {
   width: 2.6rem;
   min-height: 2.6rem;
-  border-radius: 11px;
+  border-radius: var(--r-md);
   border: 1px solid var(--line);
   background: var(--deep);
   color: var(--mut);
@@ -5976,19 +6304,19 @@ body.selmode .quick-fab {
   display: flex;
   gap: 0.4rem;
   padding: 0.4rem;
-  background: var(--deep);
-  border: 1px solid var(--line);
-  border-radius: 14px;
+  background: var(--s2-bg);
+  border: 1px solid var(--s2-bc);
+  border-radius: var(--r-lg);
   isolation: isolate;
 }
 
 .pswitch-slide {
   position: absolute;
   top: 0.4rem;
-  left: 0.4rem;
+  left: 0;
   height: calc(100% - 0.8rem);
   width: 0;
-  border-radius: 11px;
+  border-radius: var(--r-md);
   background: var(--acc);
   box-shadow:
     inset 0 1px 0 color-mix(in srgb, #fff 22%, transparent),
@@ -6018,7 +6346,7 @@ body.selmode .quick-fab {
   padding: 0.9rem 0.6rem;
   border: none;
   background: transparent;
-  border-radius: 11px;
+  border-radius: var(--r-md);
   cursor: pointer;
   font-family: inherit;
   color: var(--mut);
@@ -6037,7 +6365,7 @@ body.selmode .quick-fab {
 .pswitch-opt .pswitch-ico {
   width: 1.9rem;
   height: 1.9rem;
-  border-radius: 9px;
+  border-radius: var(--r-md);
   display: grid;
   place-items: center;
   background: color-mix(in srgb, var(--acc) 10%, transparent);
@@ -6092,7 +6420,7 @@ body.selmode .quick-fab {
 .pswitch.compact .pswitch-ico {
   width: 1.3rem;
   height: 1.3rem;
-  border-radius: 7px;
+  border-radius: var(--r-sm);
 }
 .pswitch.compact .pswitch-ico svg {
   width: 0.8rem;
@@ -6103,6 +6431,28 @@ body.selmode .quick-fab {
 }
 .pswitch.compact .pswitch-opt > span:last-child {
   display: none;
+}
+/* ── گزینه‌های فقط-آیکون (مثل «بدون پس‌زمینه») ── */
+.pswitch-opt-icon {
+  padding-inline: 0.5rem;
+}
+.pswitch-opt-icon svg {
+  width: 1.05rem;
+  height: 1.05rem;
+  display: block;
+  margin: 0 auto;
+}
+.pswitch-opt-icon.on svg {
+  /* در حالت فعال، آیکون هم رنگ acc-ink می‌گیره (به‌خاطر currentColor) */
+  stroke-width: 2.4;
+}
+
+/* موبایل باریک — آیکون کمی بزرگ‌تر */
+@media (max-width: 480px) {
+  .pswitch-opt-icon svg {
+    width: 1.15rem;
+    height: 1.15rem;
+  }
 }
 
 @media (max-width: 480px) {
@@ -6200,7 +6550,6 @@ body.selmode .quick-fab {
   padding: 0.7rem 1.3rem;
   border-top: 1px solid var(--line);
   border-bottom: 1px solid var(--line);
-  background: color-mix(in srgb, var(--deep) 65%, transparent);
   flex-shrink: 0;
   font-size: var(--f-2xs);
 }
@@ -6313,7 +6662,7 @@ body.selmode .quick-fab {
 .st-brand-logo {
   width: 4rem;
   height: 4rem;
-  border-radius: 18px;
+  border-radius: var(--r-xl);
   display: grid;
   place-items: center;
   background: linear-gradient(140deg, var(--vio), var(--acc));
@@ -6337,17 +6686,17 @@ body.selmode .quick-fab {
   font-family: var(--mono);
   direction: ltr;
   padding: 3px 10px;
-  border-radius: 999px;
-  background: var(--deep);
-  border: 1px solid var(--line);
+  border-radius: var(--r-pill);
+  background: var(--s2-bg);
+  border: 1px solid var(--s2-bc);
 }
 .st-author {
   margin-top: 1.25rem;
   text-decoration: none;
   padding: 0.55rem 1.1rem;
-  border-radius: 12px;
-  border: 1px solid var(--line);
-  background: var(--deep);
+  border-radius: var(--r-md);
+  border: 1px solid var(--s2-bc);
+  background: var(--s2-bg);
   transition: 0.18s var(--ease);
   display: inline-flex;
   align-items: center;
@@ -6426,9 +6775,9 @@ body.selmode .quick-fab {
     justify-content: flex-start;
     gap: 0.75rem;
     padding: 1rem 1.25rem;
-    border-bottom: 1px solid var(--line);
+    border-bottom: 1px solid var(--s1-bc);
     min-height: 0;
-    background: var(--deep);
+    /* background از S1 binding میاد */
   }
   .drawer-head .icon-btn {
     position: static;
@@ -6457,7 +6806,7 @@ body.selmode .quick-fab {
     padding: 0;
     overflow: hidden;
     gap: 0;
-    background: var(--card);
+    /* background از S1 binding میاد — دیگه هارد‌کد نکن */
   }
 
   /* ستون ناوبری (home) */
@@ -6466,8 +6815,9 @@ body.selmode .quick-fab {
     grid-row: 1;
     display: flex;
     flex-direction: column;
-    border-inline-end: 1px solid var(--line);
-    background: var(--deep);
+    border-inline-end: 1px solid var(--s2-bc);
+    /* بک‌گراند از S2 binding — کمی تیره‌تر از محتوا */
+    background: color-mix(in srgb, var(--s2-tint) 55%, var(--s1-tint));
     overflow-y: auto;
     padding: 0.6rem;
     height: 100%;
@@ -6482,7 +6832,7 @@ body.selmode .quick-fab {
     padding: 1.3rem 1.5rem;
     height: 100%;
     scrollbar-width: thin;
-    background: var(--card);
+    /* background از S1 binding میاد */
   }
 
   /* لیست ناوبری */
@@ -6652,7 +7002,7 @@ body.selmode .quick-fab {
   flex: 1;
   min-width: 0;
   height: 6px;
-  border-radius: 999px;
+  border-radius: var(--r-pill);
   cursor: pointer;
   accent-color: var(--acc);
   background: transparent;
@@ -6740,7 +7090,7 @@ body.selmode .quick-fab {
 #soundTestBtn {
   width: 100%;
   padding: 0.75rem 1rem;
-  border-radius: 12px;
+  border-radius: var(--r-md);
   border-style: dashed;
   font-size: var(--f-sm);
   display: inline-flex;
@@ -6779,12 +7129,12 @@ body.selmode .quick-fab {
   padding: 5px;
   background: var(--deep);
   border: 1px solid var(--line);
-  border-radius: 12px;
+  border-radius: var(--r-md);
 }
 .seg.st-seg-grid button {
   width: 100%;
   padding: 0.55rem 0.3rem;
-  border-radius: 8px;
+  border-radius: var(--r-sm);
   border: none;
   background: transparent;
   color: var(--mut);
@@ -6841,7 +7191,7 @@ body.selmode .quick-fab {
   place-items: center;
   width: 1.9rem;
   height: 1.9rem;
-  border-radius: 9px;
+  border-radius: var(--r-md);
   background: color-mix(in srgb, var(--acc) 16%, transparent);
   color: var(--acc);
   flex-shrink: 0;
@@ -6957,3 +7307,2080 @@ body.selmode .quick-fab {
   .var-deck .var-preview-foot .btn { flex: 1; }
 }
 
+/* ═══ انتخابگر اسکین ═══ */
+.skin-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 0.6rem;
+}
+@media (max-width: 480px) {
+  .skin-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+
+/* ── کارت انتخاب اسکین ── */
+.skin-opt {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.6rem 0.5rem 0.7rem;
+  border-radius: 14px;
+  border: 1px solid var(--s2-bc);
+  background: var(--s2-bg);
+  color: var(--mut);font-family: inherit;
+  font-size: var(--f-2xs);
+  font-weight: 700;
+  cursor: pointer;
+  transition:
+    border-color 0.2s var(--ease),
+    transform 0.25s var(--ease-spring),
+    box-shadow 0.3s var(--ease),
+    color 0.2s var(--ease);
+  -webkit-tap-highlight-color: transparent;
+  overflow: hidden;
+}
+.skin-opt::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: linear-gradient(
+    160deg,
+    transparent 30%,
+    color-mix(in srgb, var(--acc) 8%, transparent)
+  );
+  opacity: 0;
+  transition: opacity 0.3s var(--ease);
+  pointer-events: none;
+}
+.skin-opt:hover {
+  border-color: var(--line2);
+  color: var(--txt);
+  transform: translateY(-1px);
+}
+.skin-opt:hover::before { opacity: 0.6; }
+.skin-opt:active { transform: scale(0.98); }
+
+.skin-opt.on {
+  border-color: color-mix(in srgb, var(--acc) 55%, transparent);
+  color: var(--txt);
+  box-shadow:
+    inset 0 0 0 1px color-mix(in srgb, var(--acc) 22%, transparent),
+    0 8px 24px -8px color-mix(in srgb, var(--acc) 45%, transparent);
+}
+.skin-opt.on::before { opacity: 1; }
+
+/* ── ترمینال: کارت اسکین با فسفر سبز ── */
+:root[data-skin="terminal"] .skin-opt {
+  border-radius: 0;
+  border: 1px solid color-mix(in srgb, var(--acc) 40%, transparent);
+  background: var(--s2-tint);
+  font-family: var(--font-ui);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  font-size: 0.7rem;
+}
+:root[data-skin="terminal"] .skin-opt:hover {
+  border-color: var(--acc);
+  box-shadow: 0 0 8px color-mix(in srgb, var(--acc) 40%, transparent);
+}
+:root[data-skin="terminal"] .skin-opt.on {
+  border-color: var(--acc);
+  box-shadow:
+    0 0 0 1px var(--acc),
+    0 0 12px color-mix(in srgb, var(--acc) 45%, transparent),
+    inset 0 0 8px color-mix(in srgb, var(--acc) 18%, transparent);
+}
+:root[data-skin="terminal"] .skin-preview {
+  border-color: color-mix(in srgb, var(--acc) 35%, transparent);
+  border-radius: 0;
+}
+
+/* ── قاب پیش‌نمایش ── */
+.skin-preview {
+  width: 100%;
+  height: 2.6rem;
+  border-radius: 8px;
+  position: relative;
+  overflow: hidden;
+  background: var(--bg);
+  border: 1px solid var(--line);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.03),
+    inset 0 0 0 1px rgba(0, 0, 0, 0.06);
+  isolation: isolate;
+  transition: box-shadow 0.25s var(--ease);
+}
+.skin-opt.on .skin-preview {
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.04),
+    inset 0 0 0 1px color-mix(in srgb, var(--acc) 20%, transparent);
+}
+
+/* کارت مینیاتوری داخل پیش‌نمایش */
+.skin-preview::before {
+  content: "";
+  position: absolute;
+  left: 10%;
+  right: 42%;
+  top: 22%;
+  bottom: 22%;
+  background: var(--card);
+  border: 1px solid var(--line2);
+  border-radius: 5px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.22);
+  transition: inherit;
+}
+/* عنصر تأکیدی داخل پیش‌نمایش */
+.skin-preview::after {
+  content: "";
+  position: absolute;
+  right: 12%;
+  top: 38%;
+  width: 22%;
+  height: 24%;
+  background: var(--acc);
+  border-radius: 3px;
+  box-shadow: 0 1px 4px color-mix(in srgb, var(--acc) 50%, transparent);
+  transition: inherit;
+}
+
+/* ── پیش‌فرض: متعادل ── */
+.skin-prev-default::before { border-radius: 5px; }
+.skin-prev-default::after  { border-radius: 3px; }
+
+/* ── تیز: گوشه‌های صفر، خطوط نازک ── */
+.skin-prev-sharp { background: var(--deep); }
+.skin-prev-sharp::before {
+  border-radius: 0;
+  border-width: 1.5px;
+  background: var(--bg);
+  box-shadow: none;
+}
+.skin-prev-sharp::after {
+  border-radius: 0;
+  width: 18%;
+  height: 22%;
+  box-shadow: none;
+}
+
+/* ── نرم: گرد و لطیف ── */
+.skin-prev-soft {
+  background: linear-gradient(160deg, var(--card2), var(--deep));
+}
+.skin-prev-soft::before {
+  border-radius: 10px;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.22);
+}
+.skin-prev-soft::after {
+  border-radius: 999px;
+  width: 18%;
+  height: 20%;
+  top: 40%;
+}
+
+/* ── بروتال: خط ضخیم و سایهٔ آفست ── */
+.skin-prev-brutalist { background: var(--deep); }
+.skin-prev-brutalist::before {
+  border-radius: 0;
+  border: 2px solid var(--txt);
+  background: var(--card);
+  box-shadow: 3px 3px 0 var(--txt);
+  left: 9%;
+  right: 44%;
+  top: 20%;
+  bottom: 24%;
+}
+.skin-prev-brutalist::after {
+  border-radius: 0;
+  border: 2px solid var(--txt);
+  background: var(--acc);
+  box-shadow: 2px 2px 0 var(--txt);
+  width: 20%;
+  height: 26%;
+  top: 36%;
+}
+
+/* ── تک‌رنگ: بی‌رنگ ── */
+.skin-prev-mono { filter: grayscale(1); }
+.skin-prev-mono::before {
+  border-radius: 5px;
+  background: #3f4959;
+  border-color: #94a3b8;
+}
+.skin-prev-mono::after {
+  border-radius: 999px;
+  width: 18%;
+  height: 20%;
+  top: 40%;
+  background: #cbd5e1;
+  box-shadow: none;
+}
+
+/* ── شیشه‌ای: پس‌زمینهٔ رنگی + کارت شفاف ── */
+.skin-prev-glass {
+  background: linear-gradient(
+    135deg,
+    #a78bfa 0%,
+    #60a5fa 40%,
+    #22d3ee 70%,
+    #34d399 100%
+  );
+  border-color: rgba(255, 255, 255, 0.25);
+}
+.skin-prev-glass::before {
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.22);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+  border: 1px solid rgba(255, 255, 255, 0.42);
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.15);
+}
+.skin-prev-glass::after {
+  border-radius: 999px;
+  width: 18%;
+  height: 20%;
+  top: 40%;
+  background: rgba(255, 255, 255, 0.42);
+  backdrop-filter: blur(3px);
+  -webkit-backdrop-filter: blur(3px);
+  border: 1px solid rgba(255, 255, 255, 0.6);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12);
+}
+
+/* ── ترمینال: فسفری + اسکن‌لاین ── */
+.skin-prev-terminal {
+  background: #041a0a;
+  border-color: rgba(74, 222, 128, 0.35);
+  background-image: repeating-linear-gradient(
+    0deg,
+    rgba(74, 222, 128, 0.08) 0 1px,
+    transparent 1px 3px
+  );
+}
+.skin-prev-terminal::before {
+  border-radius: 0;
+  border: 1px solid #4ade80;
+  background: #041a0a;
+  box-shadow:
+    inset 0 0 6px rgba(74, 222, 128, 0.25),
+    0 0 6px rgba(74, 222, 128, 0.15);
+}
+.skin-prev-terminal::after {
+  border-radius: 0;
+  width: 18%;
+  height: 22%;
+  background: #4ade80;
+  box-shadow:
+    0 0 8px rgba(74, 222, 128, 0.85),
+    0 0 2px rgba(74, 222, 128, 1);
+}
+
+/* ── مجله‌ای: کاغذی و آرام ── */
+.skin-prev-editorial {
+  background: #f6f4ef;
+  border-color: rgba(0, 0, 0, 0.08);
+}
+.skin-prev-editorial::before {
+  border-radius: 2px;
+  background: #ffffff;
+  border: 0.5px solid rgba(0, 0, 0, 0.15);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+  left: 8%;
+  right: 40%;
+  top: 18%;
+  bottom: 18%;
+}
+.skin-prev-editorial::after {
+  border-radius: 1px;
+  width: 3px;
+  height: 32%;
+  top: 34%;
+  background: #1a1a1a;
+  box-shadow: none;
+}
+
+/* ══════════════ Design Tokens — پایهٔ سیستم اسکین ══════════════ */
+:root {
+  --r-sm: 8px;
+  --r-md: 11px;
+  --r-lg: 14px;
+  --r-xl: 16px;
+  --r-pill: 999px;
+  --r-circle: 50%;
+
+  --bw: 1px;
+  --bw-strong: 2px;
+
+  --shadow-card: var(--shadow);
+
+  --font-ui: "Vazirmatn", system-ui, sans-serif;
+  --font-head: "Vazirmatn", system-ui, sans-serif;
+  --fw-bold: 700;
+  --fw-black: 800;
+  --ls-ui: 0;
+  --tt-button: none;
+
+  --card-bg: linear-gradient(160deg, var(--card), var(--deep));
+
+  /* ── ادیتور / پیش‌نمایش کد ── */
+  --code-bg: #080d1c;
+  --code-gutter-bg: rgba(255, 255, 255, 0.015);
+  --code-gutter-fg: #5d6b98;
+  --code-fg: #b9dcff;
+  --code-border: rgba(140, 160, 255, 0.08);
+  --code-caret: var(--vio);
+  --select-bg: rgba(139, 92, 246, 0.35);
+  --scrollbar-thumb: #26335c;
+  --scrollbar-thumb-hover: #374a82;
+  --shadow-hover-card: 0 20px 48px rgba(2, 5, 18, 0.62);
+  --shadow-btn-hover: 0 8px 20px color-mix(in srgb, var(--acc) 22%, transparent);
+}
+
+/* ══════════════ Surface System ══════════════
+   چهار سطح انتزاعی. اسکین/تم/والپیپر فقط این توکن‌ها رو عوض می‌کنن؛
+   componentها هیچ‌وقت مستقیم رنگ سطح رو نمی‌نویسن. */
+:root {
+  /* ── S1 · سطح اصلی: کارت، مودال، دراور، ادیتور، پنل ── */
+  --s1-tint: var(--card);
+  --s1-a: 1;
+  --s1-blur: 0px;
+  --s1-sat: 1;
+  --s1-bri: 1;
+  --s1-bw: 1px;
+  --s1-bc: var(--line);
+
+  /* ── S2 · کنترل روی سطح اصلی: دکمه، فیلد، تگ ── */
+  --s2-tint: var(--card2);
+  --s2-a: 1;
+  --s2-blur: 0px;
+  --s2-sat: 1;
+  --s2-bri: 1;
+  --s2-bw: 1px;
+  --s2-bc: var(--line);
+
+  /* ── S3 · بک‌دراپ overlay ── */
+  --s3-bg: rgba(3, 6, 16, 0.62);
+  --s3-blur: 5px;
+
+  /* ── S4 · شناور: توست، منو، tooltip ── */
+  --s4-tint: var(--card);
+  --s4-a: 1;
+  --s4-blur: 0px;
+  --s4-sat: 1;
+  --s4-bri: 1;
+  --s4-bc: var(--line2);
+
+  /* ── SC · سطح کد/ادیتور ── */
+  --sc-tint: var(--code-bg);
+  --sc-a: 1;
+  --sc-blur: 0px;
+  --sc-sat: 1;
+  --sc-bri: 1;
+
+  /* ── ترکیب‌گرها ── */
+  --s1-bg: color-mix(in srgb, var(--s1-tint) calc(var(--s1-a) * 100%), transparent);
+  --s2-bg: color-mix(in srgb, var(--s2-tint) calc(var(--s2-a) * 100%), transparent);
+  --s4-bg: color-mix(in srgb, var(--s4-tint) calc(var(--s4-a) * 100%), transparent);
+  --sc-bg: color-mix(in srgb, var(--sc-tint) calc(var(--sc-a) * 100%), transparent);
+
+  --s1-fx: blur(var(--s1-blur)) saturate(var(--s1-sat)) brightness(var(--s1-bri));
+  --s2-fx: blur(var(--s2-blur)) saturate(var(--s2-sat)) brightness(var(--s2-bri));
+  --s4-fx: blur(var(--s4-blur)) saturate(var(--s4-sat)) brightness(var(--s4-bri));
+  --sc-fx: blur(var(--sc-blur)) saturate(var(--sc-sat)) brightness(var(--sc-bri));
+}
+
+/* ══════════════ اسکین‌ها — لایهٔ بصری کامل ══════════════ */
+
+/* ── تیز (sharp) ── */
+:root[data-theme="dark"][data-skin="sharp"] {
+  --r-sm: 2px; --r-md: 2px; --r-lg: 3px; --r-xl: 3px; --r-pill: 2px;
+  --r-circle: 2px;
+  --shadow: none;
+  --card-bg: var(--deep);
+}
+:root[data-theme="light"][data-skin="sharp"] {
+  --r-sm: 2px; --r-md: 2px; --r-lg: 3px; --r-xl: 3px; --r-pill: 2px;
+  --r-circle: 2px;
+  --shadow: none;
+  --card-bg: var(--card);  /* در لایت کارت سفیده، نه deep */
+}
+:root[data-skin="sharp"] .card {
+  border: 1.5px solid var(--line2);
+  padding: 1rem 1rem 0.75rem;
+}
+:root[data-skin="sharp"] .card:hover {
+  border-color: var(--acc);
+  box-shadow: none;
+}
+:root[data-skin="sharp"] .btn {
+  border-width: 1.5px;
+  font-weight: 700;
+  letter-spacing: 0.2px;
+}
+:root[data-skin="sharp"] .btn.g {
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  font-size: var(--f-xs);
+}
+:root[data-skin="sharp"] .brand .logo,
+:root[data-skin="sharp"] .st-icon,
+:root[data-skin="sharp"] .modal-h-ic,
+:root[data-skin="sharp"] .seg,
+:root[data-skin="sharp"] .seg button { border-radius: 2px; }
+:root[data-skin="sharp"] .editor-titlebar { border-radius: 0; }
+:root[data-skin="sharp"] .editor-titlebar .etb-dots { display: none; }
+:root[data-skin="sharp"] .modal,
+:root[data-skin="sharp"] .drawer,
+:root[data-skin="sharp"] .pv-drawer { border-radius: 3px; }
+:root[data-skin="sharp"] .chip { font-weight: 700; }
+
+/* ── نرم (soft) ── */
+:root[data-skin="soft"] {
+  --r-sm: 12px; --r-md: 18px; --r-lg: 22px; --r-xl: 28px;
+  --shadow: 0 12px 40px rgba(2, 5, 18, 0.42);
+}
+:root[data-skin="soft"] .card {
+  padding: 1.35rem 1.3rem 1.05rem;
+  border-radius: 28px;
+}
+:root[data-skin="soft"] .btn {
+  border-radius: var(--r-pill);
+  padding-inline: 1.4rem;
+  font-weight: 700;
+}
+:root[data-skin="soft"] .icon-btn,
+:root[data-skin="soft"] .ibtn,
+:root[data-skin="soft"] .st-icon,
+:root[data-skin="soft"] .modal-h-ic { border-radius: 50%; }
+:root[data-skin="soft"] .brand .logo { border-radius: 18px; }
+:root[data-skin="soft"] .cat-item,
+:root[data-skin="soft"] .st-row { border-radius: 22px; }
+:root[data-skin="soft"] .modal,
+:root[data-skin="soft"] .drawer { border-radius: 28px; }
+:root[data-skin="soft"] .seg,
+:root[data-skin="soft"] .seg button { border-radius: 999px; }
+:root[data-skin="soft"] .chip .dot { width: 0.6rem; height: 0.6rem; }
+
+/* ── بروتال (brutalist) ── */
+:root[data-skin="brutalist"] {
+  --r-sm: 0; --r-md: 0; --r-lg: 0; --r-xl: 0; --r-pill: 0;
+  --r-circle: 0;
+  --gap: 20px;
+}
+
+/* دارک بروتال — سایهٔ آفست با رنگ متن (سفید) */
+:root[data-theme="dark"][data-skin="brutalist"] .card {
+  box-shadow: 6px 6px 0 var(--txt);
+}
+:root[data-theme="dark"][data-skin="brutalist"] .btn {
+  box-shadow: 3px 3px 0 var(--txt);
+}
+:root[data-skin="brutalist"] .card {
+  border: 2.5px solid var(--txt);
+  box-shadow: 6px 6px 0 var(--txt);
+  background: var(--card);
+  padding: 1.2rem 1.2rem 1rem;
+  transition: box-shadow 0.12s, transform 0.12s;
+}
+:root[data-skin="brutalist"] .card:hover {
+  box-shadow: 8px 8px 0 var(--txt);
+  border-color: var(--txt);
+}
+:root[data-skin="brutalist"] .btn {
+  border: 2.5px solid var(--txt);
+  box-shadow: 3px 3px 0 var(--txt);
+  text-transform: uppercase;
+  font-weight: 900;
+  letter-spacing: 0.6px;
+  transition: transform 0.08s, box-shadow 0.08s;
+}
+:root[data-skin="brutalist"] .btn:hover {
+  transform: none;
+  box-shadow: 4px 4px 0 var(--txt);
+}
+:root[data-skin="brutalist"] .btn:active {
+  transform: translate(2px, 2px);
+  box-shadow: 1px 1px 0 var(--txt);
+}
+:root[data-skin="brutalist"] .btn.g {
+  background: var(--acc);
+  color: var(--acc-ink);
+  border-color: var(--txt);
+  box-shadow: 3px 3px 0 var(--txt);
+}
+:root[data-skin="brutalist"] .icon-btn,
+:root[data-skin="brutalist"] .ibtn {
+  border: 2.5px solid var(--txt);
+  box-shadow: 2px 2px 0 var(--txt);
+}
+:root[data-skin="brutalist"] .icon-btn:active,
+:root[data-skin="brutalist"] .ibtn:active {
+  transform: translate(1px, 1px);
+  box-shadow: 1px 1px 0 var(--txt);
+}
+:root[data-skin="brutalist"] .brand .logo {
+  border: 2.5px solid var(--txt);
+  box-shadow: 3px 3px 0 var(--txt);
+  border-radius: 0;
+}
+:root[data-skin="brutalist"] .chip {
+  border: 2px solid var(--txt);
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+:root[data-skin="brutalist"] .pcat {
+  border-width: 2px;
+  border-color: var(--txt);
+  background: var(--card);
+  color: var(--txt);
+}
+:root[data-skin="brutalist"] .modal,
+:root[data-skin="brutalist"] .drawer,
+:root[data-skin="brutalist"] .pv-drawer {
+  border: 3px solid var(--txt);
+}
+/* سایه فقط وقتی پنل بازه — چون در حالت بسته، translateX(-100%)
+   خودِ پنل رو از viewport بیرون می‌بره ولی سایه‌ی offset دار،
+   لبه‌ی باریکش هنوز می‌زنه تو صفحه و یه نوار تیره می‌سازه. */
+:root[data-skin="brutalist"] .modal-back.open .modal,
+:root[data-skin="brutalist"] .drawer.open,
+:root[data-skin="brutalist"] .pv-drawer.open {
+  box-shadow: 10px 10px 0 rgba(0, 0, 0, 0.5);
+}
+:root[data-skin="brutalist"] .st-icon,
+:root[data-skin="brutalist"] .modal-h-ic { border-radius: 0; }
+:root[data-skin="brutalist"] .cat-item,
+:root[data-skin="brutalist"] .st-row { border: 2px solid var(--txt); }
+:root[data-skin="brutalist"] .card .phead b {
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  font-weight: 900;
+}
+:root[data-skin="brutalist"] header.top {
+  border-bottom-width: 3px;
+  border-bottom-color: var(--txt);
+}
+
+/* ── تک‌رنگ (mono) ── */
+:root[data-theme="dark"][data-skin="mono"] {
+  --acc: #94a3b8; --acc-ink: #0b0f1e;
+  --vio: #cbd5e1; --blu: #94a3b8; --cyn: #b4bcc9;
+  --grn: #a3a3a3; --amb: #d4d4d4; --ros: #cbd5e1;
+  --focus: #94a3b8;
+  --r-circle: 4px;
+}
+:root[data-theme="light"][data-skin="mono"] {
+  --acc: #475569; --acc-ink: #ffffff;
+  --vio: #64748b; --blu: #475569; --cyn: #64748b;
+  --grn: #64748b; --amb: #78716c; --ros: #64748b;
+  --focus: #475569;
+  --r-circle: 4px;
+}
+:root[data-skin="mono"] .brand .logo { background: var(--mut); }
+:root[data-skin="mono"] .brand .logo svg { fill: var(--deep); }
+:root[data-skin="mono"] .btn.g {
+  background: var(--txt);
+  color: var(--bg);
+}
+:root[data-skin="mono"] .pcat,
+:root[data-skin="mono"] .tag,
+:root[data-skin="mono"] .ai-dot,
+:root[data-skin="mono"] .chip .dot {
+  filter: grayscale(1) brightness(1.05);
+}
+:root[data-skin="mono"] .about-logo {
+  background: linear-gradient(140deg, #64748b, #94a3b8);
+}
+:root[data-skin="mono"] .st-row[data-nav] .st-icon {
+  --st-c: #94a3b8;
+  --st-ink: #0b0f1e;
+}
+/* mono: سطح‌ها سالید و خاکستری */
+:root[data-skin="mono"] {
+  --s1-a: 1;
+  --s1-blur: 0px;
+  --s2-a: 1;
+  --s2-blur: 0px;
+  --sc-a: 1;
+  --sc-blur: 0px;
+  --s4-a: 1;
+  --s4-blur: 0px;
+}
+
+/* ── شیشه‌ای (glass) · dreamy / آبی ──
+   زلال، سبک، لبهٔ خیلی نازک، حس آب. با و بدون والپیپر یکسان. */
+:root[data-theme="dark"][data-skin="glass"] {
+  /* S1 · کارت / مودال / دراور */
+  --s1-a: 0.34;
+  --s1-blur: 15px;
+  --s1-sat: 1.35;
+  --s1-bri: 1.08;
+  --s1-bc: rgba(255, 255, 255, 0.07);
+
+  /* S2 · دکمه‌ها و کنترل‌ها */
+  --s2-a: 0.18;
+  --s2-blur: 14px;
+  --s2-sat: 1.25;
+  --s2-bri: 1.06;
+  --s2-bc: rgba(255, 255, 255, 0.08);
+
+  /* SC · ادیتور */
+  --sc-a: 0.48;
+  --sc-blur: 18px;
+  --sc-sat: 1.2;
+  --sc-bri: 1.04;
+
+  /* S4 · توست / منو */
+  --s4-a: 0.42;
+  --s4-blur: 20px;
+  --s4-sat: 1.3;
+  --s4-bc: rgba(255, 255, 255, 0.08);
+
+  --header-bg: rgba(10, 16, 32, 0.28);
+  --s3-bg: rgba(3, 6, 16, 0.42);
+}
+
+/* سایهٔ خیلی نرم — بدون لبهٔ تیز */
+:root[data-theme="dark"][data-skin="glass"] .card,
+:root[data-theme="dark"][data-skin="glass"] .modal,
+:root[data-theme="dark"][data-skin="glass"] .drawer,
+:root[data-theme="dark"][data-skin="glass"] .pv-drawer,
+:root[data-theme="dark"][data-skin="glass"] .dialog-modal {
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.25);
+  box-shadow:
+    0 6px 28px rgba(0, 0, 0, 0.18),
+    inset 0 1px 0 rgba(255, 255, 255, 0.06);
+}
+
+:root[data-theme="dark"][data-skin="glass"] .btn,
+:root[data-theme="dark"][data-skin="glass"] .icon-btn,
+:root[data-theme="dark"][data-skin="glass"] .ibtn,
+:root[data-theme="dark"][data-skin="glass"] .chip,
+:root[data-theme="dark"][data-skin="glass"] .pcat,
+:root[data-theme="dark"][data-skin="glass"] .cselect-btn {
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.05);
+}
+
+/* دکمهٔ accent — شفاف و نرم */
+:root[data-theme="dark"][data-skin="glass"] .btn.g {
+  background: color-mix(in srgb, var(--acc) 70%, transparent);
+  border: 1px solid color-mix(in srgb, var(--acc) 28%, transparent);
+  box-shadow:
+    0 4px 18px color-mix(in srgb, var(--acc) 18%, transparent),
+    inset 0 1px 0 rgba(255, 255, 255, 0.12);
+}
+
+/* هدر — بلور نرم، لبهٔ محو */
+:root[data-skin="glass"] header.top {
+  backdrop-filter: blur(20px) saturate(1.3);
+  -webkit-backdrop-filter: blur(20px) saturate(1.3);
+  border-bottom-color: rgba(255, 255, 255, 0.05);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04);
+}
+:root[data-theme="light"][data-skin="glass"] header.top {
+  border-bottom-color: rgba(23, 44, 110, 0.05);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.35);
+}
+
+/* ── ترمینال (terminal) — قفل dark ── */
+/* terminal همیشه dark قفله — صریح بنویس تا با light cross نشه */
+:root[data-theme="dark"][data-skin="terminal"] {
+  --font-ui: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  --font-head: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  --acc: #4ade80; --acc-ink: #041a0a;
+  --vio: #4ade80; --cyn: #4ade80; --grn: #4ade80;
+  --r-sm: 0; --r-md: 0; --r-lg: 0; --r-xl: 0; --r-pill: 0;
+  --r-circle: 0;
+  --shadow: none;
+
+  /* سطح‌ها سالید و هماهنگ با حس CRT */
+  --s1-tint: #041a0a;
+  --s1-a: 1;
+  --s1-blur: 0px;
+  --s1-bc: var(--acc);
+  --s1-bw: 1px;
+
+  --s2-tint: #041a0a;
+  --s2-a: 1;
+  --s2-blur: 0px;
+  --s2-bc: color-mix(in srgb, var(--acc) 45%, transparent);
+
+  --sc-tint: #021208;
+  --sc-a: 1;
+  --sc-blur: 0px;
+
+  --s4-tint: #041a0a;
+  --s4-a: 1;
+  --s4-blur: 0px;
+  --s4-bc: var(--acc);
+
+  --header-bg: rgba(4, 26, 10, 0.92);
+}
+:root[data-skin="terminal"] body,
+:root[data-skin="terminal"] .btn,
+:root[data-skin="terminal"] .chip,
+:root[data-skin="terminal"] .st-label,
+:root[data-skin="terminal"] .brand h1,
+:root[data-skin="terminal"] .modal h2,
+:root[data-skin="terminal"] .phead b {
+  font-family: var(--font-ui);
+  letter-spacing: 0.2px;
+}
+:root[data-skin="terminal"] .card {
+  /* background از surface binding می‌آید (--s1-tint: #041a0a) */
+  border: 1px solid var(--acc);
+  position: relative;
+  overflow: hidden;
+}
+:root[data-skin="terminal"] .card::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: repeating-linear-gradient(
+    0deg,
+    rgba(74, 222, 128, 0.04) 0 1px,
+    transparent 1px 3px
+  );
+  pointer-events: none;
+  z-index: 0;
+}
+:root[data-skin="terminal"] .card > * { position: relative; z-index: 1; }
+:root[data-skin="terminal"] .btn {
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+  font-weight: 700;
+}
+:root[data-skin="terminal"] .btn.g {
+  background: transparent;
+  color: var(--acc);
+  border: 1px solid var(--acc);
+  box-shadow: inset 0 0 12px rgba(74, 222, 128, 0.15);
+}
+:root[data-skin="terminal"] .btn.g:hover {
+  box-shadow: inset 0 0 20px rgba(74, 222, 128, 0.3);
+}
+:root[data-skin="terminal"] .brand .logo {
+  background: transparent;
+  border: 1.5px solid var(--acc);
+}
+:root[data-skin="terminal"] .brand .logo svg {
+  fill: var(--acc);
+  filter: drop-shadow(0 0 4px var(--acc));
+}
+:root[data-skin="terminal"] ::-webkit-scrollbar-thumb {
+  background: rgba(74, 222, 128, 0.35);
+}
+:root[data-skin="terminal"] .modal,
+:root[data-skin="terminal"] .drawer,
+:root[data-skin="terminal"] .pv-drawer {
+  border: 1px solid var(--acc);
+}
+
+/* ── مجله‌ای (editorial) — قفل light ── */
+:root[data-theme="light"][data-skin="editorial"] {
+  --font-head: "Noto Naskh Arabic", "Georgia", "Times New Roman", serif;
+  --r-sm: 3px; --r-md: 4px; --r-lg: 5px; --r-xl: 6px; --r-pill: 6px;
+  --r-circle: 4px;
+  --shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+  --gap: 24px;
+}
+:root[data-skin="editorial"] .card {
+  background: var(--card);
+  border: 1px solid var(--line);
+  padding: 1.75rem 1.6rem 1.25rem;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+}
+:root[data-skin="editorial"] .card:hover {
+  border-color: var(--line2);
+}
+:root[data-skin="editorial"] .brand h1,
+:root[data-skin="editorial"] .modal h2,
+:root[data-skin="editorial"] .about-name {
+  font-family: var(--font-head);
+  letter-spacing: -0.3px;
+}
+:root[data-skin="editorial"] .card .phead b {
+  font-family: var(--font-head);
+  font-weight: 700;
+  font-size: 1.15rem;
+  letter-spacing: -0.3px;
+  line-height: 1.35;
+}
+:root[data-skin="editorial"] .pdesc {
+  font-family: var(--font-head);
+  font-style: italic;
+  font-size: 0.92rem;
+}
+:root[data-skin="editorial"] .pfoot {
+  border-top-style: solid;
+  border-top-width: 0.5px;
+}
+:root[data-skin="editorial"] .btn {
+  font-weight: 600;
+  letter-spacing: 0.3px;
+}
+:root[data-skin="editorial"] .brand .logo,
+:root[data-skin="editorial"] .st-icon { border-radius: 4px; }
+
+/* ═══ دکمه‌های تم قفل‌شده ═══ */
+.seg button:disabled,
+.seg button.locked {
+  opacity: 0.3;
+  cursor: not-allowed;
+  pointer-events: none;
+  position: relative;
+}
+.seg button.locked::after {
+  content: "";
+  position: absolute;
+  top: -5px;
+  inset-inline-end: -5px;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background-color: var(--card);
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23fbbf24' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'%3E%3Crect x='3' y='11' width='18' height='11' rx='2'/%3E%3Cpath d='M7 11V7a5 5 0 0 1 10 0v4'/%3E%3C/svg%3E");
+  background-size: 9px 9px;
+  background-position: center;
+  background-repeat: no-repeat;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.35);
+}
+
+/* ══════════════ پالت‌های ترمینال (CRT Phosphor) ══════════════ */
+
+/* ── نمایش/مخفی بر اساس اسکین ── */
+.sw-crt-green,
+.sw-crt-amber,
+.sw-crt-cyan,
+.sw-crt-white,
+.sw-crt-magenta {
+  display: none;
+}
+:root[data-skin="terminal"] .sw-default,
+:root[data-skin="terminal"] .sw-ocean,
+:root[data-skin="terminal"] .sw-forest,
+:root[data-skin="terminal"] .sw-sunset,
+:root[data-skin="terminal"] .sw-galaxy,
+:root[data-skin="terminal"] .sw-mono {
+  display: none;
+}
+:root[data-skin="terminal"] .sw-crt-green,
+:root[data-skin="terminal"] .sw-crt-amber,
+:root[data-skin="terminal"] .sw-crt-cyan,
+:root[data-skin="terminal"] .sw-crt-white,
+:root[data-skin="terminal"] .sw-crt-magenta {
+  display: grid;
+}
+
+/* ── طراحی چرخه‌های فسفری (درخشش مرکزی) ── */
+.sw-crt-green {
+  --sw: radial-gradient(circle at 35% 35%, #c4ffd0 0%, #4ade80 45%, #166534 100%);
+}
+.sw-crt-amber {
+  --sw: radial-gradient(circle at 35% 35%, #ffe9b3 0%, #fbbf24 45%, #92400e 100%);
+}
+.sw-crt-cyan {
+  --sw: radial-gradient(circle at 35% 35%, #a5f3fc 0%, #22d3ee 45%, #0e7490 100%);
+}
+.sw-crt-white {
+  --sw: radial-gradient(circle at 35% 35%, #ffffff 0%, #cbd5e1 45%, #475569 100%);
+}
+.sw-crt-magenta {
+  --sw: radial-gradient(circle at 35% 35%, #fce7f3 0%, #f472b6 45%, #9d174d 100%);
+}
+
+/* ── اعمال رنگ روی اپ (specificity بالاتر → برنده) ── */
+:root[data-skin="terminal"][data-accent="crt-green"] {
+  --acc: #4ade80;
+  --acc-ink: #041a0a;
+  --vio: #4ade80;
+  --cyn: #4ade80;
+  --grn: #4ade80;
+  --focus: #4ade80;
+}
+:root[data-skin="terminal"][data-accent="crt-amber"] {
+  --acc: #fbbf24;
+  --acc-ink: #1a0f04;
+  --vio: #fbbf24;
+  --cyn: #fbbf24;
+  --grn: #fbbf24;
+  --focus: #fbbf24;
+}
+:root[data-skin="terminal"][data-accent="crt-cyan"] {
+  --acc: #22d3ee;
+  --acc-ink: #04141a;
+  --vio: #22d3ee;
+  --cyn: #22d3ee;
+  --grn: #22d3ee;
+  --focus: #22d3ee;
+}
+:root[data-skin="terminal"][data-accent="crt-white"] {
+  --acc: #e2e8f0;
+  --acc-ink: #0a0f14;
+  --vio: #e2e8f0;
+  --cyn: #e2e8f0;
+  --grn: #e2e8f0;
+  --focus: #e2e8f0;
+}
+:root[data-skin="terminal"][data-accent="crt-magenta"] {
+  --acc: #f472b6;
+  --acc-ink: #1a0410;
+  --vio: #f472b6;
+  --cyn: #f472b6;
+  --grn: #f472b6;
+  --focus: #f472b6;
+}
+
+/* ── اثر درخشش فسفری روی نقطه‌های انتخاب‌شده ── */
+:root[data-skin="terminal"] .seg.swatches button.on {
+  box-shadow:
+    0 0 0 2px var(--bg),
+    0 0 0 4px var(--acc),
+    0 0 12px color-mix(in srgb, var(--acc) 60%, transparent);
+}
+
+/* ══════════════ طراحی دکمه‌های پالت — per skin ══════════════ */
+/* دکمه‌ها با --sw اینلاین رنگ می‌گیرن؛ اینجا فقط شکل و رفتار. */
+
+/* ── تیز: کوچک، صاف ── */
+:root[data-skin="sharp"] .seg.swatches {
+  padding: 0.45rem 0.65rem;
+  gap: 0.5rem;
+}
+:root[data-skin="sharp"] .seg.swatches button {
+  width: 1.95rem;
+  height: 1.95rem;
+  border-radius: 2px;
+  border-width: 1.5px;
+}
+:root[data-skin="sharp"] .seg.swatches button::before {
+  width: 1.35rem;
+  height: 1.35rem;
+  border-radius: 1px;
+}
+:root[data-skin="sharp"] .seg.swatches button.on {
+  border-radius: 2px;
+  box-shadow: 0 0 0 2px var(--bg), 0 0 0 3px var(--acc);
+}
+
+/* ── نرم: بزرگ‌تر، گرد ── */
+:root[data-skin="soft"] .seg.swatches {
+  padding: 0.7rem 0.9rem;
+  gap: 0.7rem;
+}
+:root[data-skin="soft"] .seg.swatches button {
+  width: 2.6rem;
+  height: 2.6rem;
+}
+:root[data-skin="soft"] .seg.swatches button::before {
+  width: 1.95rem;
+  height: 1.95rem;
+}
+
+/* ── بروتال: مربع، ضخیم، سایه‌دار ── */
+:root[data-skin="brutalist"] .seg.swatches {
+  padding: 0.6rem 0.7rem;
+  gap: 0.55rem;
+  border-radius: 0;
+}
+:root[data-skin="brutalist"] .seg.swatches button {
+  width: 2rem;
+  height: 2rem;
+  border-radius: 0;
+  border: 2.5px solid var(--txt);
+  background: var(--card);
+}
+:root[data-skin="brutalist"] .seg.swatches button::before {
+  width: 1.3rem;
+  height: 1.3rem;
+  border-radius: 0;
+}
+:root[data-skin="brutalist"] .seg.swatches button.on {
+  border-radius: 0;
+  box-shadow:
+    2px 2px 0 var(--txt),
+    0 0 0 2px var(--txt);
+}
+
+/* ── شیشه‌ای: زلال با لبهٔ خیلی نازک ── */
+:root[data-skin="glass"] .seg.swatches button {
+  background: rgba(255, 255, 255, 0.05);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04);
+}
+:root[data-skin="glass"] .seg.swatches button.on {
+  border-color: rgba(255, 255, 255, 0.18);
+  box-shadow:
+    0 0 0 2px color-mix(in srgb, var(--bg) 60%, transparent),
+    0 0 0 3px rgba(255, 255, 255, 0.14),
+    inset 0 1px 0 rgba(255, 255, 255, 0.06);
+}
+:root[data-theme="light"][data-skin="glass"] .seg.swatches button {
+  background: rgba(255, 255, 255, 0.32);
+  border: 1px solid rgba(23, 44, 110, 0.06);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.35);
+}
+:root[data-theme="light"][data-skin="glass"] .seg.swatches button.on {
+  border-color: rgba(23, 44, 110, 0.14);
+  box-shadow:
+    0 0 0 2px color-mix(in srgb, var(--bg) 70%, transparent),
+    0 0 0 3px rgba(23, 44, 110, 0.12);
+}
+
+/* ── ترمینال: مربع، فسفری، درخشش ── */
+:root[data-skin="terminal"] .seg.swatches {
+  padding: 0.55rem 0.7rem;
+  gap: 0.55rem;
+  border-radius: 0;
+  background: #041a0a;
+  border-color: color-mix(in srgb, var(--acc) 45%, transparent);
+}
+:root[data-skin="terminal"] .seg.swatches button {
+  width: 2rem;
+  height: 2rem;
+  border-radius: 0;
+  border: 1px solid color-mix(in srgb, var(--acc) 45%, transparent);
+  background: #041a0a;
+}
+:root[data-skin="terminal"] .seg.swatches button::before {
+  width: 1.4rem;
+  height: 1.4rem;
+  border-radius: 0;
+}
+:root[data-skin="terminal"] .seg.swatches button:hover {
+  transform: none;
+  border-color: var(--acc);
+  box-shadow: 0 0 8px color-mix(in srgb, var(--acc) 55%, transparent);
+}
+:root[data-skin="terminal"] .seg.swatches button.on {
+  border-radius: 0;
+  border-color: var(--acc);
+  box-shadow:
+    0 0 0 2px var(--bg),
+    0 0 0 3px var(--acc),
+    0 0 14px color-mix(in srgb, var(--acc) 70%, transparent),
+    inset 0 0 6px color-mix(in srgb, var(--acc) 30%, transparent);
+}
+
+/* ── مجله‌ای: ظریف، نقطه‌ای ── */
+:root[data-skin="editorial"] .seg.swatches {
+  padding: 0.55rem 0.85rem;
+  gap: 0.5rem;
+  border-radius: 6px;
+}
+:root[data-skin="editorial"] .seg.swatches button {
+  width: 1.9rem;
+  height: 1.9rem;
+  border: 0.5px solid var(--line2);
+}
+:root[data-skin="editorial"] .seg.swatches button::before {
+  width: 1.2rem;
+  height: 1.2rem;
+}
+:root[data-skin="editorial"] .seg.swatches button.on {
+  border-color: var(--txt);
+  box-shadow:
+    0 0 0 2px var(--bg),
+    0 0 0 3px var(--txt);
+}
+
+/* ── تک‌رنگ: کوچک‌تر ── */
+:root[data-skin="mono"] .seg.swatches button {
+  width: 2.1rem;
+  height: 2.1rem;
+}
+:root[data-skin="mono"] .seg.swatches button::before {
+  width: 1.5rem;
+  height: 1.5rem;
+}
+
+/* ══════════════ پوشش اسکین برای کنترل‌ها و FAB ══════════════ */
+
+/* ── تیز ── */
+:root[data-skin="sharp"] .cselect-btn,
+:root[data-skin="sharp"] .sort-dir,
+:root[data-skin="sharp"] .empty-cta,
+:root[data-skin="sharp"] .quick-fab {
+  border-radius: 2px;
+  border-width: 1.5px;
+}
+:root[data-skin="sharp"] .cselect-menu {
+  border-radius: 3px;
+}
+:root[data-skin="sharp"] .quick-fab .qf-part {
+  border-radius: 0;
+}
+:root[data-skin="sharp"] .quick-fab .qf-part svg {
+  width: 0.95rem;
+  height: 0.95rem;
+}
+
+/* ── نرم ── */
+:root[data-skin="soft"] .cselect-btn,
+:root[data-skin="soft"] .sort-dir,
+:root[data-skin="soft"] .empty-cta,
+:root[data-skin="soft"] .quick-fab {
+  border-radius: var(--r-pill);
+}
+:root[data-skin="soft"] .quick-fab .qf-part {
+  border-radius: var(--r-pill);
+  padding-inline: 1.1rem;
+}
+:root[data-skin="soft"] .cselect-menu {
+  border-radius: 20px;
+}
+:root[data-skin="soft"] .quick-fab {
+  padding: 3px;
+}
+:root[data-skin="soft"] .quick-fab .qf-sep {
+  width: 2px;
+  border-radius: 999px;
+  background: var(--line);
+}
+
+/* ── بروتال ── */
+:root[data-skin="brutalist"] .cselect-btn,
+:root[data-skin="brutalist"] .sort-dir,
+:root[data-skin="brutalist"] .empty-cta {
+  border-radius: 0;
+  border: 2.5px solid var(--txt);
+  box-shadow: 3px 3px 0 var(--txt);
+  transition: transform 0.08s, box-shadow 0.08s;
+}
+:root[data-skin="brutalist"] .cselect-btn:hover,
+:root[data-skin="brutalist"] .sort-dir:hover {
+  transform: none;
+  box-shadow: 4px 4px 0 var(--txt);
+}
+:root[data-skin="brutalist"] .cselect-btn:active,
+:root[data-skin="brutalist"] .sort-dir:active,
+:root[data-skin="brutalist"] .empty-cta:active {
+  transform: translate(2px, 2px);
+  box-shadow: 1px 1px 0 var(--txt);
+}
+:root[data-skin="brutalist"] .cselect-menu {
+  border-radius: 0;
+  border: 2.5px solid var(--txt);
+  box-shadow: 6px 6px 0 var(--txt);
+}
+:root[data-skin="brutalist"] .quick-fab {
+  border-radius: 0;
+  border: 2.5px solid var(--txt);
+  box-shadow: 4px 4px 0 var(--txt);
+  background: var(--card);
+}
+:root[data-skin="brutalist"] .quick-fab .qf-part {
+  border-radius: 0;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  font-weight: 900;
+}
+:root[data-skin="brutalist"] .quick-fab .qf-sep {
+  background: var(--txt);
+  width: 2.5px;
+}
+
+/* ── تک‌رنگ ── */
+:root[data-skin="mono"] .quick-fab,
+:root[data-skin="mono"] .empty-cta,
+:root[data-skin="mono"] .cselect-btn,
+:root[data-skin="mono"] .sort-dir {
+  filter: grayscale(1);
+}
+:root[data-skin="mono"] .quick-fab .qf-part[data-qf="add"],
+:root[data-skin="mono"] .quick-fab .qf-part[data-qf="select"] {
+  color: var(--txt);
+}
+
+
+/* ── ترمینال ── */
+:root[data-skin="terminal"] .cselect-btn,
+:root[data-skin="terminal"] .sort-dir {
+  border-radius: 0;
+  border: 1px solid var(--acc);
+  background: #041a0a;
+  color: var(--acc);
+  font-family: var(--font-ui);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  font-size: var(--f-2xs);
+  font-weight: 700;
+  transition: box-shadow 0.18s var(--ease), color 0.18s var(--ease);
+}
+:root[data-skin="terminal"] .cselect-btn:hover,
+:root[data-skin="terminal"] .sort-dir:hover {
+  transform: none;
+  border-color: var(--acc);
+  color: var(--acc);
+  box-shadow: 0 0 10px color-mix(in srgb, var(--acc) 45%, transparent);
+}
+:root[data-skin="terminal"] .sort-dir svg {
+  stroke: var(--acc);
+}
+:root[data-skin="terminal"] .cselect-btn .cs-ic svg,
+:root[data-skin="terminal"] .cselect-btn .cs-chev svg {
+  color: var(--acc);
+  stroke: var(--acc);
+}
+:root[data-skin="terminal"] .cselect-menu {
+  border-radius: 0;
+  background: #041a0a;
+  border: 1px solid var(--acc);
+  box-shadow:
+    0 0 0 1px color-mix(in srgb, var(--acc) 30%, transparent),
+    0 12px 30px rgba(0, 0, 0, 0.6),
+    0 0 20px color-mix(in srgb, var(--acc) 25%, transparent);
+}
+:root[data-skin="terminal"] .cselect-item {
+  border-radius: 0;
+  font-family: var(--font-ui);
+  color: var(--acc);
+}
+:root[data-skin="terminal"] .cselect-item:hover {
+  background: color-mix(in srgb, var(--acc) 12%, transparent);
+}
+:root[data-skin="terminal"] .cselect-item.on {
+  color: var(--acc);
+}
+:root[data-skin="terminal"] .cselect-item .ci-check svg {
+  stroke: var(--acc);
+}
+:root[data-skin="terminal"] .empty-cta {
+  border-radius: 0;
+  border: 1px solid var(--acc);
+  border-style: solid;
+  background: transparent;
+  color: var(--acc);
+  font-family: var(--font-ui);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  box-shadow: inset 0 0 12px color-mix(in srgb, var(--acc) 12%, transparent);
+}
+:root[data-skin="terminal"] .empty-cta:hover {
+  background: color-mix(in srgb, var(--acc) 8%, transparent);
+  box-shadow:
+    inset 0 0 20px color-mix(in srgb, var(--acc) 22%, transparent),
+    0 0 14px color-mix(in srgb, var(--acc) 35%, transparent);
+}
+:root[data-skin="terminal"] .quick-fab {
+  border-radius: 0;
+  border: 1px solid var(--acc);
+  background: #041a0a;
+  box-shadow:
+    0 0 0 1px color-mix(in srgb, var(--acc) 30%, transparent),
+    0 8px 24px rgba(0, 0, 0, 0.5),
+    0 0 20px color-mix(in srgb, var(--acc) 22%, transparent);
+}
+:root[data-skin="terminal"] .quick-fab:hover {
+  border-color: var(--acc);
+  box-shadow:
+    0 0 0 1px color-mix(in srgb, var(--acc) 45%, transparent),
+    0 8px 28px rgba(0, 0, 0, 0.6),
+    0 0 28px color-mix(in srgb, var(--acc) 38%, transparent);
+}
+:root[data-skin="terminal"] .quick-fab .qf-part {
+  border-radius: 0;
+  color: var(--acc);
+  font-family: var(--font-ui);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+:root[data-skin="terminal"] .quick-fab .qf-part:hover {
+  background: color-mix(in srgb, var(--acc) 10%, transparent);
+}
+:root[data-skin="terminal"] .quick-fab .qf-part[data-qf="add"] {
+  color: var(--acc);
+}
+:root[data-skin="terminal"] .quick-fab .qf-part[data-qf="select"] {
+  color: var(--acc);
+}
+:root[data-skin="terminal"] .quick-fab .qf-sep {
+  background: color-mix(in srgb, var(--acc) 45%, transparent);
+  width: 1px;
+}
+:root[data-skin="terminal"] .quick-fab .qf-part svg {
+  stroke: var(--acc);
+}
+
+/* ── مجله‌ای ── */
+:root[data-skin="editorial"] .cselect-btn,
+:root[data-skin="editorial"] .sort-dir {
+  border-radius: 4px;
+  border-color: var(--line2);
+  font-weight: 600;
+  letter-spacing: 0.3px;
+}
+:root[data-skin="editorial"] .cselect-menu {
+  border-radius: 5px;
+}
+:root[data-skin="editorial"] .empty-cta {
+  border-radius: 4px;
+  border: 1px solid var(--line2);
+  background: var(--card);
+  color: var(--txt);
+  font-weight: 600;
+}
+:root[data-skin="editorial"] .empty-cta:hover {
+  background: var(--card2);
+  border-color: var(--txt);
+  color: var(--txt);
+}
+:root[data-skin="editorial"] .quick-fab {
+  border-radius: 4px;
+  border: 0.5px solid var(--line2);
+  background: var(--card);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+}
+:root[data-skin="editorial"] .quick-fab .qf-part {
+  border-radius: 0;
+  font-weight: 600;
+  letter-spacing: 0.3px;
+}
+:root[data-skin="editorial"] .quick-fab .qf-sep {
+  background: var(--line);
+}
+
+@keyframes stViewFwd {
+  from {
+    opacity: 0;
+    transform: translateX(-18px);
+    filter: blur(3px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+    filter: blur(0);
+  }
+}
+@keyframes stViewBack {
+  from {
+    opacity: 0;
+    transform: translateX(18px);
+    filter: blur(3px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+    filter: blur(0);
+  }
+}
+.st-view.view-in-fwd,
+.st-view.view-in-back {
+  animation-duration: 0.3s;
+  will-change: filter, transform, opacity;
+}
+
+/* ══════════════ اصلاح سایه‌ها در light mode ══════════════ */
+
+/* ── نرم (soft) در light ── */
+:root[data-theme="light"][data-skin="soft"] {
+  --shadow: 0 10px 32px rgba(90, 110, 170, 0.14);
+}
+:root[data-theme="light"][data-skin="soft"] .card:hover {
+  box-shadow: 0 16px 44px rgba(90, 110, 170, 0.2);
+}
+
+:root[data-theme="light"][data-skin="glass"] {
+  /* ═══ شیشهٔ روشن · frost سفید زلال ═══
+     خوانا روی والپیپر روشن و تیره. بدون حاشیهٔ سفید. */
+
+  --s1-tint: #ffffff;
+  --s1-a: 0.68;
+  --s1-blur: 15px;
+  --s1-bri: 1.02;
+  --s1-sat: 1.05;
+  --s1-bc: rgba(23, 44, 110, 0.08);
+
+  --s2-tint: #ffffff;
+  --s2-a: 0.62;
+  --s2-blur: 16px;
+  --s2-bri: 1.02;
+  --s2-sat: 1.05;
+  --s2-bc: rgba(23, 44, 110, 0.1);
+
+  --sc-tint: #f8fafc;
+  --sc-a: 0.82;
+  --sc-blur: 18px;
+  --sc-bri: 1.02;
+  --sc-sat: 1.04;
+
+  --s4-tint: #ffffff;
+  --s4-a: 0.82;
+  --s4-blur: 20px;
+  --s4-bri: 1.02;
+  --s4-bc: rgba(23, 44, 110, 0.1);
+
+  --header-bg: rgba(255, 255, 255, 0.62);
+  --s3-bg: rgba(15, 23, 42, 0.42);
+
+  --line: rgba(23, 44, 110, 0.1);
+  --line2: rgba(23, 44, 110, 0.16);
+}
+
+/* سایهٔ نرم + هایلایت سفید — حس frost */
+:root[data-theme="light"][data-skin="glass"] .card,
+:root[data-theme="light"][data-skin="glass"] .modal,
+:root[data-theme="light"][data-skin="glass"] .drawer,
+:root[data-theme="light"][data-skin="glass"] .pv-drawer,
+:root[data-theme="light"][data-skin="glass"] .dialog-modal {
+  box-shadow:
+    0 10px 34px rgba(15, 23, 42, 0.16),
+    0 2px 8px rgba(15, 23, 42, 0.06);
+  text-shadow: none;
+}
+
+:root[data-theme="light"][data-skin="glass"] .btn,
+:root[data-theme="light"][data-skin="glass"] .icon-btn,
+:root[data-theme="light"][data-skin="glass"] .ibtn,
+:root[data-theme="light"][data-skin="glass"] .chip,
+:root[data-theme="light"][data-skin="glass"] .pcat,
+:root[data-theme="light"][data-skin="glass"] .cselect-btn,
+:root[data-theme="light"][data-skin="glass"] .tag,
+:root[data-theme="light"][data-skin="glass"] .pin {
+  box-shadow: none;
+}
+
+:root[data-theme="light"][data-skin="glass"] .btn.g {
+  background: color-mix(in srgb, var(--acc) 82%, transparent);
+  border: 1px solid color-mix(in srgb, var(--acc) 26%, transparent);
+  box-shadow: 0 4px 14px color-mix(in srgb, var(--acc) 22%, transparent);
+}
+
+/* هدر لایت‌گلس */
+:root[data-theme="light"][data-skin="glass"] header.top {
+  backdrop-filter: blur(22px) saturate(1.25);
+  -webkit-backdrop-filter: blur(22px) saturate(1.25);
+  border-bottom-color: rgba(23, 44, 110, 0.08);
+  box-shadow: none;
+}
+
+/* ── شیشه‌ای در light: پیش‌نمایش کارت اسکین ── */
+:root[data-theme="light"][data-skin="glass"] .skin-preview::before {
+  background: rgba(255, 255, 255, 0.55);
+  border-color: rgba(255, 255, 255, 0.65);
+}
+
+/* ── بروتال در light — سایهٔ آفست نرم‌تر ── */
+:root[data-theme="light"][data-skin="brutalist"] .card {
+  box-shadow: 5px 5px 0 var(--txt);
+}
+:root[data-theme="light"][data-skin="brutalist"] .card:hover {
+  box-shadow: 7px 7px 0 var(--txt);
+}
+:root[data-theme="light"][data-skin="brutalist"] .btn {
+  box-shadow: 3px 3px 0 var(--txt);
+}
+:root[data-theme="light"][data-skin="brutalist"] .btn:hover {
+  box-shadow: 4px 4px 0 var(--txt);
+}
+:root[data-theme="light"][data-skin="brutalist"] .icon-btn,
+:root[data-theme="light"][data-skin="brutalist"] .ibtn {
+  box-shadow: 2px 2px 0 var(--txt);
+}
+:root[data-theme="light"][data-skin="brutalist"] .modal,
+:root[data-theme="light"][data-skin="brutalist"] .drawer {
+  box-shadow: 8px 8px 0 var(--txt);
+}
+:root[data-theme="light"][data-skin="brutalist"] .cselect-btn,
+:root[data-theme="light"][data-skin="brutalist"] .sort-dir,
+:root[data-theme="light"][data-skin="brutalist"] .empty-cta {
+  box-shadow: 3px 3px 0 var(--txt);
+}
+:root[data-theme="light"][data-skin="brutalist"] .quick-fab {
+  box-shadow: 4px 4px 0 var(--txt);
+}
+
+/* ══════════════ والپیپر ══════════════ */
+/* لایهٔ والپیپر — با overscan برای blur بدون لبهٔ سفید */
+#wallpaperLayer {
+  position: fixed;
+  top: -60px;
+  left: -60px;
+  width: calc(100vw + 120px);
+  height: calc(100vh + 120px);
+  /* 100lvh = بزرگ‌ترین viewport (URL bar پنهان).
+     ثابته → موقع جمع/باز شدن URL bar دوباره محاسبه نمی‌شه. */
+  height: calc(100lvh + 120px);
+  z-index: -1;
+  pointer-events: none;
+  overflow: hidden;
+  filter:
+    blur(var(--wall-blur, 0px))
+    brightness(calc(1 - var(--wall-dim, 0.4)));
+  transition: filter 0.5s var(--ease-ios);
+  /* will-change: filter حذف شد — یه لایهٔ GPU دائمی به اندازهٔ
+     ویوپورت + overscan اشغال می‌کرد. فیلتر استاتیکه و هر فریم
+     دوباره محاسبه نمی‌شه، پس نیازی به will-change نیست. */
+}
+
+#wallpaperLayer > canvas,
+#wallpaperLayer > video,
+#wallpaperLayer > img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+/* روی موبایل: بلور کمتر + overscan کمتر */
+@media (max-width: 760px) {
+  #wallpaperLayer {
+    top: -40px;
+    left: -40px;
+    width: calc(100vw + 80px);
+    height: calc(100vh + 80px);
+    height: calc(100lvh + 80px);
+    filter: blur(min(var(--wall-blur, 0px), 12px))
+      brightness(calc(1 - var(--wall-dim, 0.4)));
+  }
+}
+
+/* وقتی والپیپر فعاله، پترن‌های پس‌زمینه محو می‌شن */
+:root[data-wall="static"] body::before,
+:root[data-wall="live"] body::before {
+  opacity: 0;
+  transition: opacity 0.5s var(--ease-ios);
+}
+
+/* روی موبایل، بلور والپیپر کاملاً حذف — بزرگ‌ترین هزینهٔ GPU
+   روی موبایل بود و تفاوت بصری چشم‌گیری نداره. */
+@media (max-width: 760px) {
+  #wallpaperLayer {
+    top: -20px;
+    left: -20px;
+    right: -20px;
+    bottom: -20px;
+    filter: brightness(calc(1 - var(--wall-dim, 0.4)));
+  }
+}
+
+/* ══════════════ UI انتخاب والپیپر ══════════════ */
+.wall-cats {
+  display: flex;
+  gap: 0.35rem;
+  flex-wrap: wrap;
+  align-items: center;
+  margin-bottom: 0.9rem;
+  padding: 0.5rem;
+  border-radius: 14px;
+  background: color-mix(in srgb, var(--deep) 55%, transparent);
+  border: 1px solid var(--s2-bc);
+}
+
+.wall-cat {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.42rem 0.75rem;
+  border-radius: 999px;
+  border: 1px solid transparent;
+  background: transparent;
+  color: var(--mut);
+  font-family: inherit;
+  font-size: var(--f-xs);
+  font-weight: 700;
+  cursor: pointer;
+  transition:
+    background 0.18s var(--ease),
+    color 0.18s var(--ease),
+    transform 0.12s var(--ease),
+    box-shadow 0.2s var(--ease);
+  -webkit-tap-highlight-color: transparent;
+  line-height: 1;
+  white-space: nowrap;
+}
+.wall-cat:hover {
+  color: var(--txt);
+  background: color-mix(in srgb, var(--acc) 8%, transparent);
+}
+.wall-cat:active {
+  transform: scale(0.96);
+}
+.wall-cat.on {
+  background: var(--acc);
+  color: var(--acc-ink);
+  box-shadow: 0 3px 12px color-mix(in srgb, var(--acc) 40%, transparent);
+}
+
+.wall-cat .wc-name {
+  letter-spacing: 0.1px;
+}
+.wall-cat .wc-count {
+  font-size: 0.68rem;
+  font-weight: 800;
+  color: var(--dim);
+  background: color-mix(in srgb, var(--card) 70%, transparent);
+  border-radius: 999px;
+  padding: 1px 6px;
+  min-width: 1.15rem;
+  text-align: center;
+  line-height: 1.35;
+  font-variant-numeric: tabular-nums;
+  transition:
+    background 0.18s var(--ease),
+    color 0.18s var(--ease);
+}
+.wall-cat:hover .wc-count {
+  color: var(--txt);
+}
+.wall-cat.on .wc-count {
+  color: var(--acc-ink);
+  background: color-mix(in srgb, var(--acc-ink) 20%, transparent);
+}
+
+@media (max-width: 640px) {
+  .wall-cats {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    scrollbar-width: none;
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior-x: contain;
+  }
+  .wall-cats::-webkit-scrollbar {
+    display: none;
+  }
+  .wall-cat {
+    flex-shrink: 0;
+  }
+}
+
+.wall-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.5rem;
+}
+@media (min-width: 640px) {
+  .wall-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+}
+
+.wall-card {
+  position: relative;
+  aspect-ratio: 16/9;
+  border-radius: var(--r-md);
+  overflow: hidden;
+  border: 1.5px solid var(--s2-bc);
+  background: var(--s2-bg);
+  cursor: pointer;
+  padding: 0;
+  font-family: inherit;
+  transition: 0.2s var(--ease);
+  -webkit-tap-highlight-color: transparent;
+}
+.wall-card:hover {
+  border-color: var(--line2);
+  transform: translateY(-1px);
+}
+.wall-card.on {
+  border-color: var(--acc);
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--acc) 30%, transparent);
+}
+
+.wall-card img,
+.wall-card .wall-prev {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+.wall-card .wall-prev {
+  display: grid;
+  place-items: center;
+  background: var(--s2-bg);
+  color: var(--mut);
+  font-size: 1.6rem;
+  font-weight: 800;
+}
+
+.wall-badge {
+  position: absolute;
+  top: 6px;
+  inset-inline-end: 6px;
+  font-size: 9px;
+  font-weight: 800;
+  padding: 2px 7px;
+  border-radius: var(--r-pill);
+  background: rgba(0,0,0,0.6);
+  color: #fff;
+  letter-spacing: 0.3px;
+  text-transform: uppercase;
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+  z-index: 2;
+}
+.wall-badge.live {
+  background: color-mix(in srgb, var(--acc) 85%, transparent);
+  color: var(--acc-ink);
+}
+
+.wall-name {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  padding: 6px 8px 5px;
+  font-size: var(--f-2xs);
+  font-weight: 700;
+  color: #fff;
+  background: linear-gradient(180deg, transparent, rgba(0,0,0,0.75));
+  text-align: start;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  z-index: 2;
+}
+
+.wall-controls {
+  margin-top: 0.85rem;
+  padding-top: 0.85rem;
+  border-top: 1px dashed var(--line);
+  display: flex;
+  flex-direction: column;
+  gap: 0.7rem;
+}
+.wall-controls[hidden] { display: none; }
+.wall-ctrl-lbl {
+  min-width: 3rem;
+  font-size: var(--f-xs);
+  color: var(--mut);
+  font-weight: 700;
+}
+
+.wall-empty {
+  grid-column: 1 / -1;
+  padding: 1.5rem 1rem;
+  text-align: center;
+  color: var(--dim);
+  font-size: var(--f-xs);
+  line-height: 2;
+}
+.wall-empty code {
+  color: var(--cyn);
+  font-family: var(--mono);
+  display: inline-block;
+  padding: 1px 6px;
+  background: var(--s2-bg);
+  border-radius: 4px;
+  font-size: 0.9em;
+  direction: ltr;
+}
+
+/* ══════════════ والپیپر — تقویت سطح‌ها (فقط اسکین‌های غیرگلس) ══════════════
+   گلس عمداً اینجا نیست: با و بدون والپیپر یکسان می‌ماند (dreamy ثابت). */
+
+:root[data-wall="static"]:not([data-skin="glass"]),
+:root[data-wall="live"]:not([data-skin="glass"]) {
+  --s1-a: 0.92;
+  --s1-blur: 10px;
+  --s2-a: 0.88;
+  --s2-blur: 6px;
+  --sc-a: 0.94;
+  --sc-blur: 8px;
+  --s3-bg: rgba(3, 6, 16, 0.78);
+}
+:root[data-theme="light"][data-wall="static"]:not([data-skin="glass"]),
+:root[data-theme="light"][data-wall="live"]:not([data-skin="glass"]) {
+  --s1-a: 0.94;
+  --s2-a: 0.9;
+  --sc-a: 0.96;
+  --s3-bg: rgba(20, 30, 60, 0.5);
+}
+
+/* ══════════════ اسکرول‌بار سفارشی PWA ══════════════ */
+/* نوار نازک که فقط موقع اسکرول ظاهر می‌شه */
+#customScrollbar {
+  position: fixed;
+  top: 0;
+  inset-inline-end: 3px;
+  width: 3px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--acc) 55%, transparent);
+  opacity: 0.18;
+  pointer-events: none;
+  z-index: 99999;
+  transition:
+    opacity 0.4s var(--ease),
+    background 0.25s var(--ease);
+  will-change: transform, height;
+}
+#customScrollbar.visible {
+  opacity: 0.65;
+}
+#customScrollbar.hover {
+  opacity: 0.95;
+  background: color-mix(in srgb, var(--acc) 85%, transparent);
+}
+#customScrollbar[hidden] {
+  display: none;
+}
+
+/* وقتی اسکرول ممکن نیست، مخفی */
+#customScrollbar[hidden] {
+  display: none;
+}
+
+/* روی موبایل اصلاً نشون نده */
+@media (max-width: 760px) {
+  #customScrollbar { display: none !important; }
+}
+
+/* ══════════════ Surface Binding — منبع یگانهٔ حقیقت ══════════════
+   هر component این‌جا به یک سطح وصل می‌شه. هیچ جای دیگه‌ای نباید
+   background/backdrop/border-color این componentها رو override کنه. */
+
+/* ── S1 · سطوح اصلی ── */
+.card,
+.modal,
+.drawer,
+.pv-drawer,
+.editor-modal,
+.msearch,
+.var-modal,
+.var-preview-panel,
+.lib-preview-modal,
+.dialog-modal {
+  background: var(--s1-bg);
+  border-color: var(--s1-bc);
+  border-width: var(--s1-bw);
+}
+/* فقط گلس — بقیهٔ اسکین‌ها هزینهٔ compositor نمی‌دن */
+:root[data-skin="glass"] .card,
+:root[data-skin="glass"] .modal,
+:root[data-skin="glass"] .drawer,
+:root[data-skin="glass"] .pv-drawer,
+:root[data-skin="glass"] .editor-modal,
+:root[data-skin="glass"] .msearch,
+:root[data-skin="glass"] .var-modal,
+:root[data-skin="glass"] .var-preview-panel,
+:root[data-skin="glass"] .lib-preview-modal,
+:root[data-skin="glass"] .dialog-modal {
+  backdrop-filter: var(--s1-fx);
+  -webkit-backdrop-filter: var(--s1-fx);
+}
+
+/* ── S2 · کنترل‌ها ── */
+.btn:not(.g),
+.icon-btn,
+.ibtn,
+.pin,
+.phead .pin,
+.cselect-btn,
+.sort-dir,
+.empty-cta,
+.chip,
+.tag,
+.pcat,
+.st-val,
+.lib-icon-btn,
+.cat-item-btn,
+.cat-tool-btn,
+.var-preview-toggle,
+.var-preview-back,
+.etb-toggle,
+.etb-close,
+/* ── اضافه‌شده: عناصری که قبلاً سخت‌کد بودن ── */
+.seg,
+.seg.swatches,
+.st-row,
+.cat-item,
+.lib-card,
+.trash-item,
+.drawer-head,
+.lib-preview-stats,
+.var-preview-panel-head,
+.lib-intro,
+.lib-loading,
+.lib-empty,
+.cat-reorder-count {
+  background: var(--s2-bg);
+  border-color: var(--s2-bc);
+  border-width: var(--s2-bw);
+}
+
+/* دکمهٔ accent در گلس — شفافیت ملایم روی رنگ تأکیدی */
+:root[data-skin="glass"] .btn.g {
+  backdrop-filter: blur(10px) saturate(1.3);
+  -webkit-backdrop-filter: blur(10px) saturate(1.3);
+}
+
+/* ── فیلدهای ورودی ── */
+.inp,
+textarea,
+.em-title,
+.editor-meta .em-title,
+.em-tags,
+.editor-meta .em-tags,
+.em-desc,
+.editor-meta .em-desc,
+.var-form .var-row input,
+.searchwrap input,
+.msearch-bar input {
+  background: var(--s1-bg);
+  backdrop-filter: var(--s1-fx);
+  -webkit-backdrop-filter: var(--s1-fx);
+  border-color: var(--s2-bc);
+}
+
+/* ── SC · ادیتور/پیش‌نمایش ── */
+.editor-wrap,
+.pv-wrap,
+.var-preview,
+.lib-preview-content {
+  background: var(--sc-bg);
+}
+.editor-gutter,
+.pv-gutter {
+  background: color-mix(in srgb, var(--sc-tint) 40%, transparent);
+}
+
+/* ── Editor internals — سالید نباشن، S1 مودال از پشتشون رد شه ── */
+.editor-titlebar,
+.editor-meta,
+.editor-status,
+.editor-actions {
+  background: transparent;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+  border-color: var(--s1-bc);
+}
+
+/* ── S3 · بک‌دراپ overlay ── */
+.modal-back,
+.drawer-back,
+.pv-back,
+.msearch-back {
+  background: var(--s3-bg);
+  backdrop-filter: blur(var(--s3-blur));
+  -webkit-backdrop-filter: blur(var(--s3-blur));
+}
+
+/* ══════════════ S4 · شناور — بازنگری ══════════════
+   تفکیک دو دسته:
+   - گذرا (توست/تولتیپ/نوار انتخاب) → شفافیت مجاز، خوانایی موقت
+   - موندگار (منو/دراپ‌دان) → خوانایی اولویت، بلور برای حس گلس */
+
+/* ── گذرا ── */
+.toast,
+.gtip,
+#toastUndo,
+.sel-bar,
+.quick-fab {
+  background: var(--s4-bg);
+  border-color: var(--s4-bc);
+}
+:root[data-skin="glass"] .toast,
+:root[data-skin="glass"] .gtip,
+:root[data-skin="glass"] #toastUndo,
+:root[data-skin="glass"] .sel-bar,
+:root[data-skin="glass"] .quick-fab {
+  backdrop-filter: var(--s4-fx);
+  -webkit-backdrop-filter: var(--s4-fx);
+}
+
+/* ── موندگار: منو/دراپ‌دان ──
+   آلفای بالا (94%) + بلور ملایم → در همهٔ اسکین‌ها خوانا،
+   و در گلس با بلور بیشتر حس شیشه واقعی می‌ده. */
+.cselect-menu,
+.ai-open-menu,
+.ctx-menu {
+  background: color-mix(in srgb, var(--s4-tint) 94%, transparent);
+  border-color: var(--s4-bc);
+  backdrop-filter: blur(10px) saturate(1.2);
+  -webkit-backdrop-filter: blur(10px) saturate(1.2);
+}
+
+/* گلس: بلور بیشتر + آلفای کمتر برای شفافیت کنترل‌شده */
+:root[data-skin="glass"] .cselect-menu,
+:root[data-skin="glass"] .ai-open-menu,
+:root[data-skin="glass"] .ctx-menu {
+  background: color-mix(in srgb, var(--s4-tint) 82%, transparent);
+  backdrop-filter: blur(18px) saturate(1.35);
+  -webkit-backdrop-filter: blur(18px) saturate(1.35);
+}
+
+/* گلس روشن: تینت سفید خالص — روی هر والپیپری خوانا */
+:root[data-theme="light"][data-skin="glass"] .cselect-menu,
+:root[data-theme="light"][data-skin="glass"] .ai-open-menu,
+:root[data-theme="light"][data-skin="glass"] .ctx-menu {
+  background: rgba(255, 255, 255, 0.88);
+}
+
+/* ── ساب‌منو — سالید (بدون بلور چون بیرون والد قرار می‌گیره) ── */
+.ctx-submenu {
+  background: color-mix(in srgb, var(--s4-tint) 96%, transparent);
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+}
+:root[data-skin="glass"] .ctx-submenu {
+  background: color-mix(in srgb, var(--s4-tint) 94%, var(--deep));
+}
+:root[data-theme="light"][data-skin="glass"] .ctx-submenu {
+  background: #ffffff;
+}
+
+/* پنل جستجوی موبایل — روی محتوا overlay می‌شه،
+   پس به آلفای بالاتر از S1 عمومی نیاز داره. */
+.msearch {
+  background: color-mix(in srgb, var(--s1-tint) 94%, transparent);
+}
+:root[data-skin="glass"] .msearch {
+  background: color-mix(in srgb, var(--s1-tint) 88%, transparent);
+  backdrop-filter: blur(16px) saturate(1.3);
+  -webkit-backdrop-filter: blur(16px) saturate(1.3);
+}
+:root[data-theme="light"][data-skin="glass"] .msearch {
+  background: rgba(255, 255, 255, 0.9);
+}
+
+/* ══════════════ باکس سرچ موبایل — per skin ══════════════ */
+
+/* ── تیز: لبهٔ خطی، بدون سایه ── */
+:root[data-skin="sharp"] .msearch {
+  border-bottom: 1.5px solid var(--line2);
+  box-shadow: none;
+}
+
+/* ── بروتال: لبه و آفست ── */
+:root[data-skin="brutalist"] .msearch {
+  border-bottom: 2.5px solid var(--txt);
+  box-shadow: 0 6px 0 var(--txt);
+}
+:root[data-skin="brutalist"] .msearch-bar {
+  border-bottom: 2px solid var(--txt);
+}
+
+/* ── ترمینال: فسفری با درخشش ── */
+:root[data-skin="terminal"] .msearch {
+  background: var(--s1-tint);
+  border-bottom: 1px solid var(--acc);
+  box-shadow:
+    0 0 0 1px color-mix(in srgb, var(--acc) 30%, transparent),
+    0 0 20px color-mix(in srgb, var(--acc) 25%, transparent);
+}
+:root[data-skin="terminal"] .msearch-bar {
+  border-bottom: 1px solid color-mix(in srgb, var(--acc) 45%, transparent);
+}
+:root[data-skin="terminal"] .msearch-bar input {
+  font-family: var(--font-ui);
+  color: var(--acc);
+  letter-spacing: 0.4px;
+}
+
+/* ── مجله‌ای: خط نازک ── */
+:root[data-skin="editorial"] .msearch {
+  border-bottom: 0.5px solid var(--line2);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+}
+
+/* ── نرم: گوشه‌های گردتر ── */
+:root[data-skin="soft"] .msearch {
+  border-radius: 0 0 28px 28px;
+}
